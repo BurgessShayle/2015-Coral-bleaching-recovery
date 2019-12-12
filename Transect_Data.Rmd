@@ -1,0 +1,526 @@
+---
+title: "transect_reps"
+author: "Shayle Matsuda"
+date: "10/23/2019"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+  word_document:
+    toc: yes
+    toc_depth: '6'
+  html_document:
+    code_folding: hide
+    keep_tex: yes
+    pdf_document: null
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+This script is for the 2015 bleaching recovery paper's transect data and the Inner and Outer Lagoons. Here, we look at std error in the transect replicates. 
+
+This script includes a look at depth, it's not significant at anything but 4.5. We are dropping it.   
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, results="hide", message=FALSE}
+rm(list=ls(all=TRUE)) 
+#setwd("~/Desktop/B_NB")
+
+library("reshape2") #reshape data
+library("plotrix") #functions in tapply
+library("ggplot2") #plotting
+library("reshape") #reshape data
+library("plyr")  #splitting, applying, and combining data
+library("dplyr")  #splitting, applying, and combining data
+library("pscl")
+library("plotrix") #plotting
+library("gridExtra") #arrange plots for output
+library("car") #levenes test
+library("lsmeans")
+library(effects)
+library("multcomp") 
+library("multcompView")
+library("coefplot") #coefficient plotting
+library("seacarb") #seawater carbonate chemistry
+library("vegan") #calculating distance matrices
+library(betareg)
+library(coin)
+library(exactRankTests)
+library(mvtnorm)
+library(DTK)
+library(PMCMR)
+library(MuMIn)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
+library(ggsignif)
+library(HH)
+library(PMCMR)
+library(tidyverse)
+library(arm)
+library(jtools)
+library(broom)
+library(ggstance)
+library(officer)
+library(huxtable)
+library(flextable)
+```
+
+```{r,results="hide", message=FALSE}
+#Setup workspace:
+rData1<- read.csv("/Users/shayle/Desktop//B_NB/transect_data_20191022.csv", header=T) # load in transect data for corals by W, P, H
+
+# set levels of factor for Bleaching_status
+levels(rData1$Bleaching_score)
+rData1$Month<-as.factor(rData1$Month)
+rData1$BNB<-as.factor(rData1$BNB)
+
+
+rData1$Month <- factor(rData1$Month, levels=c("0", "1.5", "4.5","10","18","19")) #specify order
+```
+
+# Transect color score prevalence plots
+SI Figure 1  
+
+```{r, results="hide", message=FALSE}
+# Calc. mean, sd,se
+# remove rep column
+repcol<-c("Species", "Reef", "Month", "Bleaching_status","Percent")
+  rDataPlot<-rData1[repcol]
+
+# calc average  bleaching rate/month in %  per grouping
+transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month", "Bleaching_status"), summarise, 
+                   N    = length(Percent[!is.na(Percent)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Percent, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Percent, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Percent, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#Monthmeans #display table
+
+transectPlotmean$code<-paste0(transectPlotmean$Species, transectPlotmean$Reef, transectPlotmean$Bleaching_status)
+```
+
+Subsets by Coral and Lagoon:   
+*Montipora capitata* Inner Lagoon  
+```{r, results="hide", message=FALSE}
+McapInner1<-subset(transectPlotmean, Species=="Mcap")
+McapInner<-subset(McapInner1, Reef=="Inner")
+
+ col_McapInner <- McapInner %>%   # do this to get height for your labels in the bars
+  group_by(Month) %>%
+ arrange(Month, desc(Bleaching_status)) %>%
+ mutate(lab_ypos = cumsum(mean) - 0.5 * mean) 
+col_McapInner
+
+# set to 2 decimal places
+col_McapInner[,'mean']=round(col_McapInner[,'mean'],2)
+
+col_McapInner_plot<-ggplot(data=col_McapInner, aes(x=Month, y=mean, group = code, color=Bleaching_status)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Bleaching_status), size=3)+
+  geom_line(aes(color=Bleaching_status, linetype=Bleaching_status))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black", "black","black"))+
+  ylab("Montipora capitata\nPercent") +
+    xlab("Recovery time (months)") + #Label the X Axis
+    #ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Inner Lagoon")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_McapInner_plot
+McapInner<-col_McapInner_plot+ theme(legend.position = "none") #remove legend
+```
+
+*Montipora capitata* Outer Lagoon
+```{r, results="hide", message=FALSE}
+McapOuter<-subset(McapInner1, Reef=="Outer")
+
+ col_McapOuter <- McapOuter %>%   # do this to get height for your labels in the bars
+  group_by(Month) %>%
+ arrange(Month, desc(Bleaching_status)) %>%
+ mutate(lab_ypos = cumsum(mean) - 0.5 * mean) 
+col_McapOuter
+
+# set to 2 decimal places
+col_McapOuter[,'mean']=round(col_McapOuter[,'mean'],2)
+
+col_McapOuter_plot<-ggplot(data=col_McapOuter, aes(x=Month, y=mean, group = code, color=Bleaching_status)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Bleaching_status), size=3)+
+  geom_line(aes(color=Bleaching_status, linetype=Bleaching_status))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black", "black","black"))+
+  ylab("Montipora capitata\nPercent") +
+    xlab("Recovery time (months)") + #Label the X Axis
+    #ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_McapOuter_plot
+McapOuter<-col_McapOuter_plot+ theme(legend.position = "none") #remove legend
+
+```
+
+*Porites compressa* Inner Lagoon
+```{r, results="hide", message=FALSE}
+PcompInner1<-subset(transectPlotmean, Species=="Pcomp")
+PcompInner<-subset(PcompInner1, Reef=="Inner")
+
+ col_PcompInner <- PcompInner %>%   # do this to get height for your labels in the bars
+  group_by(Month) %>%
+ arrange(Month, desc(Bleaching_status)) %>%
+ mutate(lab_ypos = cumsum(mean) - 0.5 * mean) 
+col_PcompInner
+
+# set to 2 decimal places
+col_PcompInner[,'mean']=round(col_PcompInner[,'mean'],2)
+
+col_PcompInner_plot<-ggplot(data=col_PcompInner, aes(x=Month, y=mean, group = code, color=Bleaching_status)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Bleaching_status), size=3)+
+  geom_line(aes(color=Bleaching_status, linetype=Bleaching_status))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black", "black","black"))+
+  ylab("Porites compressa\nPercent") +
+    xlab("Recovery time (months)") + #Label the X Axis
+    #ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Inner Lagoon")+
+          theme(plot.title = element_text(size=20,face = "italic"));col_PcompInner_plot
+PcompInner<-col_PcompInner_plot+ theme(legend.position = "none") #remove legend
+
+```
+
+*Porites compressa* Outer Lagoon
+```{r, results="hide", message=FALSE}
+PcompOuter<-subset(PcompInner1, Reef=="Outer")
+
+ col_PcompOuter <- PcompOuter %>%   # do this to get height for your labels in the bars
+  group_by(Month) %>%
+ arrange(Month, desc(Bleaching_status)) %>%
+ mutate(lab_ypos = cumsum(mean) - 0.5 * mean) 
+col_PcompOuter
+
+# set to 2 decimal places
+col_PcompOuter[,'mean']=round(col_PcompOuter[,'mean'],2)
+
+col_PcompOuter_plot<-ggplot(data=col_PcompOuter, aes(x=Month, y=mean, group = code, color=Bleaching_status)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Bleaching_status), size=3)+
+  geom_line(aes(color=Bleaching_status, linetype=Bleaching_status))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black", "black","black"))+
+  ylab("Porites compressa\nPercent") +
+    xlab("Recovery time (months)") + #Label the X Axis
+    #ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_PcompOuter_plot
+PcompOuter<-col_PcompOuter_plot+ theme(legend.position = "none") #remove legend
+
+```
+
+Plot all four together: for Manuscript SI Figure 1
+```{r}
+grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
+```
+
+
+#Coral bleaching prevalence
+Here we add White (W) and Pale (P) to get the total % of affected corals.
+```{r}
+# Remove all Healthy rows
+rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]
+
+#create 'code' for groups by Species, Month, Depth, Reef, Rep 
+rData2$code<-paste0(rData2$Species, rData2$Month, rData2$Depth, rData2$Reef, rData2$Rep)
+
+# Group Data: combine P and B %s
+rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))
+
+# Match this back with data cols you want
+rData3$Species<-rData2$Species[match(rData3$code, rData2$code)]
+rData3$Month<-rData2$Month[match(rData3$code, rData2$code)]
+rData3$Depth<-rData2$Depth[match(rData3$code, rData2$code)]
+rData3$Reef<-rData2$Reef[match(rData3$code, rData2$code)]
+rData3$Rep<-rData2$Rep[match(rData3$code, rData2$code)]
+
+# subset by species
+BS_mcap<-subset(rData3, Species=="Mcap")
+BS_pcomp<-subset(rData3, Species=="Pcomp")
+
+#subset by reef
+BS_Inner<-subset(rData3, Reef=="Inner")
+```
+
+Prevalence by month - ANOVA 
+Mcap and Pcomp by Lagoon at each month
+```{r}
+#mcap 0
+BSc_mcap<-aov(sum~Reef, data=subset(BS_mcap, Month=="0"))
+#qqPlot(residuals(BSc_mcap))
+summary(BSc_mcap)
+TukeyHSD(BSc_mcap)
+
+#pcomp 0
+BSc_pcomp<-aov(sum~Reef, data=subset(BS_pcomp, Month=="0"))
+#qqPlot(residuals(BSc_pcomp)) 
+summary(BSc_pcomp)
+TukeyHSD(BSc_pcomp)
+
+#mcap 1.5
+BSc_mcap1.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="1.5"))
+#qqPlot(residuals(BSc_mcap1.5)) 
+summary(BSc_mcap1.5)
+
+#pcomp 1.5
+BSc_pcomp1.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="1.5"))
+#qqPlot(residuals(BSc_pcomp1.5)) 
+summary(BSc_pcomp1.5)
+TukeyHSD(BSc_pcomp1.5)
+
+#mcap 4.5
+BSc_mcap4.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="4.5"))
+#qqPlot(residuals(BSc_mcap4.5)) 
+summary(BSc_mcap4.5)
+
+#pcomp 4.5
+BSc_pcomp4.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="4.5"))
+#qqPlot(residuals(BSc_pcomp4.5)) 
+summary(BSc_pcomp4.5)
+
+#mcap 10
+BSc_mcap10<-aov(sum~Reef, data=subset(BS_mcap, Month=="10"))
+#qqPlot(residuals(BSc_mcap10)) 
+summary(BSc_mcap10)
+
+#pcomp 10
+BSc_pcomp10<-aov(sum~Reef, data=subset(BS_pcomp, Month=="10"))
+#qqPlot(residuals(BSc_pcomp10)) 
+summary(BSc_pcomp10)
+```
+
+
+#Benthic section: coral cover
+Benthic transect data here.   
+```{r}
+ccData<-read.csv("/Users/shayle/Desktop//B_NB/benthicTransectCoralcover20191024.csv", header=T)
+ccData$Reef<-as.character(ccData$Reef)
+ccData$Month<-as.character(ccData$Month)
+
+# calc average  bleaching rate/month in %  per grouping
+ccMeans <- ddply(ccData, c("Reef",  "Month"), summarise, 
+                   N    = length(CoralCover[!is.na(CoralCover)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(CoralCover, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(CoralCover, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(CoralCover, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+ccMeans
+#write.csv(ccMeans, "ccMeans_20191024.csv")
+```
+
+SI Table 3: CoralCover~Lagoon at peak bleaching
+```{r}
+ccMonth0<-subset(ccData, Month=="0")
+ccMonth0<-aov(CoralCover~Reef, ccMonth0)
+#qqPlot(residuals(ccMonth0))
+summary(ccMonth0) 
+TukeyHSD(ccMonth0) 
+```
+
+SI Table 4: CoralCover~Month at each Lagoon
+```{r}
+#SI2
+#coral cover at each reef
+ccPR13<-subset(ccData, Reef=="13")
+ccPR4<-subset(ccData, Reef=="4")
+
+ccMod13<-aov(CoralCover~Month, ccPR13)
+#qqPlot(residuals(ccMod13))
+summary(ccMod13) 
+
+ccMod4<-aov(CoralCover~Month, ccPR4)
+#qqPlot(residuals(ccMod4)) # looks good
+summary(ccMod4) # 
+```
+
+SI Table 5: Bleaching prevalence~Lagoon*Species at peak bleaching  
+```{r}
+# subset Mcap
+fmod_mcap<-subset(rData3, Month=="0")
+fmod_mcap0<-subset(fmod_mcap, Species=="Mcap")
+fmod_mcap0Mod<-aov(sum~Reef, fmod_mcap0)
+summary(fmod_mcap0Mod)
+TukeyHSD(fmod_mcap0Mod)
+
+# subset Pcomp
+fmod_pcomp<-subset(rData3, Month=="0")
+fmod_pcomp0<-subset(fmod_pcomp, Species=="Pcomp")
+fmod_pcomp0Mod<-aov(sum~Reef, fmod_pcomp0)
+summary(fmod_pcomp0Mod)
+TukeyHSD(fmod_pcomp0Mod)
+```
+
+SI 6: Month 0, by reef, bleaching (white, not pale) prevalence.  
+```{r}
+#bleached
+prevWhite<-subset(rData1, Bleaching_status=="Bleached")
+prevWhite0<-subset(prevWhite, Month=="0")
+
+#PR4
+PrevWhite0Inner<-subset(prevWhite0, Reef=="Inner")
+prev0WhiteMod4<-aov(Percent~Species, PrevWhite0Inner)
+summary(prev0WhiteMod4)
+TukeyHSD(prev0WhiteMod4)
+
+#PR13
+#PrevWhite0Outer<-subset(prevWhite0, Reef=="Outer")
+#prev0WhiteMod13<-aov(Percent~Species, PrevWhite0Outer)
+#summary(prev0WhiteMod13)
+```
+
+##Severity
+```{r}
+rData4<-rData2 #make a copy of rData2
+
+# add the sum row by code to get sum of W+P
+rData4$sum<-rData3$sum[match(rData4$code, rData3$code)]
+
+# Make new row of new percents which is P%/(W+P%)
+rData4$newPer<-rData4$Percent/rData4$sum
+
+# calc average  bleaching rate/month in %  per grouping
+rMeans <- ddply(rData4, c("Species", "Reef", "Month", "Bleaching_status"), summarise, 
+                   N    = length(newPer[!is.na(newPer)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(newPer, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(newPer, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(newPer, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+rMeans
+#write.csv(rMeans, "BleachingSeverityTransects_20191023.csv")
+```
+
+SI Table 7: Bleaching severity (white) at PR4 by coral species. 
+```{r}
+pr4Sev<-subset(rData4, Reef=="Inner") # subset reef
+pr4Sev1<-subset(pr4Sev, Month=="0") #subset only month 0
+pr4Sev2<-subset(pr4Sev1, Bleaching_status=="Bleached") #subset only bleached
+
+pr4Sev2_aov<-aov(newPer~Species, pr4Sev2) 
+summary(pr4Sev2_aov)
+TukeyHSD(pr4Sev2_aov)
+```
+
+SI Table 8: *M. capitata* bleaching severity (white) at peak bleaching: white~Lagoon
+```{r}
+mcapSev<-subset(rData4, Species=="Mcap") # subset mcap
+mcapSev<-subset(mcapSev, Bleaching_status=="Bleached") #subset only bleached
+mcapSev_0<-subset(mcapSev, Month=="0") #subset month 0 only
+mcapSev_0_aov<-aov(newPer~Reef, mcapSev_0) 
+summary(mcapSev_0_aov)
+
+#pcomp
+pcompSev<-subset(rData4, Species=="Pcomp") # subset mcap
+pcompSev<-subset(pcompSev, Bleaching_status=="Bleached") #subset only bleached
+pcompSev_0<-subset(pcompSev, Month=="0") #subset month 0 only
+pcompSev_0_aov<-aov(newPer~Reef, pcompSev_0) 
+summary(pcompSev_0_aov)
+TukeyHSD(pcompSev_0_aov)
+```
+
+
+SI Table 9: Prevalence of bleaching (white+pale) post peak bleaching during the first year of recovery. 
+```{r}
+#Month 1.5
+M1.5_post<-aov(sum~Species,   data=subset(rData3,Month=="1.5"))
+summary(M1.5_post)
+TukeyHSD(M1.5_post) #  significant. 
+
+#Month 4.5
+M4.5_post<-aov(sum~Species,   data=subset(rData3,Month=="4.5"))
+summary(M4.5_post)
+TukeyHSD(M4.5_post) #  significant. 
+
+#Month 10
+M10_post<-aov(sum~Species,   data=subset(rData3,Month=="10"))
+summary(M10_post)
+TukeyHSD(M10_post) #  significant. 
+```
+
+SI Table 10: Bleaching prevalence (white+pale)~Lagoon at each month of recovery within the first year.     
+```{r}
+#mcap 0
+BSc_mcap<-aov(sum~Reef, data=subset(BS_mcap, Month=="0"))
+summary(BSc_mcap)
+TukeyHSD(BSc_mcap)
+
+#pcomp 0
+BSc_pcomp<-aov(sum~Reef, data=subset(BS_pcomp, Month=="0"))
+summary(BSc_pcomp)
+TukeyHSD(BSc_pcomp)
+
+#mcap 1.5
+BSc_mcap1.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="1.5"))
+summary(BSc_mcap1.5)
+
+#pcomp 1.5
+BSc_pcomp1.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="1.5"))
+summary(BSc_pcomp1.5)
+TukeyHSD(BSc_pcomp1.5)
+
+#mcap 4.5
+BSc_mcap4.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="4.5"))
+summary(BSc_mcap4.5)
+
+#pcomp 4.5
+BSc_pcomp4.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="4.5"))
+summary(BSc_pcomp4.5)
+
+#mcap 10
+BSc_mcap10<-aov(sum~Reef, data=subset(BS_mcap, Month=="10"))
+summary(BSc_mcap10)
+
+#pcomp 10
+BSc_pcomp10<-aov(sum~Reef, data=subset(BS_pcomp, Month=="10"))
+summary(BSc_pcomp10)
+```
