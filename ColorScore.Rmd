@@ -68,7 +68,7 @@ library(flextable)
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
 
 # Bleaching data
-bData<-read.csv("/Users/shayle/Desktop/B_NB/Bleaching_FINAL.csv")
+bData<-read.csv("Bleaching_FINAL.csv")
 bData$Site<-as.factor(bData$Site)
 bData$Pair<-as.factor(bData$Pair)
 

@@ -75,7 +75,7 @@ library(flextable)
 
 ```{r,results="hide", message=FALSE}
 #Setup workspace:
-rData1<- read.csv("/Users/shayle/Desktop//B_NB/transect_data_20191022.csv", header=T) # load in transect data for corals by W, P, H
+rData1<- read.csv("transect_data_20191022.csv", header=T) # load in transect data for corals by W, P, H
 
 # set levels of factor for Bleaching_status
 levels(rData1$Bleaching_score)

@@ -63,7 +63,7 @@ library(huxtable)
 library(flextable)
 
 #load data
-mData<-read.csv("/Users/shayle/Desktop/B_NB/DECIMALmortality_scores_percent_20191110_missingdataremoved.csv")
+mData<-read.csv("DECIMALmortality_scores_percent_20191110_missingdataremoved.csv")
 mData$Site<-as.factor(mData$Site)
 
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
