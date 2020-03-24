@@ -61,6 +61,7 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(ggsignif)
+library(latticeExtra)
 library(HH)
 library(PMCMR)
 library(tidyverse)
@@ -71,6 +72,7 @@ library(ggstance)
 library(officer)
 library(huxtable)
 library(flextable)
+library(ARTool)
 ```
 
 ```{r,results="hide", message=FALSE}
