@@ -81,24 +81,22 @@ rData1<- read.csv("transect_data_20191022.csv", header=T) # load in transect dat
 
 # set levels of factor for Bleaching_status
 levels(rData1$Bleaching_score)
-rData1$Month<-as.factor(rData1$Month)
+rData1$MonthFactor<-as.factor(rData1$Month)  #create this to order axis in plots
 rData1$BNB<-as.factor(rData1$BNB)
 
-
-rData1$Month <- factor(rData1$Month, levels=c("0", "1.5", "4.5","10","18","19")) #specify order
+rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10","18","19")) #specify order
 ```
 
 # Transect color score prevalence plots
-SI Figure 1  
-
+SI Figure 1, Mean Table
 ```{r, results="hide", message=FALSE}
 # Calc. mean, sd,se
 # remove rep column
-repcol<-c("Species", "Reef", "Month", "Bleaching_status","Percent")
+repcol<-c("Species", "Reef", "Month","MonthFactor", "Bleaching_status","Percent")
   rDataPlot<-rData1[repcol]
 
 # calc average  bleaching rate/month in %  per grouping
-transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month", "Bleaching_status"), summarise, 
+transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month","MonthFactor", "Bleaching_status"), summarise, 
                    N    = length(Percent[!is.na(Percent)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(Percent, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(Percent, na.rm=TRUE), #calculate standard deviation
@@ -265,18 +263,13 @@ Plot all four together: for Manuscript SI Figure 1
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
-
 #Coral bleaching prevalence
-Here we add White (W) and Pale (P) to get the total % of affected corals.
+Here we sum White (W) + Pale (P) to get the total % of affected corals.
 ```{r}
-# Remove all Healthy rows
-rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]
 
-#create 'code' for groups by Species, Month, Depth, Reef, Rep 
-rData2$code<-paste0(rData2$Species, rData2$Month, rData2$Depth, rData2$Reef, rData2$Rep)
-
-# Group Data: combine P and B %s
-rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))
+rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]    # Remove Healthy 
+rData2$code<-paste0(rData2$Species, rData2$Month, rData2$MonthFactor, rData2$Depth, rData2$Reef, rData2$Rep)#create a code for groups by Species, Month, Depth, Reef, Rep 
+rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))# Group Data: combine P and B %s
 
 # Match this back with data cols you want
 rData3$Species<-rData2$Species[match(rData3$code, rData2$code)]
@@ -284,14 +277,37 @@ rData3$Month<-rData2$Month[match(rData3$code, rData2$code)]
 rData3$Depth<-rData2$Depth[match(rData3$code, rData2$code)]
 rData3$Reef<-rData2$Reef[match(rData3$code, rData2$code)]
 rData3$Rep<-rData2$Rep[match(rData3$code, rData2$code)]
-
+rData3$MonthFactor<-rData2$MonthFactor[match(rData3$code, rData2$code)]
+rData3<-rData3[,c(1,3,5:8,2)]
 # subset by species
 BS_mcap<-subset(rData3, Species=="Mcap")
+BS_mcap<-BS_mcap[,c(1,3:7)]
 BS_pcomp<-subset(rData3, Species=="Pcomp")
+BS_pcomp<-BS_pcomp[,c(1,3:7)]
 
 #subset by reef
-BS_Inner<-subset(rData3, Reef=="Inner")
+#BS_Inner<-subset(rData3, Reef=="Inner")
 ```
+
+ARTools: full model 
+```{r}
+#Mcap
+model1<-art(sum~Reef*MonthFactor+(1|Depth/Rep), data=subset(BS_mcap))
+anova(model1)   # AH getting some rank deficient warnings....thoughts?
+#emmeans(artlm(model1, "MonthFactor"), pairwise ~MonthFactor) #this won't work bc of multiple factors
+library(phia)
+		testInteractions(artlm(model1, "Reef:MonthFactor"), pairwise=c("Reef","MonthFactor"), adjustment="holm")
+
+```
+
+
+
+
+
+
+
+
+
 
 Prevalence by month - ANOVA 
 Mcap and Pcomp by Lagoon at each month
