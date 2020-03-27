@@ -316,6 +316,94 @@ summary(Mcappig06All_mod)
 TukeyHSD(Mcappig06All_mod)
 ```
 
+
+### ARTools TEST
+
+ARTools: full model  AH START HERE
+https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
+```{r}
+library(phia)
+
+#03 
+Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
+hist(Mcappig03All$score) #not normal,use ARTools for non-parametric
+
+model_mcap03_1<-art(score~month*Site*B2015+(1|Pair)+(1|TagID), Mcappig03All)
+anova(model_mcap03_1)
+  #results
+  #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
+  #Model: Mixed Effects (lmer)
+  #Response: art(score)
+
+      #                           F Df  Df.res     Pr(>F)    
+      #1 month            120.46674  2 149.303 < 2.22e-16 ***
+      #2 Site               0.93441  1  39.611    0.33958    
+      #3 B2015            918.05363  1  38.942 < 2.22e-16 ***
+      #4 month:Site        19.76773  2 149.737 2.4072e-08 ***
+      #5 month:B2015      115.88767  2 149.945 < 2.22e-16 ***
+      #6 Site:B2015         1.16330  1  39.366    0.28735    
+      #7 month:Site:B2015  23.32563  2 150.006 1.5120e-09 ***
+
+
+
+#posthoc - so this keeps giving me warnings due to involvement with ok to use? just warning
+ 
+  #month		
+    model.lm_1<-artlm(model_mcap03_1, "month")  #post hoc, get model ready to be passed into emmeans
+		marginal<-emmeans(model.lm_1, ~month) # only modeling by month
+		pairs(marginal, adjust="tukey") #tukey, all significant
+		cld(marginal, alpha=0.05, Letters=letters, adjust="tukey") # this shows they are all diff. 
+		#OR (this might be the same)
+		contrast(emmeans(model.lm_1, ~month), method = "pairwise") # only modeling by month
+
+  #Bleaching History (B2015)		
+		model.lm_2<-artlm(model_mcap03_1, "B2015")  #post hoc, get model ready to be passed into emmeans
+		marginal2<-emmeans(model.lm_2, ~B2015) # only modeling by month
+		pairs(marginal2, adjust="tukey") #tukey, significant
+		cld(marginal2, alpha=0.05, Letters=letters, adjust="tukey") 
+		
+#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
+	#Reef by Bleaching history (not by month!)
+		model.int_1=artlm(model_mcap03_1, "Site:B2015")
+		marginal1=emmeans(model.int_1, ~Site:B2015)
+      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
+		  contrast(marginal, method="pairwise", adjust="tukey")		
+
+#I think we use this for things with 3+ levels)
+		  #Bleaching history by Reef
+testInteractions(artlm(model_mcap03_1, "month:B2015"), pairwise=c("month","B2015"), adjustment="holm")		  #Chisq Test: 
+    #P-value adjustment method: holm
+      #                      Value Df   Chisq Pr(>Chisq)    
+    #Month0-Month1.5 : N-Y 148.760  1 103.645  < 2.2e-16 ***
+    #  Month0-Month3 : N-Y 217.877  1 217.685  < 2.2e-16 ***
+    #Month1.5-Month3 : N-Y  69.117  1  20.488  6.002e-06 ***
+		  
+testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site"), adjustment="holm")		   #month by Reef
+    #Chisq Test: 
+   #		                            Value Df   Chisq Pr(>Chisq)    
+    #Month0-Month1.5 : 4-13   28.507  1  2.9161     0.0877 .  
+    #  Month0-Month3 : 4-13  -77.427  1 21.0712  8.850e-06 ***
+    #Month1.5-Month3 : 4-13 -105.933  1 36.9487  3.638e-09 ***
+		  
+
+
+
+		  #trying for repeated measures
+        BS_mcap$Reef<-factor(BS_mcap$Reef, levels=unique(BS_mcap$Reef))
+                BS_mcap$MonthFactor<-factor(BS_mcap$MonthFactor, levels=unique(BS_mcap$MonthFactor))
+BS_mcap$sum.f<-factor(BS_mcap$sum, ordered=T)
+        model2<-art(sum~Reef+MonthFactor+Reef:MonthFactor+(1|Depth)+(1|Rep), data=subset(BS_mcap))
+anova(model2)
+model.lm=artlm(model2, "Reef")
+   marginal<=emmeans(model.lm~MonthFactor)     #not working
+   
+```
+
+
+
+
+
+
 *P. compressa*  
 Table 2
 ```{r}

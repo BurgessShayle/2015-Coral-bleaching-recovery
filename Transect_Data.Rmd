@@ -295,58 +295,6 @@ BS_pcomp<-BS_pcomp[,c(1,3:7)]
 
 
 
-
-
-
-
-ARTools: full model  AH START HERE
-```{r}
-library(phia)
-#Mcap
-model1<-art(sum~Reef+MonthFactor+Reef:MonthFactor+(1|Depth)+(1|Rep), data=subset(BS_mcap))
-anova(model1)   # AH getting some rank deficient warnings....thoughts?
-#emmeans(artlm(model1, "MonthFactor"), pairwise ~MonthFactor) #this won't work bc of multiple factors
-
-#posthoc 
-	#testInteractions(artlm(model1, "Reef:MonthFactor"), pairwise=c("Reef","MonthFactor"), model = adjustment="holm")  <- this isn't working great
-		
-	#OR...for one way model (this is working better I think)
-		model.lm<-artlm(model1, "MonthFactor")  #post hoc, get model ready to be passed into emmeans
-		marginal<-emmeans(model.lm, ~MonthFactor)
-		pairs(marginal, adjust="tukey")
-		cld(marginal, alpha=0.05, Letters=letters, adjust="tukey") # this is what we want I think, but only compares Mcap by month, not reef (which is not significant, however interaction is)
-		
-		#post-hoc for 2-way model
-		model.int=artlm(model1, "Reef:MonthFactor")
-		marginal=emmeans(model.int, ~Reef:MonthFactor)
-    contrast(marginal, method="pairwise", adjust="none")	 #<- some significnt	
-		    contrast(marginal, method="pairwise", adjust="tukey")		#none sig, diff between NONE vs TUKEY?
-		    
-		# post hoc for other interactions: this not as useful!
-		    model.diff<-artlm(model1, "Reef:MonthFactor")
-		    marginal=emmeans(model.diff, ~Reef:MonthFactor)
-        contrast(marginal, method = "pairwise", interaction=T)
-
-    #trying for repeated measures
-        BS_mcap$Reef<-factor(BS_mcap$Reef, levels=unique(BS_mcap$Reef))
-                BS_mcap$MonthFactor<-factor(BS_mcap$MonthFactor, levels=unique(BS_mcap$MonthFactor))
-BS_mcap$sum.f<-factor(BS_mcap$sum, ordered=T)
-        model2<-art(sum~Reef+MonthFactor+Reef:MonthFactor+(1|Depth)+(1|Rep), data=subset(BS_mcap))
-anova(model2)
-model.lm=artlm(model2, "Reef")
-   marginal<=emmeans(model.lm~MonthFactor)     #not working
-   
-```
-
-
-
-
-
-
-
-
-
-
 Prevalence by month - ANOVA 
 Mcap and Pcomp by Lagoon at each month
 ```{r}
