@@ -20,7 +20,7 @@ Color score for *M. capitata* and *P. compressa* colonies at the Inner Lagoon (P
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Bleached/Non Bleached data 
+# Bleached/Non Bleached data 
 ```{r, results="hide", message=FALSE}
 #Set up: load libraries
 
@@ -132,7 +132,7 @@ ballmeans #display table
 
 ## Bleaching score means 0-24 months by species/site/bleaching history  
 *Montipora capitata*  
-Figure 5
+Figure 5 
 ```{r}
 #subset for Mcap only
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
@@ -301,7 +301,7 @@ Table 2
 PIGMENTATION 0-3 months and 0-6 months
 score~month*B2015*lagoon
 *M. capitata*
-```{r}
+```{r} 
 Mcappig03All<-subset(b0153, Species=="Montipora capitata")
 Mcappig06All<-subset(b0153456, Species=="Montipora capitata")
 Mcappig36All<-subset(b3456, Species=="Montipora capitata")
@@ -317,13 +317,14 @@ TukeyHSD(Mcappig06All_mod)
 ```
 
 
-### ARTools TEST
+# ARTools TEST
 
 ARTools: full model  AH START HERE
 https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
 ```{r}
 library(phia)
-
+library(emmeans)
+library(ARTool)
 #03 
 Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
 hist(Mcappig03All$score) #not normal,use ARTools for non-parametric
@@ -346,9 +347,9 @@ anova(model_mcap03_1)
 
 
 
-#posthoc - so this keeps giving me warnings due to involvement with ok to use? just warning
+#posthoc - so this keeps giving me warnings due to involvement with interactions, ok to use? just warning. These are remodeling! not post hoc on above model
  
-  #month		
+  #month only		 - over time (regardless of reef or Bleaching history, months differ)
     model.lm_1<-artlm(model_mcap03_1, "month")  #post hoc, get model ready to be passed into emmeans
 		marginal<-emmeans(model.lm_1, ~month) # only modeling by month
 		pairs(marginal, adjust="tukey") #tukey, all significant
@@ -356,14 +357,15 @@ anova(model_mcap03_1)
 		#OR (this might be the same)
 		contrast(emmeans(model.lm_1, ~month), method = "pairwise") # only modeling by month
 
-  #Bleaching History (B2015)		
+  #Bleaching History (B2015)	- (regarless of time, Bleached corals and NB are diff still)	
 		model.lm_2<-artlm(model_mcap03_1, "B2015")  #post hoc, get model ready to be passed into emmeans
 		marginal2<-emmeans(model.lm_2, ~B2015) # only modeling by month
 		pairs(marginal2, adjust="tukey") #tukey, significant
 		cld(marginal2, alpha=0.05, Letters=letters, adjust="tukey") 
 		
-#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
-	#Reef by Bleaching history (not by month!)
+  #post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
+		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
+ 	#Reef by Bleaching history (not by month! moths are averaged)
 		model.int_1=artlm(model_mcap03_1, "Site:B2015")
 		marginal1=emmeans(model.int_1, ~Site:B2015)
       contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
@@ -377,7 +379,9 @@ testInteractions(artlm(model_mcap03_1, "month:B2015"), pairwise=c("month","B2015
     #Month0-Month1.5 : N-Y 148.760  1 103.645  < 2.2e-16 ***
     #  Month0-Month3 : N-Y 217.877  1 217.685  < 2.2e-16 ***
     #Month1.5-Month3 : N-Y  69.117  1  20.488  6.002e-06 ***
-		  
+# Interpret above as diff between Month0-Month1.5 of NB, and the diff between Month0-Month1.5 of B. FOr some reason, i can't change the order of "month:B2015" to "B2015:month".
+
+#contrast tests...not sure if ok
 testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site"), adjustment="holm")		   #month by Reef
     #Chisq Test: 
    #		                            Value Df   Chisq Pr(>Chisq)    
@@ -386,16 +390,36 @@ testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site")
     #Month1.5-Month3 : 4-13 -105.933  1 36.9487  3.638e-09 ***
 		  
 
+#what about nonparametric Mann-Whitney U tests (bewteen subjects) or wilcoxon (within subjects)
+#http://depts.washington.edu/acelab/proj/art/index.html
+# cross-factor pairwise comparisons using Mann-Whitney U tests. Look ok? Not by Month, across them. 
+		N4_vs_Y4 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	 	N13_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	  Y4_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	  N4_vs_N13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score)$p.value
+
+# did below bc doc suggested, not sure how I feel. Now all are significant. http://depts.washington.edu/acelab/proj/art/index.html
+# correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4_vs_Y4, N13_vs_Y13, Y4_vs_Y13,N4_vs_N13), method="holm")
+
+		
+		
+#new idea #### AH do you think we can present the 'full model' and then for post hoc run specific models (or do we run into same issues again in review)
+  
+#new idea 2# 
+#### AH #### To get around the issue of not being able to compare reef/bleachinghist/time, could we instead make a code for reef/bleachinghist/time and run that way? https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
+   
+   #OR Tests of differences of differences in interactions <- not running
+contrast(emmeans(model_mcap03_1, B2015:Site), method="pairwise", interaction=TRUE)
 
 
-		  #trying for repeated measures
-        BS_mcap$Reef<-factor(BS_mcap$Reef, levels=unique(BS_mcap$Reef))
-                BS_mcap$MonthFactor<-factor(BS_mcap$MonthFactor, levels=unique(BS_mcap$MonthFactor))
-BS_mcap$sum.f<-factor(BS_mcap$sum, ordered=T)
-        model2<-art(sum~Reef+MonthFactor+Reef:MonthFactor+(1|Depth)+(1|Rep), data=subset(BS_mcap))
-anova(model2)
-model.lm=artlm(model2, "Reef")
-   marginal<=emmeans(model.lm~MonthFactor)     #not working
+Mcappig03All_code<-Mcappig03All #copy df to mess with
+Mcappig03All_code$code<-paste0(Mcappig03All_code$B2015, Mcappig03All_code$Site) #make code col with b2015, site and month
+Mcappig03All_code$code<-as.factor(Mcappig03All_code$code)
+   Mcappig03All_code<-Mcappig03All_code[,c(1,2,5,7,6)] #get rid of col and reorder
+   
+   model_Mcappig03All_code<-artlm(score ~ month*code+(1|TagID/Pair), Mcappig03All_code)
+anova(model_mcap03_1)
    
 ```
 
