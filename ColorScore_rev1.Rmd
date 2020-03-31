@@ -1,0 +1,1096 @@
+---
+title: "B_NB_stats"
+author: "Shayle Matsuda"
+date: "08/08/2019"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+  pdf_document:
+    keep_tex: yes
+editor_options: 
+  chunk_output_type: console
+---
+update:"03/31/3030"
+
+Color score for *M. capitata* and *P. compressa* colonies at the Inner Lagoon (PR4) and Outer Lagoon (PR13) after the 2015 coral bleaching event in Kaneohe Bay.  Tagged individuals were given a color score based on their visual color: 1) white (>80% of colony white with no visible pigmentation); 2) pale (>10% colony affected by pigment loss); or 3) fully pigmented (<10% colony with any pale coloration). 
+
+```{r setup, include=FALSE,results="hide"}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Bleached/Non Bleached data 
+```{r, results="hide", message=FALSE}
+#Set up: load libraries
+
+rm(list=ls(all=TRUE)) 
+library("reshape2") #reshape data
+library("plotrix") #functions in tapply
+library("ggplot2") #plotting
+library("reshape") #reshape data
+library("plyr")  #splitting, applying, and combining data
+library("dplyr")  #splitting, applying, and combining data
+library("pscl")
+library("plotrix") #plotting
+library("gridExtra") #arrange plots for output
+library("car") #levenes test
+library("lsmeans")
+library(effects)
+library("multcomp") 
+library("multcompView")
+library("coefplot") #coefficient plotting
+library("seacarb") #seawater carbonate chemistry
+library("vegan") #calculating distance matrices
+library(betareg)
+library(coin)
+library(exactRankTests)
+library(mvtnorm)
+library(DTK)
+library(PMCMR)
+library(MuMIn)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
+library(ggsignif)
+library(HH)
+library(PMCMR)
+library(tidyverse)
+library(arm)
+library(jtools)
+library(broom)
+library(ggstance)
+library(officer)
+library(huxtable)
+library(flextable)
+
+#We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
+
+# Bleaching data
+bData<-read.csv("Bleaching_FINAL.csv")
+bData$Site<-as.factor(bData$Site)
+bData$Pair<-as.factor(bData$Pair)
+
+#organize data
+bALL<-bData
+  #melt
+  bALLData1<-melt(data = bALL, measure.vars = c("Month0","Month1.5","Month3","Month4.5", "Month6","Month10","Month18","Month24"))   
+  colnames(bALLData1)[colnames(bALLData1)=="variable"] <- "month"   # change col name from 'variable' to 'month'
+  colnames(bALLData1)[colnames(bALLData1)=="value"] <- "score"   # change col name from 'value' to 'score'
+  bALLData1$group<-paste(bALLData1$Species, bALLData1$Site, bALLData1$B2015, bALLData1$month) # add column for groups
+#write.csv(bALL, "PigmentationBNB_20191122.csv")
+
+#Remove all NON PAIRS and all NAs
+  bALLData<-na.omit(bALLData1) # remove the NA colums
+
+#subset 0-3 months
+  b03<-subset(bALLData, month=="Month0" |month=="Month3")
+  b03<-subset(b03, select = -group )
+
+      b03<-dcast(b03, Species+Site+Pair+B2015~month) # cast()
+  b03<-na.omit(b03) # remove the NA colums
+  
+#subset 0-6 months
+b06<-subset(bALLData, month=="Month0" |month=="Month6")
+b06<-subset(b06, select = -group )
+
+      b06<-dcast(b06, Species+Site+Pair+B2015~month) # cast()
+      b06<-na.omit(b06) # remove the NA colums
+
+#subset 0-1.5-3 months for pairs comparison
+b0153<-subset(bALLData, month=="Month0" |month=="Month1.5"|month=="Month3")
+   #   b0153<-dcast(b0153, Species+Site+Pair+B2015~month) # cast()
+   #   b0153<-na.omit(b0153) # remove the NA colums
+
+#subset 3-4.5-6 months for pairs comparison
+b3456<-subset(bALLData, month=="Month3" |month=="Month4.5"|month=="Month6")
+
+#subset 0-1.5-3-4.5-6 months for pairs comparison
+b0153456<-subset(bALLData, month=="Month0" |month=="Month1.5"|month=="Month3"|month=="Month4.5"|month=="Month6")
+      #b0153456<-dcast(b0153456, Species+Site+Pair+B2015~month) # cast()
+      #b0153456<-na.omit(b0153456) # remove the NA colums
+    #subset 0-1.5-3-4.5-6 months for pairs comparison
+``` 
+
+Mean bleaching scores
+```{r, results=TRUE}
+#calc average bleaching score per grouping by time point
+ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "month"), summarise, #
+                   N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(score, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
+
+ballmeans$code<-paste0(ballmeans$Site, ballmeans$B2015, ballmeans$Species)
+ballmeans #display table
+#write.csv(ballmeans,"ballmeans_20191108.csv")
+```
+
+## Bleaching score means 0-24 months by species/site/bleaching history  
+*Montipora capitata*  
+Figure 5 
+```{r}
+#subset for Mcap only
+Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month0"]<-0              # new col with month #s only
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month1.5"]<-1.5  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month3"]<-3 
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month4.5"]<-4.5
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month6"]<-6  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month10"]<-10  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month18"]<-18
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month24"]<-24 
+
+#PR13
+Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
+#PR4
+Mcap024AllplotPR4<-subset(Mcap024Allplot, Site==4)
+```
+
+*M. capitata* PR13
+```{r}
+ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  scale_shape_manual(values=c( 16,1))+
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Color score") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));ballplotMcapPR13
+McapOuter<-ballplotMcapPR13 + theme(legend.position = "none") #remove legend
+```
+
+*M. capitata* PR4
+```{r}
+ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
+ geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  
+  scale_shape_manual(values=c( 16,1))+
+  
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Montipora capitata\nColor score") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Inner Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4
+McapInner<-ballplotMcapPR4 + theme(legend.position = "none") #remove legend
+McapInner
+```
+
+*Porites compressa*  
+Figure 5
+```{r}
+Pcomp024Allplot<-subset(ballmeans, Species=="Porites compressa")
+
+# change Month# to just number
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month0"]<-0
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month1.5"]<-1.5
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month3"]<-3
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month4.5"]<-4.5
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month6"]<-6
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month10"]<-10
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month18"]<-18
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month24"]<-24
+
+Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
+Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
+```
+
+*P. compress* 
+Outer PR13
+```{r}
+b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  
+  scale_shape_manual(values=c( 16,1))+
+  
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Color score") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR13
+
+PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
+```
+
+*P. compressa*   
+Inner PR4
+```{r}
+b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  
+  scale_shape_manual(values=c( 16,1))+
+  
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Porites compressa\nColor score") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
+
+
+PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
+PcompInner
+```
+
+Plot all four together, Figure 5
+```{r}
+grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
+```
+
+
+Table 2  
+PIGMENTATION 0-3 months and 0-6 months
+score~month*B2015*lagoon
+*M. capitata*
+```{r} 
+Mcappig03All<-subset(b0153, Species=="Montipora capitata")
+Mcappig06All<-subset(b0153456, Species=="Montipora capitata")
+Mcappig36All<-subset(b3456, Species=="Montipora capitata")
+
+#03
+Mcappig03All_mod<-aov(score~month*Site*B2015, Mcappig03All)
+summary(Mcappig03All_mod)
+TukeyHSD(Mcappig03All_mod)
+#06
+Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
+summary(Mcappig06All_mod)
+TukeyHSD(Mcappig06All_mod)
+```
+
+
+# ARTools TEST
+
+ARTools: full model  AH START HERE
+https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
+```{r}
+library(phia)
+library(emmeans)
+library(ARTool)
+#03 
+Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
+hist(Mcappig03All$score) #not normal,use ARTools for non-parametric
+
+model_mcap03_1<-art(score~month*Site*B2015+(1|Pair)+(1|TagID), Mcappig03All)
+anova(model_mcap03_1)
+  #results
+  #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
+  #Model: Mixed Effects (lmer)
+  #Response: art(score)
+
+      #                           F Df  Df.res     Pr(>F)    
+      #1 month            120.46674  2 149.303 < 2.22e-16 ***
+      #2 Site               0.93441  1  39.611    0.33958    
+      #3 B2015            918.05363  1  38.942 < 2.22e-16 ***
+      #4 month:Site        19.76773  2 149.737 2.4072e-08 ***
+      #5 month:B2015      115.88767  2 149.945 < 2.22e-16 ***
+      #6 Site:B2015         1.16330  1  39.366    0.28735    
+      #7 month:Site:B2015  23.32563  2 150.006 1.5120e-09 ***
+
+
+
+#posthoc - so this keeps giving me warnings due to involvement with interactions, ok to use? just warning. These are remodeling! not post hoc on above model
+ 
+  #month only		 - over time (regardless of reef or Bleaching history, months differ)
+    model.lm_1<-artlm(model_mcap03_1, "month")  #post hoc, get model ready to be passed into emmeans
+		marginal<-emmeans(model.lm_1, ~month) # only modeling by month
+		pairs(marginal, adjust="tukey") #tukey, all significant
+		cld(marginal, alpha=0.05, Letters=letters, adjust="tukey") # this shows they are all diff. 
+		#OR (this might be the same)
+		contrast(emmeans(model.lm_1, ~month), method = "pairwise") # only modeling by month
+
+  #Bleaching History (B2015)	- (regarless of time, Bleached corals and NB are diff still)	
+		model.lm_2<-artlm(model_mcap03_1, "B2015")  #post hoc, get model ready to be passed into emmeans
+		marginal2<-emmeans(model.lm_2, ~B2015) # only modeling by month
+		pairs(marginal2, adjust="tukey") #tukey, significant
+		cld(marginal2, alpha=0.05, Letters=letters, adjust="tukey") 
+		
+  #post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
+		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
+ 	#Reef by Bleaching history (not by month! moths are averaged)
+		model.int_1=artlm(model_mcap03_1, "Site:B2015")
+		marginal1=emmeans(model.int_1, ~Site:B2015)
+      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
+		  contrast(marginal, method="pairwise", adjust="tukey")		
+
+#I think we use this for things with 3+ levels)
+		  #Bleaching history by Reef
+testInteractions(artlm(model_mcap03_1, "month:B2015"), pairwise=c("month","B2015"), adjustment="holm")		  #Chisq Test: 
+    #P-value adjustment method: holm
+      #                      Value Df   Chisq Pr(>Chisq)    
+    #Month0-Month1.5 : N-Y 148.760  1 103.645  < 2.2e-16 ***
+    #  Month0-Month3 : N-Y 217.877  1 217.685  < 2.2e-16 ***
+    #Month1.5-Month3 : N-Y  69.117  1  20.488  6.002e-06 ***
+# Interpret above as diff between Month0-Month1.5 of NB, and the diff between Month0-Month1.5 of B. FOr some reason, i can't change the order of "month:B2015" to "B2015:month".
+
+#contrast tests...not sure if ok
+testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site"), adjustment="holm")		   #month by Reef
+    #Chisq Test: 
+   #		                            Value Df   Chisq Pr(>Chisq)    
+    #Month0-Month1.5 : 4-13   28.507  1  2.9161     0.0877 .  
+    #  Month0-Month3 : 4-13  -77.427  1 21.0712  8.850e-06 ***
+    #Month1.5-Month3 : 4-13 -105.933  1 36.9487  3.638e-09 ***
+		  
+
+#what about nonparametric Mann-Whitney U tests (bewteen subjects) or wilcoxon (within subjects)
+#http://depts.washington.edu/acelab/proj/art/index.html
+# cross-factor pairwise comparisons using Mann-Whitney U tests. Look ok? Not by Month, across them. 
+		N4_vs_Y4 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	 	N13_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	  Y4_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
+	  N4_vs_N13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score)$p.value
+
+# did below bc doc suggested, not sure how I feel. Now all are significant. http://depts.washington.edu/acelab/proj/art/index.html
+# correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4_vs_Y4, N13_vs_Y13, Y4_vs_Y13,N4_vs_N13), method="holm")
+
+		
+		
+#new idea #### AH do you think we can present the 'full model' and then for post hoc run specific models (or do we run into same issues again in review)
+  
+#new idea 2# 
+#### AH #### To get around the issue of not being able to compare reef/bleachinghist/time, could we instead make a code for reef/bleachinghist/time and run that way? https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
+   
+   #OR Tests of differences of differences in interactions <- not running
+contrast(emmeans(model_mcap03_1, B2015:Site), method="pairwise", interaction=TRUE)
+
+
+Mcappig03All_code<-Mcappig03All #copy df to mess with
+Mcappig03All_code$code<-paste0(Mcappig03All_code$B2015, Mcappig03All_code$Site) #make code col with b2015, site and month
+Mcappig03All_code$code<-as.factor(Mcappig03All_code$code)
+   Mcappig03All_code<-Mcappig03All_code[,c(1,2,5,7,6)] #get rid of col and reorder
+   
+   model_Mcappig03All_code<-artlm(score ~ month*code+(1|TagID/Pair), Mcappig03All_code)
+anova(model_mcap03_1)
+   
+```
+
+
+
+
+
+
+*P. compressa*  
+Table 2
+```{r}
+Pcomppig03All<-subset(b0153, Species=="Porites compressa")
+Pcomppig06All<-subset(b0153456, Species=="Porites compressa")
+Pcomppig36All<-subset(b3456, Species=="Porites compressa")
+
+#0-3
+Pcomppig03All_mod<-aov(score~month*Site*B2015, Pcomppig03All)
+summary(Pcomppig03All_mod)
+TukeyHSD(Pcomppig03All_mod)
+#0-6
+Pcomppig06All_mod<-aov(score~month*Site*B2015, Pcomppig06All)
+summary(Pcomppig06All_mod)
+TukeyHSD(Pcomppig06All_mod)
+
+#36
+Pcomppig36All_mod<-aov(score~month*Site*B2015, Pcomppig36All)
+summary(Pcomppig36All_mod)
+TukeyHSD(Pcomppig36All_mod)
+```
+
+# Bleaching Recovery Models
+SI Table 11  
+`Bleaching Score ~ Reef Site * Bleaching History   
+Model: `score~Site*B2015`
+*Montipora capiatata*  
+```{r}
+Mcap_bALLData<-subset(bALLData, Species=="Montipora capitata")   # pull out Mcap
+
+#Month0
+Mcap_b0<-subset(Mcap_bALLData, month=="Month0")
+Mcap_b0_mod1<-aov(score~Site*B2015, Mcap_b0)
+summary(Mcap_b0_mod1)
+TukeyHSD(Mcap_b0_mod1)
+
+#Month1.5
+Mcap_b1_5<-subset(Mcap_bALLData, month=="Month1.5")
+Mcap_b1_5_mod1<-aov(score~Site*B2015, Mcap_b1_5)
+summary(Mcap_b1_5_mod1)
+TukeyHSD(Mcap_b1_5_mod1)
+
+#Month3
+Mcap_b3<-subset(Mcap_bALLData, month=="Month3")
+Mcap_b3_mod1<-aov(score~Site*B2015, Mcap_b3)
+summary(Mcap_b3_mod1)
+TukeyHSD(Mcap_b3_mod1)
+
+#Month4.5
+Mcap_b4_5<-subset(Mcap_bALLData, month=="Month4.5")
+Mcap_b4_5_mod1<-aov(score~Site*B2015, Mcap_b4_5)
+summary(Mcap_b4_5_mod1)
+TukeyHSD(Mcap_b4_5_mod1)
+
+#Month6
+Mcap_b6<-subset(Mcap_bALLData, month=="Month6")
+Mcap_b6_mod1<-aov(score~Site*B2015, Mcap_b6)
+summary(Mcap_b6_mod1)
+TukeyHSD(Mcap_b6_mod1)
+```
+
+*Porites compressa*  
+SI Table 11
+```{r}
+Pcomp_bALLData<-subset(bALLData, Species=="Porites compressa")   # pull out Pcomp
+
+#Month0
+Pcomp_b0<-subset(Pcomp_bALLData, month=="Month0")
+Pcomp_b0_mod1<-aov(score~Site*B2015, Pcomp_b0)
+summary(Pcomp_b0_mod1)
+TukeyHSD(Pcomp_b0_mod1)
+
+#Month1.5
+Pcomp_b1_5<-subset(Pcomp_bALLData, month=="Month1.5")
+Pcomp_b1_5_mod1<-aov(score~Site*B2015, Pcomp_b1_5)
+summary(Pcomp_b1_5_mod1)
+TukeyHSD(Pcomp_b1_5_mod1)
+
+#Month3
+Pcomp_b3<-subset(Pcomp_bALLData, month=="Month3")
+Pcomp_b3_mod1<-aov(score~Site*B2015, Pcomp_b3)
+summary(Pcomp_b3_mod1)
+
+#Month4.5
+Pcomp_b4_5<-subset(Pcomp_bALLData, month=="Month4.5")
+Pcomp_b4_5_mod1<-aov(score~Site*B2015, Pcomp_b4_5)
+summary(Pcomp_b4_5_mod1)
+
+#Month6
+Pcomp_b6<-subset(Pcomp_bALLData, month=="Month6")
+Pcomp_b6_mod1<-aov(score~Site*B2015, Pcomp_b6)
+summary(Pcomp_b6_mod1)
+```
+
+## Rare of Bleaching Recovery: Percent change from month 0 to month 3  
+We calculated the mean bleaching recovery at 0-3 months and 3-6 months.      
+0-3 months RATE
+```{r}
+## 1. 0-3 months
+#Calc average rate per colony 0-3 months
+# Recovery in %
+b03$Rate03<-(((b03$Month3-b03$Month0)))
+
+#Average the means of the rates. 
+
+# calc average  bleaching rate/month in %  per grouping
+b03means <- ddply(b03, c("Site", "Species", "B2015"), summarise, 
+                   N    = length(Rate03[!is.na(Rate03)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate03, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate03, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate03, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#b03means #display table
+
+b03means$code<-paste0(b03means$Site, b03means$B2015, b03means$Species)
+b03means #display table
+```
+
+0-6 months RATE
+```{r}
+#recovery in %
+b06$Rate06<-(((b06$Month6-b06$Month0)))
+
+#Average the means of the rates. 
+
+# calc average  bleaching rate/month in %  per grouping
+b06means <- ddply(b06, c("Site", "Species", "B2015"), summarise, 
+                   N    = length(Rate06[!is.na(Rate06)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate06, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate06, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate06, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+b06means #display table
+
+b06means$code<-paste0(b06means$Site, b06means$B2015, b06means$Species)
+```
+
+Rate change  
+`Rate ~ Lagoon*B2015`  
+*Montipora capitata only*    
+ Months 0-3
+```{r}
+#subset Mcap
+Mcap_b03<-subset(b03, Species=="Montipora capitata") #subset Mcap
+#0-3
+Mcap_b03r<-aov(Rate03~Site* B2015, Mcap_b03)
+summary(Mcap_b03r)
+TukeyHSD(Mcap_b03r)
+
+#0-6
+Mcap_b06<-subset(b06, Species=="Montipora capitata") #subset Mcap
+Mcap_b06r<-aov(Rate06~Site * B2015, Mcap_b06)
+summary(Mcap_b06r)
+TukeyHSD(Mcap_b06r)
+```
+
+##*Porites compressa only*
+`Bleaching score ~ Reef Site * Bleaching History`  
+###Months 0-3, Rate change
+Model: `score~Site*B2015`  
+```{r}
+#subset Pcomp
+Pcomp_b03<-subset(b03, Species=="Porites compressa") #subset Pcomp
+Pcomp_b03r<-aov(Rate03~Site  * B2015, Pcomp_b03)
+summary(Pcomp_b03r)
+TukeyHSD(Pcomp_b03r)
+
+#0-6
+Pcomp_b06<-subset(b06, Species=="Porites compressa") #subset Pcomp
+Pcomp_b06r<-aov(Rate06~Site * B2015, Pcomp_b06)
+summary(Pcomp_b06r)
+TukeyHSD(Pcomp_b06r)
+
+```
+
+
+# Pairs 
+(only include colonies when both partners of a pair are found)
+```{r,results="hide"}
+#Figure out which of the pairs we lose 
+#subset only pairs
+naData<-bALLData1
+#dataset to work from (pull unwanted from)
+pData<-bALLData1
+
+# Identify which pairs have a partner not found
+# Subset Month0 (two colonies missing values, checked datasheet)
+M0<-subset(naData, month=="Month0") # subset month 0
+M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#keep it all
+
+  # subset month 0
+  M0a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
+  M0<-pData[M0a]
+  M0<-subset(M0, month=="Month0")
+  M0<-na.omit(M0) # remove the NA colums
+  #DIFFS
+  M0diff<-M0  
+  M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
+  M0diff$diff<-M0diff$N-M0diff$Y
+
+# Subset Month1.5 
+M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
+M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+# 113_114 remove
+  # subset month 1.5
+  M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
+  M1.5<-pData[M1.5a]
+  M1.5<-subset(M1.5, month=="Month1.5")
+  M1.5<-na.omit(M1.5) # remove the NA colums
+  M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
+ #DIFFS
+  M1.5diff<-M1.5  
+  M1.5diff<-dcast(M1.5diff, Species+Site+Pair+month~B2015) # cast()
+  M1.5diff$diff<-M1.5diff$N-M1.5diff$Y
+  
+## Subset Month3
+M3<-subset(naData, month=="Month3") # subset month 3
+M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+# 107_108, 13_14, 213_214, 215_216, 217_218, 285_286, 31_32 <- both not found
+#7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
+
+  # subset month 3
+  M3a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
+  M3<-pData[M3a]
+  M3<-subset(M3, month=="Month3")
+  M3<-na.omit(M3) # remove the NA colums
+  # remove 7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
+  M3<-M3[!(M3$Pair=="7_8"),]
+  M3<-M3[!(M3$Pair=="113_114"),]
+  M3<-M3[!(M3$Pair=="255_256"),]
+  M3<-M3[!(M3$Pair=="259_260"),]
+  
+  #DIFFS
+  M3diff<-M3  
+  M3diff<-dcast(M3diff, Species+Site+Pair+month~B2015) # cast()
+  M3diff$diff<-M3diff$N-M3diff$Y
+
+## Subset Month 4.5
+M4.5<-subset(naData, month=="Month4.5") # subset month 3
+M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+# 285_286,9_10, 209_210, 37)38, 255_256 <- both not found
+# 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83 <- Pairs where only one was not found not 
+
+  # subset month 4.5
+  M4.5a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
+  M4.5<-pData[M4.5a]
+  M4.5<-subset(M4.5, month=="Month4.5")
+  M4.5<-na.omit(M4.5) # remove the NA colums
+  # remove # 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83
+  M4.5<-M4.5[!(M4.5$Pair=="7_8"),]
+  M4.5<-M4.5[!(M4.5$Pair=="113_114"),]
+  M4.5<-M4.5[!(M4.5$Pair=="255_256"),]
+  M4.5<-M4.5[!(M4.5$Pair=="259_260"),]
+  M4.5<-M4.5[!(M4.5$Pair=="263_264"),]
+  M4.5<-M4.5[!(M4.5$Pair=="267_268"),]
+  M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
+ 
+  #DIFFS
+  M4.5diff<-M4.5  
+  M4.5diff<-dcast(M4.5diff, Species+Site+Pair+month~B2015) # cast()
+  M4.5diff$diff<-M4.5diff$N-M4.5diff$Y
+  
+
+# Subset month 6
+M6<-subset(naData, month=="Month6")
+M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#  113_114,13_14, 17_18, 213_214, 215_216, 217_218, 223_224,82_83
+#<- 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264,267_269 <-Pairs where only one was not found
+
+  # Subset month 6
+  M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
+  M6<-pData[M6a]
+  M6<-subset(M6, month=="Month6")
+  M6<-na.omit(M6) # remove the NA colums
+  # remove 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264, 267_269 <-Pairs where only one was not found :/
+  M6<-M6[!(M6$Pair=="111_112"),] # remove the other partner
+  M6<-M6[!(M6$Pair=="115_116"),]
+  M6<-M6[!(M6$Pair=="119_120"),]
+  M6<-M6[!(M6$Pair=="207_208"),]
+  M6<-M6[!(M6$Pair=="255_256"),]
+  M6<-M6[!(M6$Pair=="259_260"),]
+  M6<-M6[!(M6$Pair=="263_264"),]
+  M6<-M6[!(M6$Pair=="267_268"),]
+  M6<-M6[!(M6$Pair=="263_264"),]
+  
+  #DIFFS
+  M6diff<-M6  
+  M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
+  M6diff$diff<-M6diff$N-M6diff$Y
+
+#make dfs  
+pigPairs<-rbind(M0,M1.5,M3,M4.5,M6)
+PairDat<-pigPairs
+pigPairs06<-rbind(M0,M1.5,M3,M4.5,M6)
+pigPairs03<-rbind(M0,M1.5,M3)
+pigPairs36<-rbind(M3,M4.5,M6)
+
+#Mean bleaching scores across the entire project
+
+#calc average bleaching score per grouping by time point
+pairmeans <- ddply(PairDat, c("Site", "Species", "B2015", "month"), summarise, #
+                   N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(score, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
+
+pairmeans$code<-paste0(pairmeans$Site, pairmeans$B2015, pairmeans$Species)
+pairmeans #display table
+```
+
+*Montipora capitata* 
+```{r}
+#subset for Mcap only
+McapPairplot<-subset(pairmeans, Species=="Montipora capitata")
+
+
+PairplotMcapB<-ggplot(data=McapPairplot, aes(x=month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=B2015, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Color score") +
+    xlab("") + #Label the X Axis
+    ylim(1, 3.2) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Pairs Montipora capitata Bleaching Scores months 0-10")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));PairplotMcapB
+```
+
+*Porites compressa* 
+```{r}
+#subset for Pcomp only
+PcompPairplot<-subset(pairmeans, Species=="Porites compressa")
+
+PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=B2015, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Color score") +
+    xlab("") + #Label the X Axis
+    ylim(1, 3.3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Pairs Porites compressa Bleaching Scores months 0-10")+
+          theme(plot.title = element_text(size=20,face = "italic"));PairplotPcompB
+```
+
+#Mcap only full model Pairs 0-6 months
+SI Table 11
+Model: `score~Site*B2015*Species`  
+```{r}
+#set up Pairs data
+Mcappig<-subset(PairDat, Species =="Montipora capitata")            
+
+#Month0
+MpigPair0<-subset(Mcappig, month =="Month0")           
+MpigPair0_mod1<-aov(score~Site*B2015, MpigPair0)
+summary(MpigPair0_mod1)
+TukeyHSD(MpigPair0_mod1) 
+
+#Month1.5
+MpigPair1.5<-subset(Mcappig, month =="Month1.5")
+MpigPair1.5_mod1<-aov(score~Site*B2015, MpigPair1.5)
+summary(MpigPair1.5_mod1)
+TukeyHSD(MpigPair1.5_mod1)
+
+#Month3
+MpigPair3<-subset(Mcappig, month =="Month3")
+MpigPair3_mod1<-aov(score~Site*B2015, MpigPair3)
+summary(MpigPair3_mod1)
+TukeyHSD(MpigPair3_mod1)
+
+#Month4.5
+MpigPair4.5<-subset(Mcappig, month =="Month4.5")
+MpigPair4.5_mod1<-aov(score~Site*B2015, MpigPair4.5)
+summary(MpigPair4.5_mod1)
+TukeyHSD(MpigPair4.5_mod1)
+
+#Month6
+MpigPair6<-subset(Mcappig, month =="Month6")
+# anova
+MpigPair6_mod1<-aov(score~Site*B2015, MpigPair6)
+summary(MpigPair6_mod1)
+TukeyHSD(MpigPair6_mod1)
+```
+
+###Pcomp only full model Pairs 0-6 months
+Model: `score~Site*B2015`  
+SI Table 11
+```{r}
+Pcomppig<- subset(PairDat, Species == "Porites compressa") 
+
+#Month 0
+PpigPair0<-subset(Pcomppig, month =="Month0")            
+PpigPair0_mod1<-aov(score~Site*B2015, PpigPair0)
+summary(PpigPair0_mod1)
+TukeyHSD(PpigPair0_mod1) #post hoc
+
+#Month1.5
+PpigPair1.5<-subset(Pcomppig, month =="Month1.5")
+PpigPair1.5_mod1<-aov(score~Site*B2015, PpigPair1.5)
+summary(PpigPair1.5_mod1)
+TukeyHSD(PpigPair1.5_mod1)
+
+#Month3
+PpigPair3<-subset(Pcomppig, month =="Month3")
+PpigPair3_mod1<-aov(score~Site*B2015, PpigPair3)
+summary(PpigPair3_mod1)
+
+#Month4.5
+PpigPair4.5<-subset(Pcomppig, month =="Month4.5")
+PpigPair4.5_mod1<-aov(score~Site*B2015, PpigPair4.5)
+summary(PpigPair4.5_mod1)
+TukeyHSD(PpigPair4.5_mod1)
+
+#Month6
+PpigPair6<-subset(Pcomppig, month =="Month6")
+PpigPair6_mod1<-aov(score~Site*B2015, PpigPair6)
+summary(PpigPair6_mod1)
+```
+
+0-3 and 0-6 month differences
+Pairs data
+score~month*B2015*lagoon
+*M. capitata* Pairs
+```{r}
+Mcappig03Pairs<-subset(pigPairs03, Species=="Montipora capitata")
+Mcappig06Pairs<-subset(pigPairs06, Species=="Montipora capitata")
+
+#0-3
+Mcappig03Pairs_mod<-aov(score~month*Site*B2015, Mcappig03Pairs)
+summary(Mcappig03Pairs_mod)
+
+#0-6
+Mcappig06Pairs_mod<-aov(score~month*Site*B2015, Mcappig06Pairs)
+summary(Mcappig06Pairs_mod)
+```
+
+Pcomp Pairs
+```{r}
+Pcomppig03Pairs<-subset(pigPairs03, Species=="Porites compressa")
+Pcomppig06Pairs<-subset(pigPairs06, Species=="Porites compressa")
+Pcomppig36Pairs<-subset(pigPairs36, Species=="Porites compressa")
+
+#0-3
+Pcomppig03Pairs_mod<-aov(score~month*Site*B2015, Pcomppig03Pairs)
+summary(Pcomppig03Pairs_mod)
+#06
+Pcomppig06Pairs_mod<-aov(score~month*Site*B2015, Pcomppig06Pairs)
+summary(Pcomppig06Pairs_mod)
+```
+
+
+# DIFF DATA
+Differences (nonbleached-bleached) for pairs
+```{r}
+# data = combine all the M#diffs into a single dataframe 
+DiffData06<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff)
+DiffData03<-rbind(M0diff, M1.5diff, M3diff)
+DiffData36<-rbind(M3diff, M4.5diff, M6diff)
+```
+
+Mean bleaching scores across the entire project
+```{r, results=TRUE}
+#calc average bleaching score per grouping by time point
+diffmeans <- ddply(DiffData06, c("Site", "Species", "month"), summarise, #
+                   N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(diff, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
+
+diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
+diffmeans #display table
+```
+
+SI Figure 2
+*Montipora capitata* diff 
+```{r}
+#subset for Mcap only
+Mcapdiffplot<-subset(diffmeans, Species=="Montipora capitata")
+
+Mcapdiffplota<-ggplot(data=Mcapdiffplot, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=Site, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Difference score") +
+    xlab("") + #Label the X Axis
+    ylim(-.2, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Montipora capitata")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));Mcapdiffplota
+Mcapdiffplota<-Mcapdiffplota + theme(legend.position = "none") #remove legend
+Mcapdiffplota
+```
+
+###Porites compressa diff 
+```{r}
+#subset for Mcap only
+Pcomdiffplot<-subset(diffmeans, Species=="Porites compressa")
+
+Pcompdiffplota<-ggplot(data=Pcomdiffplot, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=Site, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Difference score") +
+    xlab("") + #Label the X Axis
+    ylim(-.2, 2.5) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Porites compressa")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));Pcompdiffplota
+Pcompdiffplota<-Pcompdiffplota + theme(legend.position = "none") #remove legend
+
+```
+
+SI Figure 2
+```{r}
+grid.arrange(Mcapdiffplota, Pcompdiffplota, nrow = 1) 
+```
+
+SI Table 1
+Mcap diff~Lagoon
+```{r}
+DiffData03_Mcap<-subset(DiffData03, Species=="Montipora capitata")
+DiffData06_Mcap<-subset(DiffData06, Species=="Montipora capitata")
+DiffData36_Mcap<-subset(DiffData36, Species=="Montipora capitata")
+
+#Month0
+dMpigPair03<-subset(DiffData06_Mcap, month =="Month0")          
+dMpigPair03_mod1<-aov(diff~Site, dMpigPair03)
+summary(dMpigPair03_mod1)
+
+#Month1.5
+dMpigPair1.5<-subset(DiffData06_Mcap, month =="Month1.5")
+dMpigPair1.5_mod1<-aov(diff~Site, dMpigPair1.5)
+summary(dMpigPair1.5_mod1)
+
+#Month3
+dMpigPair3<-subset(DiffData06_Mcap, month =="Month3")
+dMpigPair3_mod1<-aov(diff~Site, dMpigPair3)
+summary(dMpigPair3_mod1)
+TukeyHSD(dMpigPair3_mod1)
+
+#Month4.5
+dMpigPair4.5<-subset(DiffData06_Mcap, month =="Month4.5")
+dMpigPair4.5_mod1<-aov(diff~Site, dMpigPair4.5)
+summary(dMpigPair4.5_mod1)
+
+#Month6
+dMpigPair6<-subset(DiffData06_Mcap, month =="Month6")
+dMpigPair6_mod1<-aov(diff~Site, dMpigPair6)
+summary(dMpigPair6_mod1)
+TukeyHSD(dMpigPair6_mod1)
+```
+
+diffs 0-3 months and 0-6 months
+*M. capitata*
+```{r}
+# 0-3
+d_Mcap03_mod1<-aov(diff~Site*month, DiffData03_Mcap)
+summary(d_Mcap03_mod1)
+TukeyHSD(d_Mcap03_mod1)
+
+# 0-6
+d_Mcap06_mod1<-aov(diff~Site*month, DiffData06_Mcap)
+summary(d_Mcap06_mod1)
+TukeyHSD(d_Mcap06_mod1)
+```
+
+*P. compressa*
+```{r}
+DiffData03_Pcomp<-subset(DiffData03, Species=="Porites compressa")
+DiffData06_Pcomp<-subset(DiffData06, Species=="Porites compressa")
+
+#Month0
+dPpigPair03<-subset(DiffData03_Pcomp, month =="Month0")          
+dPpigPair03_mod1<-aov(diff~Site, dPpigPair03)
+summary(dPpigPair03_mod1)
+TukeyHSD(dPpigPair03_mod1)
+
+#Month1.5
+dPpigPair1.5<-subset(DiffData06_Pcomp, month =="Month1.5")
+dPpigPair1.5_mod1<-aov(diff~Site, dPpigPair1.5)
+summary(dPpigPair1.5_mod1)
+
+#Month3
+dPpigPair3<-subset(DiffData06_Pcomp, month =="Month3")
+dPpigPair3_mod1<-aov(diff~Site, dPpigPair3)
+summary(dPpigPair3_mod1)
+
+#Month4.5
+dPpigPair4.5<-subset(DiffData06_Pcomp, month =="Month4.5")
+dPpigPair4.5_mod1<-aov(diff~Site, dPpigPair4.5)
+summary(dPpigPair4.5_mod1)
+
+#Month6
+dPpigPair6<-subset(DiffData06_Pcomp, month =="Month6")
+dPpigPair6_mod1<-aov(diff~Site, dPpigPair6)
+summary(dPpigPair6_mod1)
+TukeyHSD(dPpigPair6_mod1)
+```
+
+diffs 0-3 months and 0-6 months
+*P. compressa*
+```{r}
+# 0-3
+d_Pcomp03_mod1<-aov(diff~Site*month, DiffData03_Pcomp)
+summary(d_Pcomp03_mod1)
+TukeyHSD(d_Pcomp03_mod1)
+
+# 0-6
+d_Pcomp06_mod1<-aov(diff~Site*month, DiffData06_Pcomp)
+summary(d_Pcomp06_mod1)
+TukeyHSD(d_Pcomp06_mod1)
+
+# 3-6
+d_Pcomp36_mod1<-aov(diff~Site*month, DiffData36_Pcomp)
+summary(d_Pcomp36_mod1)
+TukeyHSD(d_Pcomp36_mod1)
+```
