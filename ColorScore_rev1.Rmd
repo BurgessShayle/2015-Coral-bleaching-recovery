@@ -322,7 +322,6 @@ hist(Mcap_df$log) #not normal,use ARTools for non-parametric
 Mcap_df<-Mcap_df[,c(1,2,4:7)] #subset and order cols for ARTool
 
 Full_mod_mcap<-art(score~month*Site*B2015+(1|TagID), Mcap_df)  #using TagID as only random factor not PAIR
-
 summary(Full_mod_mcap) #all should be ~0 and are
 anova(Full_mod_mcap) # Everything is significant
 
@@ -342,6 +341,9 @@ anova(Full_mod_mcap) # Everything is significant
     #7 month:Site:B2015   9.1426  7 417.452 1.5846e-10 ***
 
 
+### tried with error not sure how to interpret
+#Full_mod_mcaperr<-art(score~month*Site*B2015+Error(TagID), Mcap_df)  #using TagID as only random factor not PAIR
+
 #post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
 		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
  	#Reef by Bleaching history (not by month! moths are averaged)
@@ -351,10 +353,80 @@ anova(Full_mod_mcap) # Everything is significant
 		  contrast(marginal1, method="pairwise", adjust="tukey")	#only 13N-13Y show sig diff across months.
 		  
 		  
-#### My argument is that we use this model to show that all interactions are significant, and THEN we run models at specific time points to show what is going on at that time. I feel like that should make reviewers happy.   
+#### My argument is that we use this model to show that all interactions are significant, and THEN we run models at specific time points to show what is going on at that time. I feel like that should make reviewers happy. 
 		  
 
 ```
+
+Mcap models at each time point, main effects Reef and B2015
+```{r}
+Mcap_0<-subset(Mcap_df, month=="Month0")
+Mcap_0<-Mcap_0[,c(1,3,4,6)] 
+Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
+Mcap_1.5<-Mcap_1.5[,c(1,3,4,6)] 
+
+Mcap_3<-subset(Mcap_df, month=="Month3")
+Mcap_4.5<-subset(Mcap_df, month=="Month4.5")
+Mcap_6<-subset(Mcap_df, month=="Month6")
+Mcap_10<-subset(Mcap_df, month=="Month10")
+Mcap_18<-subset(Mcap_df, month=="Month18")
+Mcap_24<-subset(Mcap_df, month=="Month24")
+
+#Month0
+Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
+summary(Month0_mcap) #all should be ~0 and are
+anova(Month0_mcap) 
+
+#Month1.5
+Month1.5_mcap<-art(score~Site+B2015+Site:B2015, Mcap_1.5)  #using TagID as only random factor not PAIR
+summary(Month1.5_mcap) #all should be ~0 and are
+anova(Month1.5_mcap) 
+
+#Month0
+Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
+summary(Month0_mcap) #all should be ~0 and are
+anova(Month0_mcap) 
+
+#Month1.5
+Month1.5_mcap<-art(score~Site+B2015+Site:B2015, Mcap_1.5)  #using TagID as only random factor not PAIR
+summary(Month1.5_mcap) #all should be ~0 and are
+anova(Month1.5_mcap)
+
+#Month3
+Month3_mcap<-art(score~Site+B2015+Site:B2015, Mcap_3)  #using TagID as only random factor not PAIR
+summary(Month3_mcap) #all should be ~0 and are
+anova(Month3_mcap)
+
+#Month4.5
+Month4.5_mcap<-art(score~Site*B2015, Mcap_4.5)  #TagID removed bc not repeated measures
+summary(Month4.5_mcap) #all should be ~0 and are
+anova(Month4.5_mcap) 
+
+
+#Month6
+Month6_mcap<-art(score~Site*B2015, Mcap_6)  #TagID removed bc not repeated measures
+summary(Month6_mcap) #all should be ~0 and are
+anova(Month6_mcap) 
+
+#Month10
+Month10_mcap<-art(score~Site+B2015+Site:B2015, Mcap_10)  #using TagID as only random factor not PAIR
+summary(Month10_mcap) #all should be ~0 and are
+anova(Month10_mcap)
+
+#Month18
+Month18_mcap<-art(score~Site+B2015+Site:B2015, Mcap_18)  #using TagID as only random factor not PAIR
+summary(Month18_mcap) #all should be ~0 and are
+anova(Month18_mcap)
+
+#Month24
+Month24_mcap<-art(score~Site+B2015+Site:B2015, Mcap_24)  #using TagID as only random factor not PAIR
+summary(Month24_mcap) #all should be ~0 and are
+anova(Month24_mcap)
+```
+
+
+
+
 
 subsets for mcap stats
 ```{r}
