@@ -26,6 +26,9 @@ knitr::opts_chunk$set(echo = TRUE)
 #Set up: load libraries
 
 rm(list=ls(all=TRUE)) 
+library(phia)
+library(emmeans)
+library(ARTool)
 library("reshape2") #reshape data
 library("plotrix") #functions in tapply
 library("ggplot2") #plotting
@@ -54,7 +57,7 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(ggsignif)
-library(HH)
+#library(HH)
 library(PMCMR)
 library(tidyverse)
 library(arm)
@@ -64,13 +67,16 @@ library(ggstance)
 library(officer)
 library(huxtable)
 library(flextable)
+```
 
+Load in data and organize 
+```{r}
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
 
 # Bleaching data
-bData<-read.csv("Bleaching_FINAL.csv")
-bData$Site<-as.factor(bData$Site)
-bData$Pair<-as.factor(bData$Pair)
+bData<-read.csv("Bleaching_FINAL.csv") #read in bleaching df
+bData$Site<-as.factor(bData$Site) #site as factor
+bData$Pair<-as.factor(bData$Pair) #pair ID as factor
 
 #organize data
 bALL<-bData
@@ -78,11 +84,19 @@ bALL<-bData
   bALLData1<-melt(data = bALL, measure.vars = c("Month0","Month1.5","Month3","Month4.5", "Month6","Month10","Month18","Month24"))   
   colnames(bALLData1)[colnames(bALLData1)=="variable"] <- "month"   # change col name from 'variable' to 'month'
   colnames(bALLData1)[colnames(bALLData1)=="value"] <- "score"   # change col name from 'value' to 'score'
-  bALLData1$group<-paste(bALLData1$Species, bALLData1$Site, bALLData1$B2015, bALLData1$month) # add column for groups
+  bALLData1$group<-paste(bALLData1$Species, bALLData1$Site, bALLData1$B2015, bALLData1$month) # add column for groups for figures only
 #write.csv(bALL, "PigmentationBNB_20191122.csv")
 
 #Remove all NON PAIRS and all NAs
-  bALLData<-na.omit(bALLData1) # remove the NA colums
+  bALLData<-na.omit(bALLData1) # remove the NA rows (this removes individuals and NAs from pairs with no score at particular timepoints (due to not finding the coral))
+```
+
+Subsets of df: (edit for what we end up using!)
+```{r}
+
+Mcap_df<-subset(bALLData, Species=="Montipora capitata")   #Mcap only
+Pcomp_df<-subset(bALLData, Species=="Porites compressa")   #Pcomp only
+
 
 #subset 0-3 months
   b03<-subset(bALLData, month=="Month0" |month=="Month3")
@@ -113,7 +127,7 @@ b0153456<-subset(bALLData, month=="Month0" |month=="Month1.5"|month=="Month3"|mo
     #subset 0-1.5-3-4.5-6 months for pairs comparison
 ``` 
 
-Mean bleaching scores
+Mean bleaching scores full df
 ```{r, results=TRUE}
 #calc average bleaching score per grouping by time point
 ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "month"), summarise, #
@@ -123,28 +137,33 @@ ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "month"), summarise, 
                    se   = sd / sqrt(N), #calculate standard error
                    max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-#ballmeans #display table
+ballmeans #display table
 
 ballmeans$code<-paste0(ballmeans$Site, ballmeans$B2015, ballmeans$Species)
 ballmeans #display table
-#write.csv(ballmeans,"ballmeans_20191108.csv")
+#write.csv(ballmeans,"ballmeans.csv")
+
+#replace "Month#" with actual numbers
+ballmeans$Month[ballmeans$month=="Month0"]<-0              # new col replace month #s only
+ballmeans$Month[ballmeans$month=="Month1.5"]<-1.5  
+ballmeans$Month[ballmeans$month=="Month3"]<-3 
+ballmeans$Month[ballmeans$month=="Month4.5"]<-4.5
+ballmeans$Month[ballmeans$month=="Month6"]<-6  
+ballmeans$Month[ballmeans$month=="Month10"]<-10  
+ballmeans$Month[ballmeans$month=="Month18"]<-18
+ballmeans$Month[ballmeans$month=="Month24"]<-24
+
 ```
 
-## Bleaching score means 0-24 months by species/site/bleaching history  
+#Figure 5
+Bleaching score means 0-24 months by species. 
 *Montipora capitata*  
 Figure 5 
 ```{r}
 #subset for Mcap only
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month0"]<-0              # new col with month #s only
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month1.5"]<-1.5  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month3"]<-3 
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month4.5"]<-4.5
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month6"]<-6  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month10"]<-10  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month18"]<-18
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month24"]<-24 
-
+ 
+#subset by reef
 #PR13
 Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
 #PR4
@@ -213,16 +232,7 @@ Figure 5
 ```{r}
 Pcomp024Allplot<-subset(ballmeans, Species=="Porites compressa")
 
-# change Month# to just number
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month0"]<-0
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month1.5"]<-1.5
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month3"]<-3
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month4.5"]<-4.5
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month6"]<-6
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month10"]<-10
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month18"]<-18
-Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month24"]<-24
-
+#subset by reef
 Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
 Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
 ```
@@ -297,11 +307,57 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
 
-Table 2  
+#Table 2  
 PIGMENTATION 0-3 months and 0-6 months
 score~month*B2015*lagoon
-*M. capitata*
+*M. capitata*  
+# ARTools stats for non-parametric non-normality  
+Full model
 ```{r} 
+
+#Full timeframe Mcap (log, arcsinsqrt don't help normailty)
+
+hist(Mcap_df$log) #not normal,use ARTools for non-parametric
+
+Mcap_df<-Mcap_df[,c(1,2,4:7)] #subset and order cols for ARTool
+
+Full_mod_mcap<-art(score~month*Site*B2015+(1|TagID), Mcap_df)  #using TagID as only random factor not PAIR
+
+summary(Full_mod_mcap) #all should be ~0 and are
+anova(Full_mod_mcap) # Everything is significant
+
+#Analysis of Variance of Aligned Rank Transformed Data
+
+    #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
+    #Model: Mixed Effects (lmer)
+    #Response: art(score)
+
+    #                          F Df  Df.res     Pr(>F)    
+    #1 month             40.8916  7 417.205 < 2.22e-16 ***
+    #2 Site               7.0226  1  90.170  0.0095052  **
+    #3 B2015            371.2417  1  90.061 < 2.22e-16 ***
+    #4 month:Site         9.2513  7 417.356 1.1689e-10 ***
+    #5 month:B2015       44.4792  7 417.394 < 2.22e-16 ***
+    #6 Site:B2015         4.8256  1  90.062  0.0306073   *
+    #7 month:Site:B2015   9.1426  7 417.452 1.5846e-10 ***
+
+
+#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
+		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
+ 	#Reef by Bleaching history (not by month! moths are averaged)
+		model.int_1=artlm(Full_mod_mcap, "Site:B2015")
+		marginal1=emmeans(model.int_1, ~Site:B2015)
+      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
+		  contrast(marginal1, method="pairwise", adjust="tukey")	#only 13N-13Y show sig diff across months.
+		  
+		  
+#### My argument is that we use this model to show that all interactions are significant, and THEN we run models at specific time points to show what is going on at that time. I feel like that should make reviewers happy.   
+		  
+
+```
+
+subsets for mcap stats
+```{r}
 Mcappig03All<-subset(b0153, Species=="Montipora capitata")
 Mcappig06All<-subset(b0153456, Species=="Montipora capitata")
 Mcappig36All<-subset(b3456, Species=="Montipora capitata")
@@ -314,6 +370,11 @@ TukeyHSD(Mcappig03All_mod)
 Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
 summary(Mcappig06All_mod)
 TukeyHSD(Mcappig06All_mod)
+
+#36
+Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
+summary(Mcappig06All_mod)
+TukeyHSD(Mcappig06All_mod)
 ```
 
 
@@ -322,9 +383,7 @@ TukeyHSD(Mcappig06All_mod)
 ARTools: full model  AH START HERE
 https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
 ```{r}
-library(phia)
-library(emmeans)
-library(ARTool)
+
 #03 
 Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
 hist(Mcappig03All$score) #not normal,use ARTools for non-parametric
