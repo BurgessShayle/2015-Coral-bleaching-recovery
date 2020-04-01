@@ -364,13 +364,19 @@ Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_0<-Mcap_0[,c(1,3,4,6)] 
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
 Mcap_1.5<-Mcap_1.5[,c(1,3,4,6)] 
-
 Mcap_3<-subset(Mcap_df, month=="Month3")
+Mcap_3<-Mcap_1.5[,c(1,3,4,6)] 
 Mcap_4.5<-subset(Mcap_df, month=="Month4.5")
+Mcap_4.5<-Mcap_4.5[,c(1,3,4,6)] 
 Mcap_6<-subset(Mcap_df, month=="Month6")
+Mcap_6<-Mcap_6[,c(1,3,4,6)] 
 Mcap_10<-subset(Mcap_df, month=="Month10")
+Mcap_10<-Mcap_10[,c(1,3,4,6)] 
 Mcap_18<-subset(Mcap_df, month=="Month18")
+Mcap_18<-Mcap_18[,c(1,3,4,6)] 
 Mcap_24<-subset(Mcap_df, month=="Month24")
+Mcap_24<-Mcap_24[,c(1,3,4,6)] 
+
 
 #Month0
 Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
@@ -381,16 +387,6 @@ anova(Month0_mcap)
 Month1.5_mcap<-art(score~Site+B2015+Site:B2015, Mcap_1.5)  #using TagID as only random factor not PAIR
 summary(Month1.5_mcap) #all should be ~0 and are
 anova(Month1.5_mcap) 
-
-#Month0
-Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
-summary(Month0_mcap) #all should be ~0 and are
-anova(Month0_mcap) 
-
-#Month1.5
-Month1.5_mcap<-art(score~Site+B2015+Site:B2015, Mcap_1.5)  #using TagID as only random factor not PAIR
-summary(Month1.5_mcap) #all should be ~0 and are
-anova(Month1.5_mcap)
 
 #Month3
 Month3_mcap<-art(score~Site+B2015+Site:B2015, Mcap_3)  #using TagID as only random factor not PAIR
@@ -424,10 +420,120 @@ summary(Month24_mcap) #all should be ~0 and are
 anova(Month24_mcap)
 ```
 
+*P.comp*  
+# ARTools stats for non-parametric non-normality  
+Full model
+```{r} 
+
+#Full timeframe Pcomp (log, arcsinsqrt don't help normailty)
+
+hist(Pcomp_df$score) #not normal,use ARTools for non-parametric
+
+Pcomp_df<-Pcomp_df[,c(1,2,4:7)] #subset and order cols for ARTool
+
+Full_mod_Pcomp<-art(score~month*Site*B2015+(1|TagID), Pcomp_df)  #using TagID as only random factor not PAIR
+summary(Full_mod_Pcomp) #all should be ~0 and are
+anova(Full_mod_Pcomp) # Everything is significant
+
+#Analysis of Variance of Aligned Rank Transformed Data
+
+    #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
+    #Model: Mixed Effects (lmer)
+    #Response: art(score)
+
+    #                             F Df  Df.res     Pr(>F)    
+    #1 month            109.281  7 485.147 < 2.22e-16 ***
+    #2 Site              93.571  1  80.893 3.7726e-15 ***
+    #3 B2015            409.758  1  80.797 < 2.22e-16 ***
+    #4 month:Site        22.472  7 483.989 < 2.22e-16 ***
+    #5 month:B2015      132.779  7 485.104 < 2.22e-16 ***
+    #6 Site:B2015        33.393  1  80.878 1.3546e-07 ***
+    #7 month:Site:B2015  19.542  7 484.067 < 2.22e-16 ***
+
+
+### tried with error not sure how to interpret
+#Full_mod_Pcomperr<-art(score~month*Site*B2015+Error(TagID), Pcomp_df)  #using TagID as only random factor not PAIR
+
+#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
+		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
+ 	#Reef by Bleaching history (not by month! moths are averaged)
+		model.int_1=artlm(Full_mod_Pcomp, "Site:B2015")
+		marginal1=emmeans(model.int_1, ~Site:B2015)
+      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
+		  contrast(marginal1, method="pairwise", adjust="tukey")	#PR4 diff btw B/NB, PR13 diff btwn B/NB
+
+```
+
+Pcomp models at each time point, main effects Reef and B2015
+```{r}
+Pcomp_0<-subset(Pcomp_df, month=="Month0")
+Pcomp_0<-Pcomp_0[,c(1,3,4,6)] 
+Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
+Pcomp_1.5<-Pcomp_1.5[,c(1,3,4,6)] 
+Pcomp_3<-subset(Pcomp_df, month=="Month3")
+Pcomp_3<-Pcomp_3[,c(1,3,4,6)] 
+Pcomp_4.5<-subset(Pcomp_df, month=="Month4.5")
+Pcomp_4.5<-Pcomp_4.5[,c(1,3,4,6)] 
+Pcomp_6<-subset(Pcomp_df, month=="Month6")
+Pcomp_6<-Pcomp_6[,c(1,3,4,6)] 
+Pcomp_10<-subset(Pcomp_df, month=="Month10")
+Pcomp_10<-Pcomp_10[,c(1,3,4,6)] 
+Pcomp_18<-subset(Pcomp_df, month=="Month18")
+Pcomp_18<-Pcomp_18[,c(1,3,4,6)] 
+Pcomp_24<-subset(Pcomp_df, month=="Month24")
+Pcomp_24<-Pcomp_24[,c(1,3,4,6)] 
+
+
+#Month0
+Month0_Pcomp<-art(score~Site*B2015, Pcomp_0)  #TagID removed bc not repeated measures
+summary(Month0_Pcomp) #all should be ~0 and are
+anova(Month0_Pcomp) 
+
+#Month1.5
+Month1.5_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_1.5)  #using TagID as only random factor not PAIR
+summary(Month1.5_Pcomp) #all should be ~0 and are
+anova(Month1.5_Pcomp) 
+
+#Month3
+Month3_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_3)  #using TagID as only random factor not PAIR
+summary(Month3_Pcomp) #all should be ~0 and are
+anova(Month3_Pcomp)
+
+#Month4.5
+Month4.5_Pcomp<-art(score~Site*B2015, Pcomp_4.5)  #TagID removed bc not repeated measures
+summary(Month4.5_Pcomp) #all should be ~0 and are
+anova(Month4.5_Pcomp) 
+
+
+#Month6
+Month6_Pcomp<-art(score~Site*B2015, Pcomp_6)  #TagID removed bc not repeated measures
+summary(Month6_Pcomp) # all scores are 3, no variation
+anova(Month6_Pcomp) ### Error in Anova.lm(m, type = "III", test = test, ...) : 
+                          #residual sum of squares is 0 (within rounding error)
+
+#Month10
+Month10_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_10)  #using TagID as only random factor not PAIR
+summary(Month10_Pcomp) #all should be ~0 and are
+anova(Month10_Pcomp)
+
+#Month18
+Month18_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_18)  #using TagID as only random factor not PAIR
+summary(Month18_Pcomp) #all should be ~0 and are
+anova(Month18_Pcomp)
+
+#Month24
+Month24_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_24)  #using TagID as only random factor not PAIR
+summary(Month24_Pcomp) #all should be ~0 and are
+anova(Month24_Pcomp)
+```
 
 
 
 
+
+
+
+Do we want to even keep?
 subsets for mcap stats
 ```{r}
 Mcappig03All<-subset(b0153, Species=="Montipora capitata")
