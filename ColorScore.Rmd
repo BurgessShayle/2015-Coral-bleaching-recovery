@@ -64,7 +64,9 @@ library(ggstance)
 library(officer)
 library(huxtable)
 library(flextable)
+```
 
+```{r}
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
 
 # Bleaching data
@@ -84,6 +86,12 @@ bALL<-bData
 #Remove all NON PAIRS and all NAs
   bALLData<-na.omit(bALLData1) # remove the NA colums
 
+  
+Mcap_df<-subset(bALLData, Species=="Montipora capitata")   #Mcap only
+Pcomp_df<-subset(bALLData, Species=="Porites compressa")   #Pcomp only
+
+  
+  
 #subset 0-3 months
   b03<-subset(bALLData, month=="Month0" |month=="Month3")
   b03<-subset(b03, select = -group )
@@ -134,7 +142,7 @@ ballmeans #display table
 *Montipora capitata*  
 Figure 5 
 ```{r}
-#subset for Mcap only
+#subset for Mcap only 
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
 Mcap024Allplot$Month[Mcap024Allplot$month=="Month0"]<-0              # new col with month #s only
 Mcap024Allplot$Month[Mcap024Allplot$month=="Month1.5"]<-1.5  
@@ -292,7 +300,7 @@ PcompInner
 ```
 
 Plot all four together, Figure 5
-```{r}
+```{r} 
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
@@ -314,6 +322,18 @@ TukeyHSD(Mcappig03All_mod)
 Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
 summary(Mcappig06All_mod)
 TukeyHSD(Mcappig06All_mod)
+```
+
+Table 2 Redo for FULL MOD over time  
+Mcap: df = Mcap_df
+```{r} 
+#Mcap
+hist(Mcap_df$score)
+
+McapAll_mod1<-lmer(score~month*Site*B2015+(1|TagID)+(1|Pair), Mcap_df)
+summary(Mcappig03All_mod)
+TukeyHSD(Mcappig03All_mod)
+
 ```
 
 

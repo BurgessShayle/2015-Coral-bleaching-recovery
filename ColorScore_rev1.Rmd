@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, results="hide", message=FALSE}
 #Set up: load libraries
 
-rm(list=ls(all=TRUE)) 
+#rm(list=ls(all=TRUE)) 
 library(phia)
 library(emmeans)
 library(ARTool)
@@ -89,10 +89,24 @@ bALL<-bData
 
 #Remove all NON PAIRS and all NAs
   bALLData<-na.omit(bALLData1) # remove the NA rows (this removes individuals and NAs from pairs with no score at particular timepoints (due to not finding the coral))
+  
+  
+  #Change month into TIME numeric 
+  bALLData$time[bALLData$month=="Month0"]<-0
+  bALLData$time[bALLData$month=="Month1.5"]<-1.5
+  bALLData$time[bALLData$month=="Month3"]<-3
+  bALLData$time[bALLData$month=="Month4.5"]<-4.5
+  bALLData$time[bALLData$month=="Month6"]<-6
+  bALLData$time[bALLData$month=="Month10"]<-10
+  bALLData$time[bALLData$month=="Month18"]<-18
+  bALLData$time[bALLData$month=="Month19"]<-19
+  bALLData$time[bALLData$month=="Month24"]<-24
+
+  
 ```
 
 Subsets of df: (edit for what we end up using!)
-```{r}
+```{r} 
 
 Mcap_df<-subset(bALLData, Species=="Montipora capitata")   #Mcap only
 Pcomp_df<-subset(bALLData, Species=="Porites compressa")   #Pcomp only
@@ -129,8 +143,8 @@ b0153456<-subset(bALLData, month=="Month0" |month=="Month1.5"|month=="Month3"|mo
 
 Mean bleaching scores full df
 ```{r, results=TRUE}
-#calc average bleaching score per grouping by time point
-ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "month"), summarise, #
+#calc average bleaching  score per grouping by time point
+ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "time"), summarise, #
                    N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(score, na.rm=TRUE), #calculate standard deviation
@@ -141,17 +155,7 @@ ballmeans #display table
 
 ballmeans$code<-paste0(ballmeans$Site, ballmeans$B2015, ballmeans$Species)
 ballmeans #display table
-#write.csv(ballmeans,"ballmeans.csv")
-
-#replace "Month#" with actual numbers
-ballmeans$Month[ballmeans$month=="Month0"]<-0              # new col replace month #s only
-ballmeans$Month[ballmeans$month=="Month1.5"]<-1.5  
-ballmeans$Month[ballmeans$month=="Month3"]<-3 
-ballmeans$Month[ballmeans$month=="Month4.5"]<-4.5
-ballmeans$Month[ballmeans$month=="Month6"]<-6  
-ballmeans$Month[ballmeans$month=="Month10"]<-10  
-ballmeans$Month[ballmeans$month=="Month18"]<-18
-ballmeans$Month[ballmeans$month=="Month24"]<-24
+#write.csv(ballmeans,"ballmeans.csv"
 
 ```
 
@@ -160,19 +164,21 @@ Bleaching score means 0-24 months by species.
 *Montipora capitata*  
 Figure 5 
 ```{r}
-#subset for Mcap only
+#subset for Mcap only 
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
  
 #subset by reef
-#PR13
+#PR13 
 Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
 #PR4
 Mcap024AllplotPR4<-subset(Mcap024Allplot, Site==4)
 ```
 
 *M. capitata* PR13
+
 ```{r}
-ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+
+ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -182,7 +188,7 @@ ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = c
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
   ylab("Color score") +
-    xlab("Recovery Time (months)") + #Label the X Axis
+    xlab("Recovery Time (times)") + #Label the X Axis
     ylim(1, 3) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -199,7 +205,7 @@ McapOuter<-ballplotMcapPR13 + theme(legend.position = "none") #remove legend
 
 *M. capitata* PR4
 ```{r}
-ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
+ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=time, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -211,7 +217,7 @@ ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = cod
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
   ylab("Montipora capitata\nColor score") +
-    xlab("Recovery Time (months)") + #Label the X Axis
+    xlab("Recovery Time (times)") + #Label the X Axis
     ylim(1, 3) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -240,7 +246,7 @@ Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
 *P. compress* 
 Outer PR13
 ```{r}
-b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -252,7 +258,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group =
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
   ylab("Color score") +
-    xlab("Recovery Time (months)") + #Label the X Axis
+    xlab("Recovery Time (times)") + #Label the X Axis
     ylim(1, 3) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -262,7 +268,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group =
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+  #ggtitle("Porites compressa Bleaching Scores times 0-24")+
           theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR13
 
 PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
@@ -271,7 +277,7 @@ PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
 *P. compressa*   
 Inner PR4
 ```{r}
-b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -283,7 +289,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = c
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
   ylab("Porites compressa\nColor score") +
-    xlab("Recovery Time (months)") + #Label the X Axis
+    xlab("Recovery Time (times)") + #Label the X Axis
     ylim(1, 3) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -293,7 +299,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = c
         panel.grid.minor = element_blank(), #Set the minor gridlines
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
-  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+  #ggtitle("Porites compressa Bleaching Scores times 0-24")+
           theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
 
 
@@ -314,11 +320,14 @@ score~month*B2015*lagoon
 # ARTools stats for non-parametric non-normality  
 Full model
 ```{r} 
+# replace Site with PR4 and PR13
+
 
 #Full timeframe Mcap (log, arcsinsqrt don't help normailty)
 
-hist(Mcap_df$log) #not normal,use ARTools for non-parametric
-
+hist(Mcap_df$sqrt) #not normal,use ARTools for non-parametric
+Mcap_df$sqrt<- arcsin(sqrt(Mcap_df$score))
+  
 Mcap_df<-Mcap_df[,c(1,2,4:7)] #subset and order cols for ARTool
 
 Full_mod_mcap<-art(score~month*Site*B2015+(1|TagID), Mcap_df)  #using TagID as only random factor not PAIR
@@ -351,10 +360,25 @@ anova(Full_mod_mcap) # Everything is significant
 		marginal1=emmeans(model.int_1, ~Site:B2015)
       contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
 		  contrast(marginal1, method="pairwise", adjust="tukey")	#only 13N-13Y show sig diff across months.
-		  
+
+		  	  
 		  
 #### My argument is that we use this model to show that all interactions are significant, and THEN we run models at specific time points to show what is going on at that time. I feel like that should make reviewers happy. 
 		  
+  ##** I dont think we want this
+ 	   #posthoc lib phia, testInteractions, Site:B2015  
+    testInteractions(artlm(Month1.5_mcap, "Site:B2015"), pairwise=c("Site", "B2015"), adjustment="holm")	
+      # 4-13 : N-Y 0.0111  
+      # This is testing diffs between 4-13 NB corals vs diffs between 4-13 B corals, can't switch it...Any ideas?
+    
+        testInteractions(artlm(Month1.5_mcap, "B2015:Site"), across=c("B2015", "Site"), adjustment="holm")	#Works         across not pairwise. "The factors contained in across will appear as a full set of contrasts. By default          they will be orthogonal contrasts, unless overriden by the contrasts of the model data frame or by the            arguments passed down to testFactors. See the documentation of that function for further details.
+        
+        #F Test: 
+            #P-value adjustment method: holm
+            #           Value Df Sum of Sq      F Pr(>F)  
+            #Mean      23.017  1      2461 6.8013 0.0111 *
+            #Residuals        71     25691   		  
+
 
 ```
 
@@ -380,53 +404,129 @@ Mcap_24<-Mcap_24[,c(1,3,4,6)]
 
 #Month0
 Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
-summary(Month0_mcap) #all should be ~0 and are
+summary(Month0_mcap) #all should be ~0
 anova(Month0_mcap) 
+  #posthoc for single factors:
+ 	   contrast(emmeans(artlm(Month0_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
 
+ 	
+ 	   
 #Month1.5
-Month1.5_mcap<-art(score~Site+B2015+Site:B2015, Mcap_1.5)  #using TagID as only random factor not PAIR
-summary(Month1.5_mcap) #all should be ~0 and are
+Month1.5_mcap<-art(score~B2015+Site+B2015:Site, Mcap_1.5)  #using TagID as only random factor not PAIR
+summary(Month1.5_mcap) #all should be ~0,F-vals not all ~0, other options? 
 anova(Month1.5_mcap) 
 
+  #posthoc for single factors:
+ 	   contrast(emmeans(artlm(Month1.5_mcap, "Site"), ~ Site), method="pairwise") 
+        #4-13 0.0051
+ 	   contrast(emmeans(artlm(Month1.5_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
+
+            
+# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
+        #Mann-Whitney U tests tests on the original data.
+        # cross-factor pairwise comparisons using Mann-Whitney U tests.
+ 	   ### AH can you look at the WARNINGS thrown and give your opinion?
+
+		N4.Y4 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "N",]$score, Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "Y",]$score)$p.value  
+		N13.Y13 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "N",]$score, Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "Y",]$score)$p.value 
+	Y4.Y13 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "Y",]$score, Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "Y",]$score)$p.value 
+        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
+		# This returns all significantly different. 
+    
 #Month3
 Month3_mcap<-art(score~Site+B2015+Site:B2015, Mcap_3)  #using TagID as only random factor not PAIR
-summary(Month3_mcap) #all should be ~0 and are
+summary(Month3_mcap) #all should be ~0, are for cols, aren't for F-value
 anova(Month3_mcap)
+
+  contrast(emmeans(artlm(Month3_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
+
+# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
+        #Mann-Whitney U tests tests on the original data.
+        # cross-factor pairwise comparisons using Mann-Whitney U tests.
+
+		N4.Y4 <- wilcox.test(Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "N",]$score, Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "Y",]$score)$p.value  
+		N13.Y13 <- wilcox.test(Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "N",]$score, Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "Y",]$score)$p.value 
+	Y4.Y13 <- wilcox.test(Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "Y",]$score, Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "Y",]$score)$p.value 
+        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
+		# This returns all significantly different.  4.443438e-04 1.227426e-07 3.355914e-02
 
 #Month4.5
 Month4.5_mcap<-art(score~Site*B2015, Mcap_4.5)  #TagID removed bc not repeated measures
 summary(Month4.5_mcap) #all should be ~0 and are
 anova(Month4.5_mcap) 
 
+ contrast(emmeans(artlm(Month4.5_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
+
+# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
+        #Mann-Whitney U tests tests on the original data.
+        # cross-factor pairwise comparisons using Mann-Whitney U tests.
+
+		N4.Y4 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "N",]$score, Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "Y",]$score)$p.value  
+		N13.Y13 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "N",]$score, Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "Y",]$score)$p.value 
+	Y4.Y13 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "Y",]$score, Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "Y",]$score)$p.value 
+        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
+		# This returns all significantly different.  3.333033e-02 4.355652e-07 3.333033e-02
 
 #Month6
 Month6_mcap<-art(score~Site*B2015, Mcap_6)  #TagID removed bc not repeated measures
 summary(Month6_mcap) #all should be ~0 and are
 anova(Month6_mcap) 
 
+contrast(emmeans(artlm(Month6_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
+
+# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
+        #Mann-Whitney U tests tests on the original data.
+        # cross-factor pairwise comparisons using Mann-Whitney U tests.
+
+		N4.Y4 <- wilcox.test(Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "N",]$score, Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "Y",]$score)$p.value  
+		N13.Y13 <- wilcox.test(Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "N",]$score, Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "Y",]$score)$p.value 
+	Y4.Y13 <- wilcox.test(Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "Y",]$score, Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "Y",]$score)$p.value 
+        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
+		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
+		# This returns all significantly different.  7.186167e-02 5.878972e-05 8.629725e-03
+
 #Month10
 Month10_mcap<-art(score~Site+B2015+Site:B2015, Mcap_10)  #using TagID as only random factor not PAIR
 summary(Month10_mcap) #all should be ~0 and are
 anova(Month10_mcap)
+
+
+contrast(emmeans(artlm(Month10_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
 
 #Month18
 Month18_mcap<-art(score~Site+B2015+Site:B2015, Mcap_18)  #using TagID as only random factor not PAIR
 summary(Month18_mcap) #all should be ~0 and are
 anova(Month18_mcap)
 
+contrast(emmeans(artlm(Month18_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
+
 #Month24
 Month24_mcap<-art(score~Site+B2015+Site:B2015, Mcap_24)  #using TagID as only random factor not PAIR
 summary(Month24_mcap) #all should be ~0 and are
 anova(Month24_mcap)
+
+contrast(emmeans(artlm(Month24_mcap, "B2015"), ~ B2015), method="pairwise") 
+ 	        #N - Y <.0001
 ```
 
 *P.comp*  
 # ARTools stats for non-parametric non-normality  
+
 Full model
 ```{r} 
 
 #Full timeframe Pcomp (log, arcsinsqrt don't help normailty)
-
+ 
 hist(Pcomp_df$score) #not normal,use ARTools for non-parametric
 
 Pcomp_df<-Pcomp_df[,c(1,2,4:7)] #subset and order cols for ARTool
@@ -439,8 +539,7 @@ anova(Full_mod_Pcomp) # Everything is significant
 
     #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
     #Model: Mixed Effects (lmer)
-    #Response: art(score)
-
+    #Response: art(score) 
     #                             F Df  Df.res     Pr(>F)    
     #1 month            109.281  7 485.147 < 2.22e-16 ***
     #2 Site              93.571  1  80.893 3.7726e-15 ***
@@ -466,7 +565,7 @@ anova(Full_mod_Pcomp) # Everything is significant
 
 Pcomp models at each time point, main effects Reef and B2015
 ```{r}
-Pcomp_0<-subset(Pcomp_df, month=="Month0")
+Pcomp_0<-subset(Pcomp_df, month=="Month0") 
 Pcomp_0<-Pcomp_0[,c(1,3,4,6)] 
 Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
 Pcomp_1.5<-Pcomp_1.5[,c(1,3,4,6)] 
@@ -490,18 +589,18 @@ summary(Month0_Pcomp) #all should be ~0 and are
 anova(Month0_Pcomp) 
 
 #Month1.5
-Month1.5_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_1.5)  #using TagID as only random factor not PAIR
+Month1.5_Pcomp<-art(score~Site*B2015, Pcomp_1.5)  #using TagID as only random factor not PAIR
 summary(Month1.5_Pcomp) #all should be ~0 and are
 anova(Month1.5_Pcomp) 
 
 #Month3
-Month3_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_3)  #using TagID as only random factor not PAIR
-summary(Month3_Pcomp) #all should be ~0 and are
+Month3_Pcomp<-art(score~Site*B2015, Pcomp_3)  #using TagID as only random factor not PAIR
+summary(Month3_Pcomp) #all should be ~0 and most are, max 0.0012
 anova(Month3_Pcomp)
 
 #Month4.5
 Month4.5_Pcomp<-art(score~Site*B2015, Pcomp_4.5)  #TagID removed bc not repeated measures
-summary(Month4.5_Pcomp) #all should be ~0 and are
+summary(Month4.5_Pcomp) #all should be ~0 and are close
 anova(Month4.5_Pcomp) 
 
 
@@ -512,17 +611,17 @@ anova(Month6_Pcomp) ### Error in Anova.lm(m, type = "III", test = test, ...) :
                           #residual sum of squares is 0 (within rounding error)
 
 #Month10
-Month10_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_10)  #using TagID as only random factor not PAIR
+Month10_Pcomp<-art(score~Site*B2015, Pcomp_10)  #using TagID as only random factor not PAIR
 summary(Month10_Pcomp) #all should be ~0 and are
 anova(Month10_Pcomp)
 
 #Month18
-Month18_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_18)  #using TagID as only random factor not PAIR
+Month18_Pcomp<-art(score~Site*B2015, Pcomp_18)  #using TagID as only random factor not PAIR
 summary(Month18_Pcomp) #all should be ~0 and are
 anova(Month18_Pcomp)
 
 #Month24
-Month24_Pcomp<-art(score~Site+B2015+Site:B2015, Pcomp_24)  #using TagID as only random factor not PAIR
+Month24_Pcomp<-art(score~Site*B2015, Pcomp_24)  #using TagID as only random factor not PAIR
 summary(Month24_Pcomp) #all should be ~0 and are
 anova(Month24_Pcomp)
 ```
@@ -535,8 +634,7 @@ anova(Month24_Pcomp)
 
 Do we want to even keep?
 subsets for mcap stats
-```{r}
-Mcappig03All<-subset(b0153, Species=="Montipora capitata")
+```{r} 
 Mcappig06All<-subset(b0153456, Species=="Montipora capitata")
 Mcappig36All<-subset(b3456, Species=="Montipora capitata")
 
@@ -564,7 +662,7 @@ https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
 
 #03 
 Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
-hist(Mcappig03All$score) #not normal,use ARTools for non-parametric
+hist(Mcappig03All$score) #not normal,use ARTools for non-parametric 
 
 model_mcap03_1<-art(score~month*Site*B2015+(1|Pair)+(1|TagID), Mcappig03All)
 anova(model_mcap03_1)
@@ -581,7 +679,6 @@ anova(model_mcap03_1)
       #5 month:B2015      115.88767  2 149.945 < 2.22e-16 ***
       #6 Site:B2015         1.16330  1  39.366    0.28735    
       #7 month:Site:B2015  23.32563  2 150.006 1.5120e-09 ***
-
 
 
 #posthoc - so this keeps giving me warnings due to involvement with interactions, ok to use? just warning. These are remodeling! not post hoc on above model
@@ -643,21 +740,7 @@ testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site")
 		
 #new idea #### AH do you think we can present the 'full model' and then for post hoc run specific models (or do we run into same issues again in review)
   
-#new idea 2# 
-#### AH #### To get around the issue of not being able to compare reef/bleachinghist/time, could we instead make a code for reef/bleachinghist/time and run that way? https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
-   
-   #OR Tests of differences of differences in interactions <- not running
-contrast(emmeans(model_mcap03_1, B2015:Site), method="pairwise", interaction=TRUE)
 
-
-Mcappig03All_code<-Mcappig03All #copy df to mess with
-Mcappig03All_code$code<-paste0(Mcappig03All_code$B2015, Mcappig03All_code$Site) #make code col with b2015, site and month
-Mcappig03All_code$code<-as.factor(Mcappig03All_code$code)
-   Mcappig03All_code<-Mcappig03All_code[,c(1,2,5,7,6)] #get rid of col and reorder
-   
-   model_Mcappig03All_code<-artlm(score ~ month*code+(1|TagID/Pair), Mcappig03All_code)
-anova(model_mcap03_1)
-   
 ```
 
 
@@ -686,6 +769,152 @@ Pcomppig36All_mod<-aov(score~month*Site*B2015, Pcomppig36All)
 summary(Pcomppig36All_mod)
 TukeyHSD(Pcomppig36All_mod)
 ```
+
+#new table 2 models with mixed models (lmer)  AKA new Table 2
+Mcap_df  full model
+```{r}
+#MONTH AS FACTOR
+Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
+summary(Mcap_df_mod)
+anova(Mcap_df_mod) #pvals
+
+#post hoc
+test<-emmeans(Mcap_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
+cld(test, Letter="abcde")
+
+ emm<-emmeans(Mcap_df_mod,  ~ B2015*Site|time, adjust="Tukey")
+cld(emm, Letter="abcdefg")
+
+test1a<-emmeans(Mcap_df_mod, "time")
+cld(test1a, Letter="abcdefg")
+
+#TIME AS NUMERIC
+Mcap_df_mod<-lmer(score~B2015*Site*time+(1|TagID), data=Mcap_df)
+summary(Mcap_df_mod)
+anova(Mcap_df_mod) #pvals
+
+test1b<-emmeans(Mcap_df_mod, "time")
+cld(test1b, Letter="abcdefg")
+```
+
+
+Pcomp_df - full model
+```{r}
+#pcomp  - time as numeric
+Pcomp_df_mod<-lmer(score~B2015*Site*time+(1|TagID), data=Pcomp_df)
+summary(Pcomp_df_mod)
+anova(Pcomp_df_mod) #pvals
+
+#pcomp  - month as factor
+Pcomp_df_mod2<-lmer(score~B2015*Site*month+(1|TagID), data=Pcomp_df)
+summary(Pcomp_df_mod2)
+anova(Pcomp_df_mod2) #pvals
+
+#post hoc
+test<-emmeans(Pcomp_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
+cld(test, Letter="abcde")
+
+test2<-emmeans(Pcomp_df_mod, "Site","B2015","time") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
+cld(test2, Letter="abcde")
+
+```
+
+Models at each timepoint
+Mcap
+```{r}
+Mcap_0<-subset(Mcap_df, month=="Month0")
+Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
+Mcap_3<-subset(Mcap_df, month=="Month3")
+Mcap_4.5<-subset(Mcap_df, month=="Month4.5")
+Mcap_6<-subset(Mcap_df, month=="Month6")
+Mcap_10<-subset(Mcap_df, month=="Month10")
+Mcap_18<-subset(Mcap_df, month=="Month18")
+Mcap_24<-subset(Mcap_df, month=="Month24")
+
+
+#Month0
+Month0_mcap0<-aov(score~Site*B2015, Mcap_0)
+summary(Month0_mcap0)
+
+#Month1.5
+Month1.5_mcap1.5<-aov(score~Site*B2015, Mcap_1.5)
+summary(Month1.5_mcap1.5)
+
+#Month3
+Month3_mcap3<-aov(score~Site*B2015, Mcap_3)
+summary(Month1.5_mcap3)
+
+#Month4.5
+Month4.5_mcap4.5<-aov(score~Site*B2015, Mcap_4.5)
+summary(Month4.5_mcap4.5)
+
+#Month6
+Month6_mcap6<-aov(score~Site*B2015, Mcap_6)
+summary(Month6_mcap6)
+
+#Month10
+Month10_mcap10<-aov(score~Site*B2015, Mcap_10)
+summary(Month10_mcap10)
+
+#Month18
+Month18_mcap18<-aov(score~Site*B2015, Mcap_18)
+summary(Month18_mcap18)
+
+#Month24
+Month24_mcap24<-aov(score~Site*B2015, Mcap_24)
+summary(Month24_mcap24)
+```
+Pcomp
+```{r}
+Pcomp_0<-subset(Pcomp_df, month=="Month0")
+Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
+Pcomp_3<-subset(Pcomp_df, month=="Month3")
+Pcomp_4.5<-subset(Pcomp_df, month=="Month4.5")
+Pcomp_6<-subset(Pcomp_df, month=="Month6")
+Pcomp_10<-subset(Pcomp_df, month=="Month10")
+Pcomp_18<-subset(Pcomp_df, month=="Month18")
+Pcomp_24<-subset(Pcomp_df, month=="Month24")
+
+
+#Month0
+Month0_Pcomp0<-aov(score~Site*B2015, Pcomp_0)
+summary(Month0_Pcomp0)
+
+#Month1.5
+Month1.5_Pcomp1.5<-aov(score~Site*B2015, Pcomp_1.5)
+summary(Month1.5_Pcomp1.5)
+
+#Month3
+Month3_Pcomp3<-aov(score~Site*B2015, Pcomp_3)
+summary(Month1.5_Pcomp3)
+
+#Month4.5
+Month4.5_Pcomp4.5<-aov(score~Site*B2015, Pcomp_4.5)
+summary(Month4.5_Pcomp4.5)
+
+#Month6
+Month6_Pcomp6<-aov(score~Site*B2015, Pcomp_6)
+summary(Month6_Pcomp6)
+
+#Month10
+Month10_Pcomp10<-aov(score~Site*B2015, Pcomp_10)
+summary(Month10_Pcomp10)
+
+#Month18
+Month18_Pcomp18<-aov(score~Site*B2015, Pcomp_18)
+summary(Month18_Pcomp18)
+
+#Month24
+Month24_Pcomp24<-aov(score~Site*B2015, Pcomp_24)
+summary(Month24_Pcomp24)
+```
+
+
+
+
+
+
+
 
 # Bleaching Recovery Models
 SI Table 11  
