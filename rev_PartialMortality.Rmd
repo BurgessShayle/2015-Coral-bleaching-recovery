@@ -1,0 +1,922 @@
+
+---
+title: "ColorScore"
+author: "Shayle Matsuda"
+date: "9/25/2019"
+output:
+  pdf_document:
+    keep_tex: yes
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+editor_options: 
+  chunk_output_type: console
+---
+Tissue partial mortality in *M. capitata* and *P. compressa* colonies at the Inner Lagoon (PR4) and Outer Lagoon (PR13) after the 2015 coral bleaching event in Kaneohe Bay.  Mortality scores are in % to the nearest 20%
+
+```{r setup, include=FALSE,results="hide"}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, results="hide", message=FALSE}
+rm(list=ls(all=TRUE)) 
+setwd("~/Desktop/B_NB")
+library("reshape2") #reshape data
+library("plotrix") #functions in tapply
+library("ggplot2") #plotting
+library("reshape") #reshape data
+library("plyr")  #splitting, applying, and combining data
+library("dplyr")  #splitting, applying, and combining data
+library("pscl")
+library("plotrix") #plotting
+library("gridExtra") #arrange plots for output
+library("car") #levenes test
+library("lsmeans")
+library(effects)
+library("multcomp") 
+library("multcompView")
+library("coefplot") #coefficient plotting
+library("seacarb") #seawater carbonate chemistry
+library("vegan") #calculating distance matrices
+library(betareg)
+library(coin)
+library(exactRankTests)
+library(mvtnorm)
+library(DTK)
+library(PMCMR)
+library(MuMIn)
+library(glmmTMB)
+library(lme4)
+library(lmerTest)
+library(ggsignif)
+library(HH)
+library(PMCMR)
+library(tidyverse)
+library(arm)
+library(jtools)
+library(broom)
+library(ggstance)
+library(officer)
+library(huxtable)
+library(flextable)
+
+#load data
+mData<-read.csv("DECIMALmortality_scores_percent_20191110_missingdataremoved.csv")
+mData$Site<-as.factor(mData$Site)
+
+#We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
+```
+
+# Partial mortality rate  
+Time points: 0-3 months,0-6 months
+```{r,results="hide", }
+#all Months
+  mALL<-mData
+  #melt
+  mALLData1<-melt(data = mALL, measure.vars = c("Month0","Month1.5","Month3","Month4.5", "Month6","Month10","Month18","Month24"))   
+  colnames(mALLData1)[colnames(mALLData1)=="variable"] <- "month"   # change col name from 'variable' to 'month'
+  colnames(mALLData1)[colnames(mALLData1)=="value"] <- "score"   # change col name from 'value' to 'score'
+
+#Remove all NON PAIRS and all NAs
+  mALLData<-na.omit(mALLData1) # remove the NA colums
+  
+##subset 0-3 months
+  m03<-subset(mALLData, month=="Month0" |month=="Month3")
+      m03<-dcast(m03, Species+Site+Pair+B2015~month) # cast() 
+  m03<-na.omit(m03) # remove the NA colums
+   
+#subset 3-6 months
+m36<-subset(mALLData, month=="Month3" |month=="Month6")
+
+      m36<-dcast(m36, Species+Site+Pair+B2015~month) # cast()
+      m36<-na.omit(m36) # remove the NA colums 
+
+#subset 0-1.5-3 months for pairs comparison 
+m0153<-subset(mALLData, month=="Month0" |month=="Month1.5"|month=="Month3")
+
+#subset 3-4.5-6 months for pairs comparison 
+m3456<-subset(mALLData, month=="Month3" |month=="Month4.5"|month=="Month5")
+ 
+#subset 0-1.5-3-4.5-6 months for pairs comparison 
+m0153456<-subset(mALLData, month=="Month0"  |month=="Month1.5"|month=="Month3"|month=="Month4.5"|month=="Month6") 
+```
+
+Mean partial mortality scores
+```{r, results=TRUE}
+#calc average tissue loss score per grouping by time point
+mALLmeans <- ddply(mALLData, c("Site", "Species", "B2015", "month"), summarise, #
+                   N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(score, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+mALLmeans$code<-paste0(mALLmeans$Site, mALLmeans$B2015, mALLmeans$Species)
+#mALLmeans #display table
+```
+
+## Partial mortality score means 0-24 months by species/site/bleaching history
+For paper figure
+```{r, results=TRUE}
+#Change scores into %
+mALLDataPER<-mALLData
+mALLDataPER$Score<-mALLDataPER$score*100
+
+#calc average tissue loss score per grouping by time point
+mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summarise, #
+                   N    = length(Score[!is.na(Score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Score, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Score, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#mALLmeansPER #display table
+mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Species)
+#mALLmeansPER #display table
+```
+
+###*Montipora capitata*: Partial mortality
+Figure 5
+```{r}
+#subset for Mcap only
+Mcap024Allplot<-subset(mALLmeansPER, Species=="Montipora capitata")     #subset Mcap
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month0"]<-0              # new col with month #s only
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month1.5"]<-1.5  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month3"]<-3 
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month4.5"]<-4.5
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month6"]<-6  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month10"]<-10  
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month18"]<-18
+Mcap024Allplot$Month[Mcap024Allplot$month=="Month24"]<-24 
+
+
+#PR13
+Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
+#PR4
+Mcap024AllplotPR4<-subset(Mcap024Allplot, Site==4)
+```
+
+Mcap PR13
+```{r}
+mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  scale_shape_manual(values=c( 16,1))+
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Partial Mortality (%)") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));mallplotMcapPR13
+McapOuter<-mallplotMcapPR13 + theme(legend.position = "none") #remove legend
+```
+
+Mcap PR4
+```{r}
+ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
+ geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  
+  scale_shape_manual(values=c( 16,1))+
+  
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Montipora capitata\nParital Mortality (%)") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Inner Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4
+McapInner<-ballplotMcapPR4 + theme(legend.position = "none") #remove legend
+McapInner
+```
+
+###*Porites compressa*  
+Figure 5
+```{r}
+Pcomp024Allplot<-subset(mALLmeansPER, Species=="Porites compressa")
+
+# change Month# to just number
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month0"]<-0
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month1.5"]<-1.5
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month3"]<-3
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month4.5"]<-4.5
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month6"]<-6
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month10"]<-10
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month18"]<-18
+Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month24"]<-24
+
+Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
+Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
+```
+
+Pcomp PR13
+```{r}
+b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  scale_shape_manual(values=c( 16,1))+
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Partial Mortality (%)") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(0,80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR13
+PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
+```
+
+Pcomp PR4
+```{r}
+b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+  geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
+  
+  scale_shape_manual(values=c( 16,1))+
+  
+  geom_line(aes(color=B2015, linetype=B2015))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+    scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Porites compressa\nPartial Mortality (%)") +
+    xlab("Recovery Time (months)") + #Label the X Axis
+    ylim(0,80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  #ggtitle("Porites compressa Bleaching Scores months 0-24")+
+          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
+PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
+PcompInner
+```
+
+Plot all four together: Figure 5
+```{r}
+grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
+```
+
+
+Table 3: Full dataset
+Mortality 0-3 months and 0-6 months
+score~month*B2015*lagoon
+
+*M. capitata* All
+```{r}
+Mcapmort03All<-subset(m0153, Species=="Montipora capitata")
+Mcapmort06All<-subset(m0153456, Species=="Montipora capitata")
+Mcapmort36All<-subset(m3456, Species=="Montipora capitata")
+
+#0-3
+Mcapmort03All_mod<-aov(score~month*Site*B2015, Mcapmort03All)
+summary(Mcapmort03All_mod)
+TukeyHSD(Mcapmort03All_mod)
+
+#0-6
+Mcapmort06All_mod<-aov(score~month*Site*B2015, Mcapmort06All)
+summary(Mcapmort06All_mod)
+TukeyHSD(Mcapmort06All_mod)
+```
+
+Table 3
+*P. compressa*
+```{r}
+Pcompmort03All<-subset(m0153, Species=="Porites compressa")
+Pcompmort06All<-subset(m0153456, Species=="Porites compressa")
+Pcompmort36All<-subset(m3456, Species=="Porites compressa")
+
+#0-3
+Pcompmort03All_mod<-aov(score~month*Site*B2015, Pcompmort03All)
+summary(Pcompmort03All_mod)
+TukeyHSD(Pcompmort03All_mod)
+
+#0-6
+Pcompmort06All_mod<-aov(score~month*Site*B2015, Pcompmort06All)
+summary(Pcompmort06All_mod)
+TukeyHSD(Pcompmort06All_mod)
+```
+
+# Partial mortality rate 
+Mean partial mortality rate at 0-3 months and 3-6 months. 
+## 0-3 Months RATE
+```{r}
+## 1. 0-3 months
+#Calc average rate per colony 0-3 months
+m03$Rate03<-(((m03$Month3-m03$Month0)))
+
+#Average the means of the rates. 
+# calc average  tissue loss rate/month in %  per grouping
+m03means <- ddply(m03, c("Site", "Species", "B2015"), summarise, 
+                   N    = length(Rate03[!is.na(Rate03)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate03, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate03, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate03, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#m03means #display table
+
+m03means$code<-paste0(m03means$Site, m03means$B2015, m03means$Species)
+m03means #display table
+```
+
+## 3-6 Months RATE
+```{r}
+## 2. months 3-6
+#Rate in %
+m36$Rate36<-(((m36$Month6-m36$Month3)))
+
+#Average the means of the rates. 
+# calc average  tissue loss rate/month in %  per grouping
+m36means <- ddply(m36, c("Site", "Species", "B2015"), summarise, 
+                   N    = length(Rate36[!is.na(Rate36)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate36, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate36, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate36, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#m36means #display table
+
+m36means$code<-paste0(m36means$Site, m36means$B2015, m36means$Species)
+m36means #display table
+```
+
+#Tissue Loss  Models  
+SI Table 2 and SI Table 12.  
+`Mortality Score ~ Reef Site * Bleaching History * Coral Species`  
+ *Montipora capiatata*  
+```{r}
+Mcap_mALLData<-subset(mALLData, Species=="Montipora capitata")   # pull out Mcap
+
+#Month0
+Mcap_m0<-subset(Mcap_mALLData, month=="Month0")
+Mcap_m0_mod1<-aov(score~Site*B2015, Mcap_m0)
+summary(Mcap_m0_mod1) 
+TukeyHSD(Mcap_m0_mod1) 
+
+# Month1.5
+Mcap_m1_5<-subset(Mcap_mALLData, month=="Month1.5")
+Mcap_m1_5_mod1<-aov(score~Site*B2015, Mcap_m1_5)
+summary(Mcap_m1_5_mod1)
+TukeyHSD(Mcap_m1_5_mod1)
+
+#Month3
+Mcap_m3<-subset(Mcap_mALLData, month=="Month3")
+Mcap_m3_mod1<-aov(score~Site*B2015, Mcap_m3)
+summary(Mcap_m3_mod1)
+TukeyHSD(Mcap_m3_mod1)
+
+#Month4.5
+Mcap_m4_5<-subset(Mcap_mALLData, month=="Month4.5")
+Mcap_m4_5_mod1<-aov(score~Site*B2015, Mcap_m4_5)
+summary(Mcap_m4_5_mod1)
+TukeyHSD(Mcap_m4_5_mod1)
+
+#Month6
+Mcap_m6<-subset(Mcap_mALLData, month=="Month6")
+Mcap_m6_mod1<-aov(score~Site*B2015, Mcap_m6)
+summary(Mcap_m6_mod1)
+TukeyHSD(Mcap_m6_mod1)
+```
+
+*Porites compressa*  
+SI Table 2 and SI Table 12
+```{r}
+Pcomp_mALLData<-subset(mALLData, Species=="Porites compressa")   # pull out Mcap
+
+#Month0
+Pcomp_m0<-subset(Pcomp_mALLData, month=="Month0")   
+Pcomp_m0_mod1<-aov(score~Site*B2015, Pcomp_m0)
+summary(Pcomp_m0_mod1)
+TukeyHSD(Pcomp_m0_mod1)
+
+#Month1.5
+Pcomp_m1_5<-subset(Pcomp_mALLData, month=="Month1.5")   
+Pcomp_m1_5_mod1<-aov(score~Site*B2015, Pcomp_m1_5)
+summary(Pcomp_m1_5_mod1)
+TukeyHSD(Pcomp_m1_5_mod1)
+
+#Month3
+Pcomp_m3<-subset(Pcomp_mALLData, month=="Month3")   
+Pcomp_m3_mod1<-aov(score~Site*B2015, Pcomp_m3)
+summary(Pcomp_m3_mod1)
+TukeyHSD(Pcomp_m3_mod1)
+
+#Month4.5
+Pcomp_m4_5<-subset(Pcomp_mALLData, month=="Month4.5")   
+Pcomp_m4_5_mod1<-aov(score~Site*B2015, Pcomp_m4_5)
+summary(Pcomp_m4_5_mod1)
+TukeyHSD(Pcomp_m4_5_mod1)
+
+#Month6
+Pcomp_m6<-subset(Pcomp_mALLData, month=="Month6")   
+Pcomp_m6_mod1<-aov(score~Site*B2015, Pcomp_m6)
+summary(Pcomp_m6_mod1)
+TukeyHSD(Pcomp_m6_mod1)
+```
+
+## Partial mortality rates, by reef Site and Bleaching History  
+SI Table 13  
+*M. capitata*
+###Months 0-3 
+```{r}
+#subset Mcap
+Mcap_m03<-subset(m03, Species=="Montipora capitata") #subset Mcap
+#0-3 months
+Mcap_m03r<-aov(Rate03~Site  * B2015, Mcap_m03)
+summary(Mcap_m03r)
+TukeyHSD(Mcap_m03r)
+#0-6 months
+#subset Mcap
+#Mcap_m36<-subset(m36, Species=="Montipora capitata") #subset Mcap
+#Mcap_m36r<-aov(Rate36~Site  * B2015, Mcap_m36)
+#summary(Mcap_m36r)
+```
+
+*Porites compressa only*
+SI Table 13  
+###Months 0-3
+```{r}
+#subset Pcomp
+Pcomp_m03<-subset(m03, Species=="Porites compressa") #subset Pcomp
+#0-3 months
+Pcomp_m03r<-aov(Rate03~Site  * B2015, Pcomp_m03)
+summary(Pcomp_m03r)
+TukeyHSD(Pcomp_m03r)
+#0-6 months
+#Pcomp_m36<-subset(m36, Species=="Porites compressa") #subset Pcomp
+#Pcomp_m36r<-aov(Rate36~Site * B2015, Pcomp_m36)
+#summary(Pcomp_m36r)
+```
+
+## Pairs comparison   
+(only include colonies when both partners of a pair are found)
+
+```{r,results="hide"}
+#Figure out which of the pairs we lose 
+naData<-mALLData1
+#dataset to work from (pull unwanted from)
+pData<-mALLData1
+
+# Identify which pairs have a partner not found
+# Subset Month0 (two colonies missing values, checked datasheet)
+M0<-subset(naData, month=="Month0") # subset month 0
+M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+
+  # subset month 0
+  M0a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
+  M0<-pData[M0a]
+  M0<-subset(M0, month=="Month0")
+  M0<-na.omit(M0) # remove the NA colums
+  #DIFFS (Nonbleached-Bleached, each pair)
+  M0diff<-M0  
+  M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
+  M0diff$diff<-M0diff$N-M0diff$Y
+
+# Subset Month1.5 
+M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
+M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+# 113_114, 115_116, 117_118, 7_8
+  # subset month 1.5
+  M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
+  M1.5<-pData[M1.5a]
+  M1.5<-subset(M1.5, month=="Month1.5")
+  M1.5<-na.omit(M1.5) # remove the NA colums
+    M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
+    M1.5<-M1.5[!(M1.5$Pair=="115_116"),]
+    M1.5<-M1.5[!(M1.5$Pair=="117_118"),]
+    M1.5<-M1.5[!(M1.5$Pair=="7_8"),]
+  #DIFFS
+  M1.5diff<-M1.5  
+  M1.5diff<-dcast(M1.5diff, Species+Site+Pair+month~B2015) # cast()
+  M1.5diff$diff<-M1.5diff$N-M1.5diff$Y
+  
+## Subset Month3
+M3<-subset(naData, month=="Month3") # subset month 3
+M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#7_8, 213_214,215_216, 217_218, 7_8 <- Pairs where only one was not found :/
+
+  # subset month 3
+  M3a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
+  M3<-pData[M3a]
+  M3<-subset(M3, month=="Month3")
+  M3<-na.omit(M3) # remove the NA colums
+  # remove  Pairs where only one was not found :/
+  M3<-M3[!(M3$Pair=="7_8"),]
+  M3<-M3[!(M3$Pair=="213_214"),]
+  M3<-M3[!(M3$Pair=="215_216"),]
+  M3<-M3[!(M3$Pair=="217_218"),]
+  M3<-M3[!(M3$Pair=="7_8"),]
+  #DIFFS
+  M3diff<-M3  
+  M3diff<-dcast(M3diff, Species+Site+Pair+month~B2015) # cast()
+  M3diff$diff<-M3diff$N-M3diff$Y
+
+## Subset Month 4.5
+M4.5<-subset(naData, month=="Month4.5") # subset month 3
+M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+# 15_16, 17_18, 19_20, 9_10<- both not found
+# 107_108, 255_256, 261_262, 263_264, 267_268, 7_8, 82_83<- Pairs where only one was not found not 
+
+  # subset month 4.5
+  M4.5a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
+  M4.5<-pData[M4.5a]
+  M4.5<-subset(M4.5, month=="Month4.5")
+  M4.5<-na.omit(M4.5) # remove the NA colums
+  # remove # 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83
+  M4.5<-M4.5[!(M4.5$Pair=="107_108"),]
+  M4.5<-M4.5[!(M4.5$Pair=="255_256"),]
+  M4.5<-M4.5[!(M4.5$Pair=="261_262"),]
+  M4.5<-M4.5[!(M4.5$Pair=="263_264"),]
+  M4.5<-M4.5[!(M4.5$Pair=="267_268"),]
+  M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
+  M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
+  #DIFFS
+  M4.5diff<-M4.5  
+  M4.5diff<-dcast(M4.5diff, Species+Site+Pair+month~B2015) # cast()
+  M4.5diff$diff<-M4.5diff$N-M4.5diff$Y
+  
+
+# Subset month 6
+M6<-subset(naData, month=="Month6")
+M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#15_16, 17_18, 19_20, 215_216, 82_83, 9_10
+#115_116, 119_120, 13_14,213_214,217_218,263_264, 267_268, 7_8   <-  <-Pairs where only one was not found
+
+  # Subset month 6
+  M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
+  M6<-pData[M6a]
+  M6<-subset(M6, month=="Month6")
+  M6<-na.omit(M6) # remove the NA colums
+  ##115_116, 119_120, 13_14,213_214,217_218,263_264, 267_268, 7_8  
+  M6<-M6[!(M6$Pair=="115_116"),]
+  M6<-M6[!(M6$Pair=="119_120"),]
+  M6<-M6[!(M6$Pair=="13_14"),]
+  M6<-M6[!(M6$Pair=="213_214"),]
+  M6<-M6[!(M6$Pair=="217_218"),]
+  M6<-M6[!(M6$Pair=="263_264"),]
+  M6<-M6[!(M6$Pair=="267_268"),]
+  M6<-M6[!(M6$Pair=="7_8"),]
+  #DIFFS
+  M6diff<-M6  
+  M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
+  M6diff$diff<-M6diff$N-M6diff$Y
+
+```
+
+Mean bleaching scores across the entire project, pairs
+```{r}
+MortPairs<-rbind(M0,M1.5,M3,M4.5,M6)
+PairDat<-MortPairs
+MortPairs06<-rbind(M0,M1.5,M3,M4.5,M6)
+MortPairs03<-rbind(M0,M1.5,M3)
+MortPairs36<-rbind(M3,M4.5,M6)
+
+#calc average bleaching score per grouping by time point
+pairmeans <- ddply(MortPairs, c("Site", "Species", "B2015", "month"), summarise, #
+                   N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(score, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
+
+pairmeans$code<-paste0(pairmeans$Site, pairmeans$B2015, pairmeans$Species)
+pairmeans #display table
+```
+
+SI Table 2:
+*M. capitata* partial mortality, pairs
+```{r}
+#set up Pairs data
+McapMort<-subset(PairDat, Species =="Montipora capitata")            
+ 
+#Does bleaching score differ at Month 0?
+MmortPair0<-subset(McapMort, month =="Month0")           
+MmortPair0_mod1<-aov(score~Site*B2015, MmortPair0)
+summary(MmortPair0_mod1)
+TukeyHSD(MmortPair0_mod1) #post hoc
+
+#Month1.5
+MmortPair1.5<-subset(McapMort, month =="Month1.5")
+MmortPair1.5_mod1<-aov(score~Site*B2015, MmortPair1.5)
+summary(MmortPair1.5_mod1)
+TukeyHSD(MmortPair1.5_mod1)
+
+#Month3
+MmortPair3<-subset(McapMort, month =="Month3")
+MmortPair3_mod1<-aov(score~Site*B2015, MmortPair3)
+summary(MmortPair3_mod1)
+TukeyHSD(MmortPair3_mod1)
+
+#Month4.5
+MmortPair4.5<-subset(McapMort, month =="Month4.5")
+# ANOVA
+MmortPair4.5_mod1<-aov(score~Site*B2015, MmortPair4.5)
+summary(MmortPair4.5_mod1)
+TukeyHSD(MmortPair4.5_mod1)
+
+#Month6
+# pull out Month6
+MmortPair6<-subset(McapMort, month =="Month6")
+MmortPair6_mod1<-aov(score~Site*B2015, MmortPair6)
+summary(MmortPair6_mod1)
+TukeyHSD(MmortPair6_mod1)
+```
+
+SI Table 2  
+*P. compressa* partial mortality pairs  
+Model: `score~Site*B2015`  
+```{r}
+PcompMort<- subset(PairDat, Species == "Porites compressa") 
+
+###Does bleaching score differ at Month 0?
+PmortPair0<-subset(PcompMort, month =="Month0")            
+PmortPair0_mod1<-aov(score~Site*B2015, PmortPair0)
+summary(PmortPair0_mod1)
+TukeyHSD(PmortPair0_mod1) 
+
+#Month1.5
+PmortPair1.5<-subset(PcompMort, month =="Month1.5")
+PmortPair1.5_mod1<-aov(score~Site*B2015, PmortPair1.5)
+summary(PmortPair1.5_mod1)
+TukeyHSD(PmortPair1.5_mod1)
+
+#Month3
+PmortPair3<-subset(PcompMort, month =="Month3")
+PmortPair3_mod1<-aov(score~Site*B2015, PmortPair3)
+summary(PmortPair3_mod1)
+TukeyHSD(PmortPair3_mod1)
+
+#Month4.5
+PmortPair4.5<-subset(PcompMort, month =="Month4.5")
+PmortPair4.5_mod1<-aov(score~Site*B2015, PmortPair4.5)
+summary(PmortPair4.5_mod1)
+TukeyHSD(PmortPair4.5_mod1)
+
+#Month6
+PmortPair6<-subset(PcompMort, month =="Month6")
+PmortPair6_mod1<-aov(score~Site*B2015, PmortPair6)
+summary(PmortPair6_mod1)
+TukeyHSD(PmortPair6_mod1)
+```
+
+Table 3:
+0-3 and 0-6 month differences, Pairs data
+Partial mortality 0-3 months and 0-6 months
+score~month*B2015*lagoon
+*M. capitata* Pairs
+```{r}
+Mcapmort03Pairs<-subset(MortPairs03, Species=="Montipora capitata")
+Mcapmort06Pairs<-subset(MortPairs06, Species=="Montipora capitata") 
+Mcapmort36Pairs<-subset(MortPairs36, Species=="Montipora capitata") 
+
+#0-3 
+Mcapmort03Pairs_mod<-aov(score~month*Site*B2015, Mcapmort03Pairs)
+summary(Mcapmort03Pairs_mod)
+#0-6
+Mcapmort06Pairs_mod<-aov(score~month*Site*B2015, Mcapmort06Pairs)
+summary(Mcapmort06Pairs_mod)
+```
+
+Table 3:
+*P. compressa* Pairs
+```{r}
+Pcompmort03Pairs<-subset(MortPairs03, Species=="Porites compressa") 
+Pcompmort06Pairs<-subset(MortPairs06, Species=="Porites compressa")
+Pcompmort36Pairs<-subset(MortPairs36, Species=="Porites compressa")
+
+#0-3 
+Pcompmort03Pairs_mod<-aov(score~month*Site*B2015, Pcompmort03Pairs)
+summary(Pcompmort03Pairs_mod)
+
+#0-6
+Pcompmort06Pairs_mod<-aov(score~month*Site*B2015, Pcompmort06Pairs)
+summary(Pcompmort06Pairs_mod)
+```
+
+
+# Diffs data: Nonbleached-bleach for pairs
+*M. capitata*
+```{r}
+# data = combine all the M#diffs into a single dataframe 
+DiffData06<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff)
+DiffData03<-rbind(M0diff, M1.5diff, M3diff)
+DiffData36<-rbind(M3diff, M4.5diff, M6diff)
+```
+
+Mean pairs mortality scores across the entire project
+```{r, results=TRUE}
+#calc average bleaching score per grouping by time point
+diffmeans <- ddply(DiffData06, c("Site", "Species", "month"), summarise, #
+                   N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(diff, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
+
+diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
+#diffmeans #display table
+```
+
+SI Figure 2:
+*Montipora capitata* diffs Plot
+```{r}
+#subset for Mcap only
+Mcapdiffplotb<-subset(diffmeans, Species=="Montipora capitata")
+
+Mcapdiffplotc<-ggplot(data=Mcapdiffplotb, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=Site, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Difference score") +
+    xlab("") + #Label the X Axis
+    ylim(-.5, .5) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Montipora capitata")+
+          theme(plot.title = element_text(size=20,face = "italic"));Mcapdiffplotc
+Mcapdiffplotc<-Mcapdiffplotc + theme(legend.position = "none") #remove legend
+Mcapdiffplotc
+```
+
+###Porites compressa diffs 
+```{r}
+#subset for Mcap only
+Pcomdiffplotc<-subset(diffmeans, Species=="Porites compressa")
+
+
+Pcompdiffplotd<-ggplot(data=Pcomdiffplotc, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=Site), size=3)+
+  geom_line(aes(color=Site, linetype=Site))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  scale_color_manual(values=c("black","black"))+
+  ylab("Difference score") +
+    xlab("") + #Label the X Axis
+    ylim(-.5, .5) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Porites compressa")+
+          theme(plot.title = element_text(size=20,face = "italic"));Pcompdiffplotd
+Pcompdiffplotd<-Pcompdiffplotd + theme(legend.position = "none") #remove legend
+Pcompdiffplotd
+```
+
+Plot all diffs plots together: SI Figure 2
+```{r}
+grid.arrange(Mcapdiffplotc, Pcompdiffplotd,Mcapdiffplotc, Pcompdiffplotd, nrow = 2)
+```
+
+SI Table 2: diff~Lagoon
+*M. capitata*
+```{r} 
+#Month0
+dMmortPair0<-subset(DiffData06, month =="Month0")           
+dMmortPair0_mod1<-aov(diff~Site, dMmortPair0)
+summary(dMmortPair0_mod1)
+
+#Month1.5
+dMmortPair1.5<-subset(DiffData06, month =="Month1.5")
+dMmortPair1.5_mod1<-aov(diff~Site, dMmortPair1.5)
+summary(dMmortPair1.5_mod1)
+
+#Month3
+dMmortPair3<-subset(DiffData06, month =="Month3")
+dMmortPair3_mod1<-aov(diff~Site, dMmortPair3)
+summary(dMmortPair3_mod1)
+
+#Month4.5
+dMmortPair4.5<-subset(DiffData06, month =="Month4.5")
+dMmortPair4.5_mod1<-aov(diff~Site, dMmortPair4.5)
+summary(dMmortPair4.5_mod1)
+
+#month6
+dMmortPair6<-subset(DiffData06, month =="Month6")
+dMmortPair6_mod1<-aov(diff~Site, dMmortPair6)
+summary(dMmortPair6_mod1)
+```
+
+SI Table 2: diff~Lagoon  <---- right
+*P. compressa*
+```{r} 
+#Month0
+dMmortPair0<-subset(DiffData06, month =="Month0")           
+dMmortPair0_mod1<-aov(diff~Site, dMmortPair0)
+summary(dMmortPair0_mod1)
+
+#Month1.5
+dMmortPair1.5<-subset(DiffData06, month =="Month1.5")
+dMmortPair1.5_mod1<-aov(diff~Site, dMmortPair1.5)
+summary(dMmortPair1.5_mod1)
+
+#Month3
+dMmortPair3<-subset(DiffData06, month =="Month3")
+dMmortPair3_mod1<-aov(diff~Site, dMmortPair3)
+summary(dMmortPair3_mod1)
+
+#Month4.5
+dMmortPair4.5<-subset(DiffData06, month =="Month4.5")
+dMmortPair4.5_mod1<-aov(diff~Site, dMmortPair4.5)
+summary(dMmortPair4.5_mod1)
+
+#month6
+dMmortPair6<-subset(DiffData06, month =="Month6")
+dMmortPair6_mod1<-aov(diff~Site, dMmortPair6)
+summary(dMmortPair6_mod1)
+```
+
+Table 3: diffs 03 months and 06 months
+*M. capitat*
+```{r}
+DiffData03_Mcap<-subset(DiffData03, Species=="Montipora capitata")
+DiffData06_Mcap<-subset(DiffData06, Species=="Montipora capitata")
+DiffData36_Mcap<-subset(DiffData36, Species=="Montipora capitata")
+
+# 0-3
+d_Mcap03_mod1<-aov(diff~Site*month, DiffData03_Mcap)
+summary(d_Mcap03_mod1)
+TukeyHSD(d_Mcap03_mod1)
+
+# 0-6
+d_Mcap06_mod1<-aov(diff~Site*month, DiffData06_Mcap)
+summary(d_Mcap06_mod1)
+TukeyHSD(d_Mcap06_mod1)
+```
+
+Table 3: diffs 
+*P. compressa*
+```{r}
+DiffData03_Pcomp<-subset(DiffData03, Species=="Porites compressa")
+DiffData06_Pcomp<-subset(DiffData06, Species=="Porites compressa")
+DiffData36_Pcomp<-subset(DiffData36, Species=="Porites compressa")
+
+# 0-3
+d_Pcomp03_mod1<-aov(diff~Site*month, DiffData03_Pcomp)
+summary(d_Pcomp03_mod1)
+TukeyHSD(d_Pcomp03_mod1)
+
+# 0-6
+d_Pcomp06_mod1<-aov(diff~Site*month, DiffData06_Pcomp)
+summary(d_Pcomp06_mod1)
+TukeyHSD(d_Pcomp06_mod1)
+```
+
