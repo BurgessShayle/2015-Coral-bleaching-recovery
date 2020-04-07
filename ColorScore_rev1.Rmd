@@ -522,7 +522,8 @@ contrast(emmeans(artlm(Month24_mcap, "B2015"), ~ B2015), method="pairwise")
 *P.comp*  
 # ARTools stats for non-parametric non-normality  
 
-Full model
+Full model ARTool
+
 ```{r} 
 
 #Full timeframe Pcomp (log, arcsinsqrt don't help normailty)
@@ -563,7 +564,7 @@ anova(Full_mod_Pcomp) # Everything is significant
 
 ```
 
-Pcomp models at each time point, main effects Reef and B2015
+Pcomp models at each time point, main effects Reef and B2015 ARTool
 ```{r}
 Pcomp_0<-subset(Pcomp_df, month=="Month0") 
 Pcomp_0<-Pcomp_0[,c(1,3,4,6)] 
@@ -770,6 +771,7 @@ summary(Pcomppig36All_mod)
 TukeyHSD(Pcomppig36All_mod)
 ```
 
+
 #new table 2 models with mixed models (lmer)  AKA new Table 2
 Mcap_df  full model
 ```{r}
@@ -777,6 +779,10 @@ Mcap_df  full model
 Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
 summary(Mcap_df_mod)
 anova(Mcap_df_mod) #pvals
+
+leveneTest(score~B2015*Site*month, Mcap_df) # do we do this?????
+qqPlot(residuals(Mcap_df_mod))              # and this???
+
 
 #post hoc
 test<-emmeans(Mcap_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
@@ -819,9 +825,9 @@ cld(test2, Letter="abcde")
 
 ```
 
-Models at each timepoint
+Models at each timepoint -NEW
 Mcap
-```{r}
+```{r} 
 Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
 Mcap_3<-subset(Mcap_df, month=="Month3")
@@ -842,7 +848,7 @@ summary(Month1.5_mcap1.5)
 
 #Month3
 Month3_mcap3<-aov(score~Site*B2015, Mcap_3)
-summary(Month1.5_mcap3)
+summary(Month3_mcap3)
 
 #Month4.5
 Month4.5_mcap4.5<-aov(score~Site*B2015, Mcap_4.5)
@@ -930,6 +936,7 @@ Mcap_b0_mod1<-aov(score~Site*B2015, Mcap_b0)
 summary(Mcap_b0_mod1)
 TukeyHSD(Mcap_b0_mod1)
 
+
 #Month1.5
 Mcap_b1_5<-subset(Mcap_bALLData, month=="Month1.5")
 Mcap_b1_5_mod1<-aov(score~Site*B2015, Mcap_b1_5)
@@ -941,6 +948,12 @@ Mcap_b3<-subset(Mcap_bALLData, month=="Month3")
 Mcap_b3_mod1<-aov(score~Site*B2015, Mcap_b3)
 summary(Mcap_b3_mod1)
 TukeyHSD(Mcap_b3_mod1)
+
+Mcap_b0<-subset(Mcap_df, month=="Month0")
+Mcap_b0_mod1<-aov(score~Site*B2015, Mcap_b0)
+summary(Mcap_b0_mod1)
+TukeyHSD(Mcap_b0_mod1)
+
 
 #Month4.5
 Mcap_b4_5<-subset(Mcap_bALLData, month=="Month4.5")
@@ -1033,7 +1046,8 @@ b06means #display table
 b06means$code<-paste0(b06means$Site, b06means$B2015, b06means$Species)
 ```
 
-Rate change  
+Rate change       <- we didn't use this for Color score, just Tissue loss
+
 `Rate ~ Lagoon*B2015`  
 *Montipora capitata only*    
  Months 0-3
@@ -1077,21 +1091,21 @@ TukeyHSD(Pcomp_b06r)
 ```{r,results="hide"}
 #Figure out which of the pairs we lose 
 #subset only pairs
-naData<-bALLData1
+naData<-bALLData
 #dataset to work from (pull unwanted from)
-pData<-bALLData1
+pData<-bALLData
 
 # Identify which pairs have a partner not found
 # Subset Month0 (two colonies missing values, checked datasheet)
 M0<-subset(naData, month=="Month0") # subset month 0
-M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
 #keep it all
 
   # subset month 0
   M0a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
   M0<-pData[M0a]
   M0<-subset(M0, month=="Month0")
-  M0<-na.omit(M0) # remove the NA colums
+  #M0<-na.omit(M0) # remove the NA colums
   #DIFFS
   M0diff<-M0  
   M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
@@ -1099,22 +1113,22 @@ M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows yo
 
 # Subset Month1.5 
 M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
-M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
 # 113_114 remove
   # subset month 1.5
   M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
   M1.5<-pData[M1.5a]
   M1.5<-subset(M1.5, month=="Month1.5")
-  M1.5<-na.omit(M1.5) # remove the NA colums
+  #M1.5<-na.omit(M1.5) # remove the NA colums
   M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
- #DIFFS
+ #DIFFS 
   M1.5diff<-M1.5  
   M1.5diff<-dcast(M1.5diff, Species+Site+Pair+month~B2015) # cast()
   M1.5diff$diff<-M1.5diff$N-M1.5diff$Y
   
 ## Subset Month3
 M3<-subset(naData, month=="Month3") # subset month 3
-M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
 # 107_108, 13_14, 213_214, 215_216, 217_218, 285_286, 31_32 <- both not found
 #7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
 
@@ -1122,7 +1136,7 @@ M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows yo
   M3a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
   M3<-pData[M3a]
   M3<-subset(M3, month=="Month3")
-  M3<-na.omit(M3) # remove the NA colums
+  #M3<-na.omit(M3) # remove the NA colums
   # remove 7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
   M3<-M3[!(M3$Pair=="7_8"),]
   M3<-M3[!(M3$Pair=="113_114"),]
@@ -1136,8 +1150,7 @@ M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows yo
 
 ## Subset Month 4.5
 M4.5<-subset(naData, month=="Month4.5") # subset month 3
-M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-# 285_286,9_10, 209_210, 37)38, 255_256 <- both not found
+#M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) 
 # 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83 <- Pairs where only one was not found not 
 
   # subset month 4.5
@@ -1162,7 +1175,7 @@ M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what row
 
 # Subset month 6
 M6<-subset(naData, month=="Month6")
-M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
 #  113_114,13_14, 17_18, 213_214, 215_216, 217_218, 223_224,82_83
 #<- 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264,267_269 <-Pairs where only one was not found
 
@@ -1170,7 +1183,7 @@ M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows yo
   M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M6<-pData[M6a]
   M6<-subset(M6, month=="Month6")
-  M6<-na.omit(M6) # remove the NA colums
+  #M6<-na.omit(M6) # remove the NA colums
   # remove 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264, 267_269 <-Pairs where only one was not found :/
   M6<-M6[!(M6$Pair=="111_112"),] # remove the other partner
   M6<-M6[!(M6$Pair=="115_116"),]
@@ -1186,13 +1199,110 @@ M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows yo
   M6diff<-M6  
   M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
   M6diff$diff<-M6diff$N-M6diff$Y
+  
+  
+# Subset month 10
+M10<-subset(naData, month=="Month10")
+#M10_NA <- M10 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#  113_114,13_14, 17_18, 213_214, 215_2110, 217_218, 223_224,82_83
+#<- 111_112, 115_1110, 119_120, 207_208, 255_2510, 259_2100, 2103_2104,2107_2109 <-Pairs where only one was not found
 
+  # Subset month 10
+  M10a<-c("TagID","Pair","Species", "Site","B2015","month","score")
+  M10<-pData[M10a]
+  M10<-subset(M10, month=="Month10")
+  #M10<-na.omit(M10) # remove the NA colums
+  # remove 253_254, 259_260, 161_262, 263_264, 267_268, 271_272, 273_274, 275_276,277_278 , 31_2
+  M10<-M10[!(M10$Pair=="253_254"),] # remove the other partner
+  M10<-M10[!(M10$Pair=="259_260"),]
+  M10<-M10[!(M10$Pair=="113_114"),]
+  M10<-M10[!(M10$Pair=="161_262"),]
+  M10<-M10[!(M10$Pair=="263_264"),]
+  M10<-M10[!(M10$Pair=="267_268"),]
+  M10<-M10[!(M10$Pair=="271_272"),]
+  M10<-M10[!(M10$Pair=="273_274"),]
+  M10<-M10[!(M10$Pair=="275_276"),]
+  M10<-M10[!(M10$Pair=="277_278"),]
+  M10<-M10[!(M10$Pair=="31_32"),]
+    M10<-M10[!(M10$Pair=="261_262"),]
+
+
+  
+  #DIFFS
+  M10diff<-M10  
+  M10diff<-dcast(M10diff, Species+Site+Pair+month~B2015) # cast()
+  M10diff$diff<-M10diff$N-M10diff$Y
+  
+  
+  # Subset month 18
+M18<-subset(naData, month=="Month18")
+#M18_NA <- M18 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
+#<- 101_102,1-3_104, 115_116, 117_118, 119_120, 19_20, 205-206, 223_224, 261_262, 265_266, 269_270, 271_272, 275_276, 39_40
+
+  # Subset month 18
+  M18a<-c("TagID","Pair","Species", "Site","B2015","month","score")
+  M18<-pData[M18a]
+  M18<-subset(M18, month=="Month18")
+  #M18<-na.omit(M18) # remove the NA colums
+  M18<-M18[!(M18$Pair=="253_254"),] # remove the other partner
+  M18<-M18[!(M18$Pair=="259_260"),]
+  M18<-M18[!(M18$Pair=="161_262"),]
+  M18<-M18[!(M18$Pair=="263_264"),]
+  M18<-M18[!(M18$Pair=="267_268"),]
+  M18<-M18[!(M18$Pair=="271_272"),]
+  M18<-M18[!(M18$Pair=="273_274"),]
+  M18<-M18[!(M18$Pair=="275_276"),]
+  M18<-M18[!(M18$Pair=="277_278"),]
+  M18<-M18[!(M18$Pair=="31_2"),]
+    M18<-M18[!(M18$Pair=="115_116"),]
+  M18<-M18[!(M18$Pair=="119_120"),]
+    M18<-M18[!(M18$Pair=="261_262"),]
+  M18<-M18[!(M18$Pair=="269_270"),]
+  M18<-M18[!(M18$Pair=="101_102"),]
+  M18<-M18[!(M18$Pair=="117_118"),]
+    M18<-M18[!(M18$Pair=="265_266"),]
+  M18<-M18[!(M18$Pair=="19_20"),]
+  M18<-M18[!(M18$Pair=="205_206"),]
+  M18<-M18[!(M18$Pair=="223_224"),]
+    M18<-M18[!(M18$Pair=="39_40"),]
+    
+    
+  #DIFFS
+  M18diff<-M18  
+  M18diff<-dcast(M18diff, Species+Site+Pair+month~B2015) # cast()
+  M18diff$diff<-M18diff$N-M18diff$Y
+  
+  
+  # Subset month 24
+M24<-subset(naData, month=="Month24")
+
+
+# Subset month 24
+  M24a<-c("TagID","Pair","Species", "Site","B2015","month","score")
+  M24<-pData[M24a]
+  M24<-subset(M24, month=="Month24")
+  M24<-M24[!(M24$Pair=="107_108"),] # remove the other partner
+  M24<-M24[!(M24$Pair=="13_14"),]
+  M24<-M24[!(M24$Pair=="223_224"),]
+  M24<-M24[!(M24$Pair=="231_232"),]
+  M24<-M24[!(M24$Pair=="261_262"),]
+  M24<-M24[!(M24$Pair=="263_264"),]
+  M24<-M24[!(M24$Pair=="265_266"),]
+  M24<-M24[!(M24$Pair=="283_284"),]
+  M24<-M24[!(M24$Pair=="289_290"),]
+  M24<-M24[!(M24$Pair=="31_32"),]
+  M24<-M24[!(M24$Pair=="33_34"),]
+  M24<-M24[!(M24$Pair=="39_40"),]
+  M24<-M24[!(M24$Pair=="76_77"),]
+  M24<-M24[!(M24$Pair=="78_79"),]
+
+  #DIFFS
+  M24diff<-M24  
+  M24diff<-dcast(M24diff, Species+Site+Pair+month~B2015) # cast()
+  M24diff$diff<-M24diff$N-M24diff$Y
+  
 #make dfs  
-pigPairs<-rbind(M0,M1.5,M3,M4.5,M6)
-PairDat<-pigPairs
-pigPairs06<-rbind(M0,M1.5,M3,M4.5,M6)
-pigPairs03<-rbind(M0,M1.5,M3)
-pigPairs36<-rbind(M3,M4.5,M6)
+PairDat<-rbind(M0,M1.5,M3,M4.5,M6,M10,M18,M24)
 
 #Mean bleaching scores across the entire project
 
@@ -1210,7 +1320,7 @@ pairmeans$code<-paste0(pairmeans$Site, pairmeans$B2015, pairmeans$Species)
 pairmeans #display table
 ```
 
-*Montipora capitata* 
+*Montipora capitata*  plot pairs
 ```{r}
 #subset for Mcap only
 McapPairplot<-subset(pairmeans, Species=="Montipora capitata")
@@ -1238,9 +1348,9 @@ PairplotMcapB<-ggplot(data=McapPairplot, aes(x=month, y=mean, group = code, colo
           theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));PairplotMcapB
 ```
 
-*Porites compressa* 
+*Porites compressa* plot pairs
 ```{r}
-#subset for Pcomp only
+#subset for Pcomp only 
 PcompPairplot<-subset(pairmeans, Species=="Porites compressa")
 
 PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
@@ -1265,12 +1375,18 @@ PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, co
           theme(plot.title = element_text(size=20,face = "italic"));PairplotPcompB
 ```
 
-#Mcap only full model Pairs 0-6 months
+#Mcap only full model Pairs ARTools
 SI Table 11
-Model: `score~Site*B2015*Species`  
+Model: `score~Site*B2015*Species`
+lmer
 ```{r}
 #set up Pairs data
 Mcappig<-subset(PairDat, Species =="Montipora capitata")            
+
+#All
+MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
+summary(MpigPair_all_mod1)
+anova(MpigPair_all_mod1)
 
 #Month0
 MpigPair0<-subset(Mcappig, month =="Month0")           
@@ -1302,13 +1418,103 @@ MpigPair6<-subset(Mcappig, month =="Month6")
 MpigPair6_mod1<-aov(score~Site*B2015, MpigPair6)
 summary(MpigPair6_mod1)
 TukeyHSD(MpigPair6_mod1)
+
+#Month10
+MpigPair10<-subset(Mcappig, month =="Month10")
+# anova
+MpigPair10_mod1<-aov(score~Site*B2015, MpigPair10)
+summary(MpigPair10_mod1)
+TukeyHSD(MpigPair10_mod1)
+
+#Month18
+MpigPair18<-subset(Mcappig, month =="Month18")
+# anova
+MpigPair18_mod1<-aov(score~Site*B2015, MpigPair18)
+summary(MpigPair18_mod1)
+TukeyHSD(MpigPair18_mod1)
+
+#Month24
+MpigPair24<-subset(Mcappig, month =="Month24")
+# anova
+MpigPair24_mod1<-aov(score~Site*B2015, MpigPair24)
+summary(MpigPair24_mod1)
+TukeyHSD(MpigPair24_mod1)
 ```
 
-###Pcomp only full model Pairs 0-6 months
+ARTools mcap:pairs
+```{r}
+#set up Pairs data
+Mcappig<-subset(PairDat, Species =="Montipora capitata")            
+McappigArt<-Mcappig
+
+
+
+#All
+MpigPair_all_mod1ART<-art(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
+summary(MpigPair_all_mod1ART)
+anova(MpigPair_all_mod1ART)
+
+#Month0
+MpigPair0ART<-subset(Mcappig, month =="Month0")           
+MpigPair0_mod1ART<-art(score~Site*B2015, MpigPair0ART)
+summary(MpigPair0_mod1ART)
+anova(MpigPair0_mod1ART)
+
+#Month1.5
+MpigPair1.5ART<-subset(Mcappig, month =="Month1.5")           
+MpigPair1.5_mod1ART<-art(score~Site*B2015, MpigPair1.5ART)
+summary(MpigPair1.5_mod1ART) #not good
+anova(MpigPair1.5_mod1ART)
+
+#Month3
+MpigPair3ART<-subset(Mcappig, month =="Month3")           
+MpigPair3_mod1ART<-art(score~Site*B2015, MpigPair3ART)
+summary(MpigPair3_mod1ART)
+anova(MpigPair3_mod1ART)
+
+#Month4.5
+MpigPair4.5ART<-subset(Mcappig, month =="Month4.5")           
+MpigPair4.5_mod1ART<-art(score~Site*B2015, MpigPair4.5ART)
+summary(MpigPair4.5_mod1ART) #not good
+anova(MpigPair4.5_mod1ART)
+
+#Month6
+MpigPair6ART<-subset(Mcappig, month =="Month6")           
+MpigPair6_mod1ART<-art(score~Site*B2015, MpigPair6ART)
+summary(MpigPair6_mod1ART)#not good
+anova(MpigPair6_mod1ART)
+
+#Month10
+MpigPair10ART<-subset(Mcappig, month =="Month10")           
+MpigPair10_mod1ART<-art(score~Site*B2015, MpigPair10ART)
+summary(MpigPair10_mod1ART)#not good
+anova(MpigPair10_mod1ART)
+
+#Month18
+MpigPair18ART<-subset(Mcappig, month =="Month18")           
+MpigPair18_mod1ART<-art(score~Site*B2015, MpigPair18ART)
+summary(MpigPair18_mod1ART)#notgood
+anova(MpigPair18_mod1ART)
+
+#Month24
+MpigPair24ART<-subset(Mcappig, month =="Month24")           
+MpigPair24_mod1ART<-art(score~Site*B2015, MpigPair24ART)
+summary(MpigPair24_mod1ART)#really not good
+anova(MpigPair24_mod1ART)
+```
+
+
+
+###Pcomp only full model Pairs
 Model: `score~Site*B2015`  
 SI Table 11
 ```{r}
 Pcomppig<- subset(PairDat, Species == "Porites compressa") 
+
+#All timepoints
+PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
+summary(PpigPair_all_mod1)
+anova(PpigPair_all_mod1)
 
 #Month 0
 PpigPair0<-subset(Pcomppig, month =="Month0")            
@@ -1337,9 +1543,88 @@ TukeyHSD(PpigPair4.5_mod1)
 PpigPair6<-subset(Pcomppig, month =="Month6")
 PpigPair6_mod1<-aov(score~Site*B2015, PpigPair6)
 summary(PpigPair6_mod1)
+
+#Month10
+PpigPair10<-subset(Pcomppig, month =="Month10")
+PpigPair10_mod1<-aov(score~Site*B2015, PpigPair10)
+summary(PpigPair10_mod1)
+
+#Month18
+PpigPair18<-subset(Pcomppig, month =="Month18")
+PpigPair18_mod1<-aov(score~Site*B2015, PpigPair18)
+summary(PpigPair18_mod1)
+
+#Month24
+PpigPair24<-subset(Pcomppig, month =="Month24")
+PpigPair24_mod1<-aov(score~Site*B2015, PpigPair24)
+summary(PpigPair24_mod1)
+```
+ARTools pcomp:pairs
+```{r}
+#set up Pairs data
+Pcomppig<-subset(PairDat, Species =="Porites compressa")            
+
+#All
+PpigPair_all_mod1ART<-art(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
+summary(PpigPair_all_mod1ART)# not all 0
+anova(PpigPair_all_mod1ART)
+
+#Month0
+PpigPair0ART<-subset(Pcomppig, month =="Month0")           
+PpigPair0_mod1ART<-art(score~Site*B2015, PpigPair0ART)
+summary(PpigPair0_mod1ART)#not0
+anova(PpigPair0_mod1ART)
+
+#Month1.5
+PpigPair1.5ART<-subset(Pcomppig, month =="Month1.5")           
+PpigPair1.5_mod1ART<-art(score~Site*B2015, PpigPair1.5ART)
+summary(PpigPair1.5_mod1ART) #0
+anova(PpigPair1.5_mod1ART)
+
+#Month3
+PpigPair3ART<-subset(Pcomppig, month =="Month3")           
+PpigPair3_mod1ART<-art(score~Site*B2015, PpigPair3ART)
+summary(PpigPair3_mod1ART) #close to 0
+anova(PpigPair3_mod1ART)
+
+#Month4.5
+PpigPair4.5ART<-subset(Pcomppig, month =="Month4.5")           
+PpigPair4.5_mod1ART<-art(score~Site*B2015, PpigPair4.5ART)
+summary(PpigPair4.5_mod1ART) #not all 0
+anova(PpigPair4.5_mod1ART)
+
+#Month6
+PpigPair6ART<-subset(Pcomppig, month =="Month6")           
+PpigPair6_mod1ART<-art(score~Site*B2015, PpigPair6ART)
+summary(PpigPair6_mod1ART)#Error in Anova.lm(m, type = "III", test = test, ...) :residual sum of squares is 0 (within rounding error)
+anova(PpigPair6_mod1ART)
+
+#Month10
+PpigPair10ART<-subset(Pcomppig, month =="Month10")           
+PpigPair10_mod1ART<-art(score~Site*B2015, PpigPair10ART)
+summary(PpigPair10_mod1ART)#not all 0
+anova(PpigPair10_mod1ART)
+
+#Month18
+PpigPair18ART<-subset(Pcomppig, month =="Month18")           
+PpigPair18_mod1ART<-art(score~Site*B2015, PpigPair18ART)
+summary(PpigPair18_mod1ART)#not all 0
+anova(PpigPair18_mod1ART)
+
+#Month24
+PpigPair24ART<-subset(Pcomppig, month =="Month24")           
+PpigPair24_mod1ART<-art(score~Site*B2015, PpigPair24ART)
+summary(PpigPair24_mod1ART)#not all 0
+anova(PpigPair24_mod1ART)
 ```
 
-0-3 and 0-6 month differences
+
+
+
+
+
+
+0-3 and 0-6 month differences <- cut?
 Pairs data
 score~month*B2015*lagoon
 *M. capitata* Pairs
@@ -1374,7 +1659,8 @@ summary(Pcomppig06Pairs_mod)
 # DIFF DATA
 Differences (nonbleached-bleached) for pairs
 ```{r}
-# data = combine all the M#diffs into a single dataframe 
+# data = combine all the M#diffs into a single dataframe
+All_diff<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff,M10diff, M18diff, M24diff)
 DiffData06<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff)
 DiffData03<-rbind(M0diff, M1.5diff, M3diff)
 DiffData36<-rbind(M3diff, M4.5diff, M6diff)
@@ -1383,7 +1669,7 @@ DiffData36<-rbind(M3diff, M4.5diff, M6diff)
 Mean bleaching scores across the entire project
 ```{r, results=TRUE}
 #calc average bleaching score per grouping by time point
-diffmeans <- ddply(DiffData06, c("Site", "Species", "month"), summarise, #
+diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
                    N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
@@ -1461,41 +1747,62 @@ grid.arrange(Mcapdiffplota, Pcompdiffplota, nrow = 1)
 ```
 
 SI Table 1
-Mcap diff~Lagoon
+Mcap diff~Lagoon   
 ```{r}
-DiffData03_Mcap<-subset(DiffData03, Species=="Montipora capitata")
-DiffData06_Mcap<-subset(DiffData06, Species=="Montipora capitata")
-DiffData36_Mcap<-subset(DiffData36, Species=="Montipora capitata")
+DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
+
+#Month ALL
+dMpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Mcap)
+summary(dMpigPairall_mod1)
+anova(dMpigPairall_mod1)
 
 #Month0
-dMpigPair03<-subset(DiffData06_Mcap, month =="Month0")          
+dMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
 dMpigPair03_mod1<-aov(diff~Site, dMpigPair03)
 summary(dMpigPair03_mod1)
 
 #Month1.5
-dMpigPair1.5<-subset(DiffData06_Mcap, month =="Month1.5")
+dMpigPair1.5<-subset(DiffData_all_Mcap, month =="Month1.5")
 dMpigPair1.5_mod1<-aov(diff~Site, dMpigPair1.5)
 summary(dMpigPair1.5_mod1)
 
 #Month3
-dMpigPair3<-subset(DiffData06_Mcap, month =="Month3")
+dMpigPair3<-subset(DiffData_all_Mcap, month =="Month3")
 dMpigPair3_mod1<-aov(diff~Site, dMpigPair3)
 summary(dMpigPair3_mod1)
 TukeyHSD(dMpigPair3_mod1)
 
 #Month4.5
-dMpigPair4.5<-subset(DiffData06_Mcap, month =="Month4.5")
+dMpigPair4.5<-subset(DiffData_all_Mcap, month =="Month4.5")
 dMpigPair4.5_mod1<-aov(diff~Site, dMpigPair4.5)
 summary(dMpigPair4.5_mod1)
 
 #Month6
-dMpigPair6<-subset(DiffData06_Mcap, month =="Month6")
+dMpigPair6<-subset(DiffData_all_Mcap, month =="Month6")
 dMpigPair6_mod1<-aov(diff~Site, dMpigPair6)
 summary(dMpigPair6_mod1)
 TukeyHSD(dMpigPair6_mod1)
+
+#Month10
+dMpigPair10<-subset(DiffData_all_Mcap, month =="Month10")
+dMpigPair10_mod1<-aov(diff~Site, dMpigPair10)
+summary(dMpigPair10_mod1)
+TukeyHSD(dMpigPair10_mod1)
+
+#Month18
+dMpigPair18<-subset(DiffData_all_Mcap, month =="Month18")
+dMpigPair18_mod1<-aov(diff~Site, dMpigPair18)
+summary(dMpigPair18_mod1)
+TukeyHSD(dMpigPair18_mod1)
+
+#Month24
+dMpigPair24<-subset(DiffData_all_Mcap, month =="Month24")
+dMpigPair24_mod1<-aov(diff~Site, dMpigPair24)
+summary(dMpigPair24_mod1)
+TukeyHSD(dMpigPair24_mod1)
 ```
 
-diffs 0-3 months and 0-6 months
+diffs 0-3 months and 0-6 months: CUT??
 *M. capitata*
 ```{r}
 # 0-3
@@ -1511,36 +1818,170 @@ TukeyHSD(d_Mcap06_mod1)
 
 *P. compressa*
 ```{r}
-DiffData03_Pcomp<-subset(DiffData03, Species=="Porites compressa")
-DiffData06_Pcomp<-subset(DiffData06, Species=="Porites compressa")
+DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
+
+#Month ALL
+dPpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Pcomp)
+summary(dPpigPairall_mod1)
+anova(dPpigPairall_mod1)
 
 #Month0
-dPpigPair03<-subset(DiffData03_Pcomp, month =="Month0")          
-dPpigPair03_mod1<-aov(diff~Site, dPpigPair03)
-summary(dPpigPair03_mod1)
-TukeyHSD(dPpigPair03_mod1)
+dPpigPair0<-subset(DiffData_all_Pcomp, month =="Month0")          
+dPpigPair0_mod1<-aov(diff~Site, dPpigPair0)
+summary(dPpigPair0_mod1)
 
 #Month1.5
-dPpigPair1.5<-subset(DiffData06_Pcomp, month =="Month1.5")
+dPpigPair1.5<-subset(DiffData_all_Pcomp, month =="Month1.5")
 dPpigPair1.5_mod1<-aov(diff~Site, dPpigPair1.5)
 summary(dPpigPair1.5_mod1)
 
 #Month3
-dPpigPair3<-subset(DiffData06_Pcomp, month =="Month3")
+dPpigPair3<-subset(DiffData_all_Pcomp, month =="Month3")
 dPpigPair3_mod1<-aov(diff~Site, dPpigPair3)
 summary(dPpigPair3_mod1)
+TukeyHSD(dPpigPair3_mod1)
 
 #Month4.5
-dPpigPair4.5<-subset(DiffData06_Pcomp, month =="Month4.5")
+dPpigPair4.5<-subset(DiffData_all_Pcomp, month =="Month4.5")
 dPpigPair4.5_mod1<-aov(diff~Site, dPpigPair4.5)
 summary(dPpigPair4.5_mod1)
 
 #Month6
-dPpigPair6<-subset(DiffData06_Pcomp, month =="Month6")
+dPpigPair6<-subset(DiffData_all_Pcomp, month =="Month6")
 dPpigPair6_mod1<-aov(diff~Site, dPpigPair6)
 summary(dPpigPair6_mod1)
 TukeyHSD(dPpigPair6_mod1)
+
+#Month10
+dPpigPair10<-subset(DiffData_all_Pcomp, month =="Month10")
+dPpigPair10_mod1<-aov(diff~Site, dPpigPair10)
+summary(dPpigPair10_mod1)
+TukeyHSD(dPpigPair10_mod1)
+
+#Month18
+dPpigPair18<-subset(DiffData_all_Pcomp, month =="Month18")
+dPpigPair18_mod1<-aov(diff~Site, dPpigPair18)
+summary(dPpigPair18_mod1)
+TukeyHSD(dPpigPair18_mod1)
+
+#Month24
+dPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
+dPpigPair24_mod1<-aov(diff~Site, dPpigPair24)
+summary(dPpigPair24_mod1)
+TukeyHSD(dPpigPair24_mod1)
 ```
+
+ARTools diffs
+Mcap
+```{r}
+DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
+DiffData_all_Mcap<-na.omit(DiffData_all_Mcap)
+#Month ALL
+DiffdMpigPairall_mod1<-art(diff~Site*month+(1|Pair), DiffData_all_Mcap)
+summary(DiffdMpigPairall_mod1) #Max is 4.8, violation
+anova(DiffdMpigPairall_mod1)
+
+#Month0
+DiffdMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
+DiffdMpigPair03_mod1<-art(diff~Site, DiffdMpigPair03)
+summary(DiffdMpigPair03_mod1)
+anova(DiffdMpigPair03_mod1)
+
+
+#Month1.5
+DiffdMpigPair1.5<-subset(DiffData_all_Mcap, month =="Month1.5")
+DiffdMpigPair1.5_mod1<-art(diff~Site, DiffdMpigPair1.5)
+summary(DiffdMpigPair1.5_mod1)
+anova(DiffdMpigPair1.5_mod1)
+
+#Month3
+DiffdMpigPair3<-subset(DiffData_all_Mcap, month =="Month3")
+DiffdMpigPair3_mod1<-art(diff~Site, DiffdMpigPair3)
+summary(DiffdMpigPair3_mod1)
+anova(DiffdMpigPair3_mod1)
+
+#Month4.5
+DiffdMpigPair4.5<-subset(DiffData_all_Mcap, month =="Month4.5")
+DiffdMpigPair4.5_mod1<-art(diff~Site, DiffdMpigPair4.5)
+summary(DiffdMpigPair4.5_mod1)
+anova(DiffdMpigPair4.5_mod1)
+
+#Month6
+DiffdMpigPair6<-subset(DiffData_all_Mcap, month =="Month6")
+DiffdMpigPair6_mod1<-art(diff~Site, DiffdMpigPair6)
+summary(DiffdMpigPair6_mod1)
+anova(DiffdMpigPair6_mod1)
+
+#Month10
+DiffdMpigPair10<-subset(DiffData_all_Mcap, month =="Month10")
+DiffdMpigPair10_mod1<-art(diff~Site, DiffdMpigPair10)
+summary(DiffdMpigPair10_mod1)
+anova(DiffdMpigPair10_mod1)
+
+#Month18
+DiffdMpigPair18<-subset(DiffData_all_Mcap, month =="Month18")
+DiffdMpigPair18_mod1<-art(diff~Site, DiffdMpigPair18)
+summary(DiffdMpigPair18_mod1)
+anova(DiffdMpigPair18_mod1)
+
+#Month24
+DiffdMpigPair24<-subset(DiffData_all_Mcap, month =="Month24")
+DiffdMpigPair24_mod1<-art(diff~Site, DiffdMpigPair24)
+summary(DiffdMpigPair24_mod1)
+anova(DiffdMpigPair24_mod1)
+```
+
+Pcomp diff ARTools (CODE not edited yet)
+```{r}
+DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
+DiffData_all_Pcomp<-na.omit(DiffData_all_Pcomp)
+#Month ALL
+DiffdPpigPairall_mod1<-art(diff~Site*month+(1|Pair), DiffData_all_Pcomp)
+summary(DiffdPpigPairall_mod1) #violation
+anova(DiffdPpigPairall_mod1)
+
+#Month0
+DiffdPpigPair03<-subset(DiffData_all_Pcomp, month =="Month0")          
+DiffdPpigPair03_mod1<-aov(diff~Site, DiffdPpigPair03)
+summary(DiffdPpigPair03_mod1)
+
+#Month1.5
+DiffdPpigPair1.5<-subset(DiffData_all_Pcomp, month =="Month1.5")
+DiffdPpigPair1.5_mod1<-aov(diff~Site, DiffdPpigPair1.5)
+summary(DiffdPpigPair1.5_mod1)
+
+#Month3
+DiffdPpigPair3<-subset(DiffData_all_Pcomp, month =="Month3")
+DiffdPpigPair3_mod1<-aov(diff~Site, DiffdPpigPair3)
+summary(DiffdPpigPair3_mod1)
+
+#Month4.5
+DiffdPpigPair4.5<-subset(DiffData_all_Pcomp, month =="Month4.5")
+DiffdPpigPair4.5_mod1<-aov(diff~Site, DiffdPpigPair4.5)
+summary(DiffdPpigPair4.5_mod1)
+
+#Month6
+DiffdPpigPair6<-subset(DiffData_all_Pcomp, month =="Month6")
+DiffdPpigPair6_mod1<-aov(diff~Site, DiffdPpigPair6)
+summary(DiffdPpigPair6_mod1)
+
+#Month10
+DiffdPpigPair10<-subset(DiffData_all_Pcomp, month =="Month10")
+DiffdPpigPair10_mod1<-aov(diff~Site, DiffdPpigPair10)
+summary(DiffdPpigPair10_mod1)
+
+#Month18
+DiffdPpigPair18<-subset(DiffData_all_Pcomp, month =="Month18")
+DiffdPpigPair18_mod1<-aov(diff~Site, DiffdPpigPair18)
+summary(DiffdPpigPair18_mod1)
+
+#Month24
+DiffdPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
+DiffdPpigPair24_mod1<-aov(diff~Site, DiffdPpigPair24)
+summary(DiffdPpigPair24_mod1)
+```
+
+
 
 diffs 0-3 months and 0-6 months
 *P. compressa*
