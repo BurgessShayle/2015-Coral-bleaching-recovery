@@ -1,6 +1,6 @@
 
 ---
-title: "ColorScore"
+title: "ColorScore revision"
 author: "Shayle Matsuda"
 date: "9/25/2019"
 output:
@@ -21,8 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, results="hide", message=FALSE}
-rm(list=ls(all=TRUE)) 
-setwd("~/Desktop/B_NB")
+#rm(list=ls(all=TRUE)) 
 library("reshape2") #reshape data
 library("plotrix") #functions in tapply
 library("ggplot2") #plotting
@@ -81,26 +80,10 @@ Time points: 0-3 months,0-6 months
 
 #Remove all NON PAIRS and all NAs
   mALLData<-na.omit(mALLData1) # remove the NA colums
-  
-##subset 0-3 months
-  m03<-subset(mALLData, month=="Month0" |month=="Month3")
-      m03<-dcast(m03, Species+Site+Pair+B2015~month) # cast() 
-  m03<-na.omit(m03) # remove the NA colums
-   
-#subset 3-6 months
-m36<-subset(mALLData, month=="Month3" |month=="Month6")
 
-      m36<-dcast(m36, Species+Site+Pair+B2015~month) # cast()
-      m36<-na.omit(m36) # remove the NA colums 
-
-#subset 0-1.5-3 months for pairs comparison 
-m0153<-subset(mALLData, month=="Month0" |month=="Month1.5"|month=="Month3")
-
-#subset 3-4.5-6 months for pairs comparison 
-m3456<-subset(mALLData, month=="Month3" |month=="Month4.5"|month=="Month5")
- 
-#subset 0-1.5-3-4.5-6 months for pairs comparison 
-m0153456<-subset(mALLData, month=="Month0"  |month=="Month1.5"|month=="Month3"|month=="Month4.5"|month=="Month6") 
+  #Change scores into %
+mALLDataPER<-mALLData
+mALLDataPER$Score<-mALLDataPER$score*100
 ```
 
 Mean partial mortality scores
@@ -118,11 +101,9 @@ mALLmeans$code<-paste0(mALLmeans$Site, mALLmeans$B2015, mALLmeans$Species)
 ```
 
 ## Partial mortality score means 0-24 months by species/site/bleaching history
-For paper figure
+For paper figure, as percents
 ```{r, results=TRUE}
-#Change scores into %
-mALLDataPER<-mALLData
-mALLDataPER$Score<-mALLDataPER$score*100
+
 
 #calc average tissue loss score per grouping by time point
 mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summarise, #
@@ -301,48 +282,71 @@ Table 3: Full dataset
 Mortality 0-3 months and 0-6 months
 score~month*B2015*lagoon
 
-*M. capitata* All
+All
 ```{r}
-Mcapmort03All<-subset(m0153, Species=="Montipora capitata")
-Mcapmort06All<-subset(m0153456, Species=="Montipora capitata")
-Mcapmort36All<-subset(m3456, Species=="Montipora capitata")
+#data hist trying all the transformations (spoiler, nothing works)
+#hist(mALLDataPER$Score)
+#mALLDataPER$log<-log(mALLDataPER$score+8)
+#hist(mALLDataPER$log)
+#mALLDataPER$sqrt<-sqrt(mALLDataPER$score)
+##hist(mALLDataPER$sqrt)
+#mALLDataPER$cube<-(mALLDataPER$score+1)^(1/3)
+#hist(mALLDataPER$cube)
+#mALLDataPER$recip<--(1/(mALLDataPER$score))
+#hist(mALLDataPER$recip)
 
-#0-3
-Mcapmort03All_mod<-aov(score~month*Site*B2015, Mcapmort03All)
-summary(Mcapmort03All_mod)
-TukeyHSD(Mcapmort03All_mod)
 
-#0-6
-Mcapmort06All_mod<-aov(score~month*Site*B2015, Mcapmort06All)
-summary(Mcapmort06All_mod)
-TukeyHSD(Mcapmort06All_mod)
+#subset by species
+Mcap_mort<-subset(mALLDataPER, Species=="Montipora capitata")
+Pcomp_mort<-subset(mALLDataPER, Species=="Porites compressa")
+
 ```
 
 Table 3
-*P. compressa*
+Mortality across all timepoints, Mcap and Pcomp
 ```{r}
-Pcompmort03All<-subset(m0153, Species=="Porites compressa")
-Pcompmort06All<-subset(m0153456, Species=="Porites compressa")
-Pcompmort36All<-subset(m3456, Species=="Porites compressa")
+#Mcap
+Mcap_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Mcap_mort)
+anova(Mcap_mort_mod)
 
-#0-3
-Pcompmort03All_mod<-aov(score~month*Site*B2015, Pcompmort03All)
-summary(Pcompmort03All_mod)
-TukeyHSD(Pcompmort03All_mod)
+#conduct Tukey post hoc test 
+emm = emmeans(Mcap_mort_mod, ~ Site*B2015*month, adjust="tukey")
+#letter display
+cld(emm)
 
-#0-6
-Pcompmort06All_mod<-aov(score~month*Site*B2015, Pcompmort06All)
-summary(Pcompmort06All_mod)
-TukeyHSD(Pcompmort06All_mod)
+#Pcomp
+Pcomp_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Pcomp_mort)
+anova(Pcomp_mort_mod)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_mort_mod, ~ Site*B2015*month, adjust="tukey")
+#letter display
+cld(emm)
 ```
 
-# Partial mortality rate 
-Mean partial mortality rate at 0-3 months and 3-6 months. 
-## 0-3 Months RATE
-```{r}
-## 1. 0-3 months
+# Partial mortality rate - 
+Mean partial mortality rate for all time poun 
+## 0-3 Months RATE calculation
+```{r} 
+#calc rates
+Rate_Df<-mALLDataPER
+Mcap_rate<-subset(Rate_Df, Species=="Montipora capitata") #subset Mcap
+Pcomp_rate<-subset(Rate_Df, Species=="Porites compressa") #subset Pcomp
+
+
+
+
+
+
+
+NOTWORKING
 #Calc average rate per colony 0-3 months
-m03$Rate03<-(((m03$Month3-m03$Month0)))
+Mcap_rate$Rate1.5<-(((Mcap_rate$Month1.5-Mcap_rate$Month0)))
+Mcap_rate$Rate3<-(((Mcap_rate$Month3-Mcap_rate$Month1.5)))
+Mcap_rate$Rate4.5<-(((Mcap_rate$Month4.5-Mcap_rate$Month3)))
+
+Mcap_rate$Rate03<-(((Mcap_rate$Month3-Mcap_rate$Month0)))
+
 
 #Average the means of the rates. 
 # calc average  tissue loss rate/month in %  per grouping
@@ -356,7 +360,7 @@ m03means <- ddply(m03, c("Site", "Species", "B2015"), summarise,
 #m03means #display table
 
 m03means$code<-paste0(m03means$Site, m03means$B2015, m03means$Species)
-m03means #display table
+m03means #display table 
 ```
 
 ## 3-6 Months RATE
@@ -385,82 +389,169 @@ SI Table 2 and SI Table 12.
 `Mortality Score ~ Reef Site * Bleaching History * Coral Species`  
  *Montipora capiatata*  
 ```{r}
-Mcap_mALLData<-subset(mALLData, Species=="Montipora capitata")   # pull out Mcap
-
+ 
 #Month0
-Mcap_m0<-subset(Mcap_mALLData, month=="Month0")
-Mcap_m0_mod1<-aov(score~Site*B2015, Mcap_m0)
+Mcap_m0<-subset(Mcap_mort, month=="Month0")
+Mcap_m0_mod1<-lm(score~Site*B2015, Mcap_m0)
 summary(Mcap_m0_mod1) 
-TukeyHSD(Mcap_m0_mod1) 
 
 # Month1.5
-Mcap_m1_5<-subset(Mcap_mALLData, month=="Month1.5")
-Mcap_m1_5_mod1<-aov(score~Site*B2015, Mcap_m1_5)
+Mcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
+Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
 summary(Mcap_m1_5_mod1)
-TukeyHSD(Mcap_m1_5_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
 
 #Month3
-Mcap_m3<-subset(Mcap_mALLData, month=="Month3")
-Mcap_m3_mod1<-aov(score~Site*B2015, Mcap_m3)
+Mcap_m3<-subset(Mcap_mort, month=="Month3")
+Mcap_m3_mod1<-lm(score~Site*B2015, Mcap_m3)
 summary(Mcap_m3_mod1)
-TukeyHSD(Mcap_m3_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m3_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
+      #letter display
+      cld(emm)
 
 #Month4.5
-Mcap_m4_5<-subset(Mcap_mALLData, month=="Month4.5")
-Mcap_m4_5_mod1<-aov(score~Site*B2015, Mcap_m4_5)
+Mcap_m4_5<-subset(Mcap_mort, month=="Month4.5")
+Mcap_m4_5_mod1<-lm(score~Site*B2015, Mcap_m4_5)
 summary(Mcap_m4_5_mod1)
-TukeyHSD(Mcap_m4_5_mod1)
 
+ #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m4_5_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
 #Month6
-Mcap_m6<-subset(Mcap_mALLData, month=="Month6")
-Mcap_m6_mod1<-aov(score~Site*B2015, Mcap_m6)
+Mcap_m6<-subset(Mcap_mort, month=="Month6")
+Mcap_m6_mod1<-lm(score~Site*B2015, Mcap_m6)
 summary(Mcap_m6_mod1)
-TukeyHSD(Mcap_m6_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m6_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m6_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month10
+Mcap_m10<-subset(Mcap_mort, month=="Month10")
+Mcap_m10_mod1<-lm(score~Site*B2015, Mcap_m10)
+summary(Mcap_m10_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m10_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m10_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month18
+Mcap_m18<-subset(Mcap_mort, month=="Month18")
+Mcap_m18_mod1<-lm(score~Site*B2015, Mcap_m18)
+summary(Mcap_m18_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m18_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month24
+Mcap_m24<-subset(Mcap_mort, month=="Month24")
+Mcap_m24_mod1<-lm(score~Site*B2015, Mcap_m24)
+summary(Mcap_m24_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m24_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
 ```
 
-*Porites compressa*  
+*Porites compressa*  mixed model
 SI Table 2 and SI Table 12
 ```{r}
-Pcomp_mALLData<-subset(mALLData, Species=="Porites compressa")   # pull out Mcap
 
 #Month0
-Pcomp_m0<-subset(Pcomp_mALLData, month=="Month0")   
-Pcomp_m0_mod1<-aov(score~Site*B2015, Pcomp_m0)
-summary(Pcomp_m0_mod1)
-TukeyHSD(Pcomp_m0_mod1)
+Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
+Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
+summary(Pcomp_m0_mod1) 
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m0_mod1, ~ Site*B2015, adjust="tukey")
+#letter display
+cld(emm)
 
-#Month1.5
-Pcomp_m1_5<-subset(Pcomp_mALLData, month=="Month1.5")   
-Pcomp_m1_5_mod1<-aov(score~Site*B2015, Pcomp_m1_5)
+# Month1.5
+Pcomp_m1_5<-subset(Pcomp_mort, month=="Month1.5")
+Pcomp_m1_5_mod1<-lm(score~Site*B2015, Pcomp_m1_5)
 summary(Pcomp_m1_5_mod1)
-TukeyHSD(Pcomp_m1_5_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m1_5_mod1, ~ Site*B2015, adjust="tukey")
+#letter display
+cld(emm)
 
 #Month3
-Pcomp_m3<-subset(Pcomp_mALLData, month=="Month3")   
-Pcomp_m3_mod1<-aov(score~Site*B2015, Pcomp_m3)
+Pcomp_m3<-subset(Pcomp_mort, month=="Month3")
+Pcomp_m3_mod1<-lm(score~Site*B2015, Pcomp_m3)
 summary(Pcomp_m3_mod1)
-TukeyHSD(Pcomp_m3_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m3_mod1, ~ Site*B2015, adjust="tukey")
+#letter display
+cld(emm)
 
 #Month4.5
-Pcomp_m4_5<-subset(Pcomp_mALLData, month=="Month4.5")   
-Pcomp_m4_5_mod1<-aov(score~Site*B2015, Pcomp_m4_5)
+Pcomp_m4_5<-subset(Pcomp_mort, month=="Month4.5")
+Pcomp_m4_5_mod1<-lm(score~Site*B2015, Pcomp_m4_5)
 summary(Pcomp_m4_5_mod1)
-TukeyHSD(Pcomp_m4_5_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m4_5_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
 
 #Month6
-Pcomp_m6<-subset(Pcomp_mALLData, month=="Month6")   
-Pcomp_m6_mod1<-aov(score~Site*B2015, Pcomp_m6)
+Pcomp_m6<-subset(Pcomp_mort, month=="Month6")
+Pcomp_m6_mod1<-lm(score~Site*B2015, Pcomp_m6)
 summary(Pcomp_m6_mod1)
-TukeyHSD(Pcomp_m6_mod1)
+
+#Month10
+Pcomp_m10<-subset(Pcomp_mort, month=="Month10")
+Pcomp_m10_mod1<-lm(score~Site*B2015, Pcomp_m10)
+summary(Pcomp_m10_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#Month18
+Pcomp_m18<-subset(Pcomp_mort, month=="Month18")
+Pcomp_m18_mod1<-lm(score~Site*B2015, Pcomp_m18)
+summary(Pcomp_m18_mod1)
+
+#Month24
+Pcomp_m24<-subset(Pcomp_mort, month=="Month24")
+Pcomp_m24_mod1<-lm(score~Site*B2015, Pcomp_m24)
+summary(Pcomp_m24_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m24_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
 ```
 
-## Partial mortality rates, by reef Site and Bleaching History  
+# Partial mortality rates, by reef Site and Bleaching History  
 SI Table 13  
 *M. capitata*
-###Months 0-3 
+Changed to all months
 ```{r}
 #subset Mcap
-Mcap_m03<-subset(m03, Species=="Montipora capitata") #subset Mcap
+Mcap_m03<-subset(Mcap_mort, Species=="Montipora capitata") #subset Mcap
 #0-3 months
 Mcap_m03r<-aov(Rate03~Site  * B2015, Mcap_m03)
 summary(Mcap_m03r)
