@@ -569,10 +569,14 @@ SI Table 13
 *M. capitata* RATE
 ```{r}
 #0-3 months
-Mcap_m03rate<-lm(Rate~Site*B2015, Mcap_rate_03)
+Mcap_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Mcap_rate_03)
 summary(Mcap_m03rate)
+anova(Mcap_m03rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Mcap_m03rate, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+    emm = emmeans(Mcap_m03rate, ~ Site, adjust="tukey")
     #letter display
     cld(emm)
     emm = emmeans(Mcap_m03rate, ~ B2015*Site, adjust="tukey")
@@ -580,8 +584,9 @@ summary(Mcap_m03rate)
     cld(emm)
 
 #3-6 months
-Mcap_m36rate<-lm(Rate~Site*B2015, Mcap_rate_36)
+Mcap_m36rate<-lmer(Rate~Site*B2015+(1|Pair), Mcap_rate_36)
 summary(Mcap_m36rate)
+anova(Mcap_m36rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Mcap_m36rate, ~ Site, adjust="tukey")
     #letter display
@@ -593,12 +598,14 @@ summary(Mcap_m36rate)
 SI Table 13   RATE
 ```{r}
 #0-3 months
-Pcomp_m03rate<-lm(Rate~Site*B2015, Pcomp_rate_03)
+Pcomp_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Pcomp_rate_03)
 summary(Pcomp_m03rate)
+anova(Pcomp_m03rate)
 
 #3-6 months
-Pcomp_m36rate<-lm(Rate~Site*B2015, Pcomp_rate_36)
+Pcomp_m36rate<-lmer(Rate~Site*B2015+(1|Pair), Pcomp_rate_36)
 summary(Pcomp_m36rate)
+anova(Pcomp_m36rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Pcomp_m36rate, ~ Site*B2015, adjust="tukey")
     #letter display
@@ -946,17 +953,112 @@ summary(MpigDiff_all_mod1)
 anova(MpigDiff_all_mod1)
 
 #Month0
-MpigPair0<-subset(Mcappig, month =="Month0")           
-MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
-summary(MpigPair0_mod1)
+MpigDiff0<-subset(Mcap_diff, month =="Month0")           
+MpigDiff0_mod1<-lm(diff~Site, MpigDiff0)
+summary(MpigDiff0_mod1)
 
+#Month1.5
+MpigDiff1.5<-subset(Mcap_diff, month =="Month1.5")           
+MpigDiff1.5_mod1<-lm(diff~Site, MpigDiff1.5)
+summary(MpigDiff1.5_mod1)
+
+#Month3
+MpigDiff3<-subset(Mcap_diff, month =="Month3")           
+MpigDiff3_mod1<-lm(diff~Site, MpigDiff3)
+summary(MpigDiff3_mod1)
+
+#Month4.5
+MpigDiff4.5<-subset(Mcap_diff, month =="Month4.5")           
+MpigDiff4.5_mod1<-lm(diff~Site, MpigDiff4.5)
+summary(MpigDiff4.5_mod1)
+
+#Month6
+MpigDiff6<-subset(Mcap_diff, month =="Month6")           
+MpigDiff6_mod1<-lm(diff~Site, MpigDiff6)
+summary(MpigDiff6_mod1)
+
+#Month10
+MpigDiff10<-subset(Mcap_diff, month =="Month10")           
+MpigDiff10_mod1<-lm(diff~Site, MpigDiff10)
+summary(MpigDiff10_mod1)
+
+#Month18
+MpigDiff18<-subset(Mcap_diff, month =="Month18")           
+MpigDiff18_mod1<-lm(diff~Site, MpigDiff18)
+summary(MpigDiff18_mod1)
+
+#Month24
+MpigDiff24<-subset(Mcap_diff, month =="Month24")           
+MpigDiff24_mod1<-lm(diff~Site, MpigDiff24)
+summary(MpigDiff24_mod1)
 
 ```
 
+Pcomp diffs
+```{r}
+#subset the masterDiff
+Pcomp_diff<-subset(diffDat, Species=="Porites compressa")
+Pcomp_diff<-na.omit(Pcomp_diff)
+
+#full models
+#Pcomp
+
+#All
+PpigDiff_all_mod1<-lmer(diff~Site*month+(1|Pair), Pcomp_diff) 
+summary(PpigDiff_all_mod1)
+anova(PpigDiff_all_mod1)
+
+#Month0
+PpigDiff0<-subset(Pcomp_diff, month =="Month0")           
+PpigDiff0_mod1<-lm(diff~Site, PpigDiff0)
+summary(PpigDiff0_mod1)
+
+#Month1.5
+PpigDiff1.5<-subset(Pcomp_diff, month =="Month1.5")           
+PpigDiff1.5_mod1<-lm(diff~Site, PpigDiff1.5)
+summary(PpigDiff1.5_mod1)
+
+#Month3
+PpigDiff3<-subset(Pcomp_diff, month =="Month3")           
+PpigDiff3_mod1<-lm(diff~Site, PpigDiff3)
+summary(PpigDiff3_mod1)
+
+#Month4.5
+PpigDiff4.5<-subset(Pcomp_diff, month =="Month4.5")           
+PpigDiff4.5_mod1<-lm(diff~Site, PpigDiff4.5)
+summary(PpigDiff4.5_mod1)
+
+#Month6
+PpigDiff6<-subset(Pcomp_diff, month =="Month6")           
+PpigDiff6_mod1<-lm(diff~Site, PpigDiff6)
+summary(PpigDiff6_mod1)
+
+#Month10
+PpigDiff10<-subset(Pcomp_diff, month =="Month10")           
+PpigDiff10_mod1<-lm(diff~Site, PpigDiff10)
+summary(PpigDiff10_mod1)
+
+#Month18
+PpigDiff18<-subset(Pcomp_diff, month =="Month18")           
+PpigDiff18_mod1<-lm(diff~Site, PpigDiff18)
+summary(PpigDiff18_mod1)
+
+#Month24
+PpigDiff24<-subset(Pcomp_diff, month =="Month24")           
+PpigDiff24_mod1<-lm(diff~Site, PpigDiff24)
+summary(PpigDiff24_mod1)
+
+```
+
+
+
+
+
+
 Mean pairs mortality scores across the entire project
-```{r, results=TRUE}
+```{r, results=TRUE} 
 #calc average bleaching score per grouping by time point
-diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
+diffmeans <- ddply(diffDat, c("Site", "Species", "month"), summarise, #
                    N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
@@ -1033,6 +1135,14 @@ Plot all diffs plots together: SI Figure 2
 ```{r}
 grid.arrange(Mcapdiffplotc, Pcompdiffplotd,Mcapdiffplotc, Pcompdiffplotd, nrow = 2)
 ```
+
+
+
+
+Do we even keep this now?
+
+
+
 
 SI Table 2: diff~Lagoon
 *M. capitata*
