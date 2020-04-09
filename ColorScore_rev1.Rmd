@@ -1375,15 +1375,17 @@ PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, co
           theme(plot.title = element_text(size=20,face = "italic"));PairplotPcompB
 ```
 
-#Mcap only full model Pairs ARTools
+#Mcap only full model Pairs 
 SI Table 11
 Model: `score~Site*B2015*Species`
 lmer
+
+CHANGE AOV TO LM
 ```{r}
 #set up Pairs data
 Mcappig<-subset(PairDat, Species =="Montipora capitata")            
 
-#All
+#All lmer
 MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
 summary(MpigPair_all_mod1)
 anova(MpigPair_all_mod1)
@@ -1511,10 +1513,18 @@ SI Table 11
 ```{r}
 Pcomppig<- subset(PairDat, Species == "Porites compressa") 
 
-#All timepoints
+#All timepoints lmer
 PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
 summary(PpigPair_all_mod1)
 anova(PpigPair_all_mod1)
+
+#All timepoints glmer
+PpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=poisson(link="log"),Pcomppig)
+PpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=gaussian(link="identity"),Pcomppig)
+
+summary(PpigPair_all_mod1)
+anova(PpigPair_all_mod1)
+
 
 #Month 0
 PpigPair0<-subset(Pcomppig, month =="Month0")            
@@ -1756,6 +1766,8 @@ dMpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Mcap)
 summary(dMpigPairall_mod1)
 anova(dMpigPairall_mod1)
 
+
+
 #Month0
 dMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
 dMpigPair03_mod1<-aov(diff~Site, dMpigPair03)
@@ -1816,7 +1828,7 @@ summary(d_Mcap06_mod1)
 TukeyHSD(d_Mcap06_mod1)
 ```
 
-*P. compressa*
+*P. compressa* diff
 ```{r}
 DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
 

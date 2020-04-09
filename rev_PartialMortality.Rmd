@@ -84,6 +84,10 @@ Time points: 0-3 months,0-6 months
   #Change scores into %
 mALLDataPER<-mALLData
 mALLDataPER$Score<-mALLDataPER$score*100
+
+#recast for rate cals
+mALLData_cast<-dcast(mALLData, TagID+Pair+Species+Site+B2015~month)
+
 ```
 
 Mean partial mortality scores
@@ -282,24 +286,11 @@ Table 3: Full dataset
 Mortality 0-3 months and 0-6 months
 score~month*B2015*lagoon
 
-All
+Set up dateframes
 ```{r}
-#data hist trying all the transformations (spoiler, nothing works)
-#hist(mALLDataPER$Score)
-#mALLDataPER$log<-log(mALLDataPER$score+8)
-#hist(mALLDataPER$log)
-#mALLDataPER$sqrt<-sqrt(mALLDataPER$score)
-##hist(mALLDataPER$sqrt)
-#mALLDataPER$cube<-(mALLDataPER$score+1)^(1/3)
-#hist(mALLDataPER$cube)
-#mALLDataPER$recip<--(1/(mALLDataPER$score))
-#hist(mALLDataPER$recip)
-
-
 #subset by species
 Mcap_mort<-subset(mALLDataPER, Species=="Montipora capitata")
 Pcomp_mort<-subset(mALLDataPER, Species=="Porites compressa")
-
 ```
 
 Table 3
@@ -313,7 +304,7 @@ anova(Mcap_mort_mod)
 emm = emmeans(Mcap_mort_mod, ~ Site*B2015*month, adjust="tukey")
 #letter display
 cld(emm)
-
+ 
 #Pcomp
 Pcomp_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Pcomp_mort)
 anova(Pcomp_mort_mod)
@@ -324,73 +315,101 @@ emm = emmeans(Pcomp_mort_mod, ~ Site*B2015*month, adjust="tukey")
 cld(emm)
 ```
 
-# Partial mortality rate - 
-Mean partial mortality rate for all time poun 
+# Partial mortality RATE - 
+Mean partial mortality rate for all time points 
 ## 0-3 Months RATE calculation
+df: mALLData_cast
+Mcap rate
 ```{r} 
-#calc rates
-Rate_Df<-mALLDataPER
-Mcap_rate<-subset(Rate_Df, Species=="Montipora capitata") #subset Mcap
-Pcomp_rate<-subset(Rate_Df, Species=="Porites compressa") #subset Pcomp
+#Mcap
+Mcap_rate<-subset(mALLData_cast, Species=="Montipora capitata")
+Mcap_rate_03<-Mcap_rate[,c(1,2,4:6,8)] # months 0-3,select cols
+Mcap_rate_03$Rate<-(((Mcap_rate_03$Month3-Mcap_rate_03$Month0))) #cal rate for 3 months
+Mcap_rate_03<-na.omit(Mcap_rate_03) #get rid of NAs
 
-
-
-
-
-
-
-NOTWORKING
-#Calc average rate per colony 0-3 months
-Mcap_rate$Rate1.5<-(((Mcap_rate$Month1.5-Mcap_rate$Month0)))
-Mcap_rate$Rate3<-(((Mcap_rate$Month3-Mcap_rate$Month1.5)))
-Mcap_rate$Rate4.5<-(((Mcap_rate$Month4.5-Mcap_rate$Month3)))
-
-Mcap_rate$Rate03<-(((Mcap_rate$Month3-Mcap_rate$Month0)))
-
+Mcap_rate_36<-Mcap_rate[,c(1,2,4:5,8,10)] # months 3-6,select cols
+Mcap_rate_36$Rate<-(((Mcap_rate_36$Month6-Mcap_rate_36$Month3))) #cal rate for next 3 months
+Mcap_rate_36<-na.omit(Mcap_rate_36) #get rid of NAs
 
 #Average the means of the rates. 
 # calc average  tissue loss rate/month in %  per grouping
-m03means <- ddply(m03, c("Site", "Species", "B2015"), summarise, 
-                   N    = length(Rate03[!is.na(Rate03)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate03, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate03, na.rm=TRUE), #calculate standard deviation
+m03means <- ddply(Mcap_rate_03, c("Site", "B2015"), summarise, 
+                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
                    se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate03, na.rm=TRUE) #calculate max, could also calculate min () if desired
+                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 #m03means #display table
 
-m03means$code<-paste0(m03means$Site, m03means$B2015, m03means$Species)
+m03means$code<-paste0(m03means$Site, m03means$B2015)
 m03means #display table 
-```
 
-## 3-6 Months RATE
-```{r}
 ## 2. months 3-6
-#Rate in %
-m36$Rate36<-(((m36$Month6-m36$Month3)))
-
-#Average the means of the rates. 
+# means of the rates. 
 # calc average  tissue loss rate/month in %  per grouping
-m36means <- ddply(m36, c("Site", "Species", "B2015"), summarise, 
-                   N    = length(Rate36[!is.na(Rate36)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate36, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate36, na.rm=TRUE), #calculate standard deviation
+m36means <- ddply(Mcap_rate_36, c("Site", "B2015"), summarise, 
+                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
                    se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate36, na.rm=TRUE) #calculate max, could also calculate min () if desired
+                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 #m36means #display table
 
 m36means$code<-paste0(m36means$Site, m36means$B2015, m36means$Species)
 m36means #display table
 ```
+Pcomp rate
+```{r}
+#Pcomp
+Pcomp_rate<-subset(mALLData_cast, Species=="Porites compressa")
+Pcomp_rate_03<-Pcomp_rate[,c(1,2,4:6,8)] # months 0-3,select cols
+Pcomp_rate_03$Rate<-(((Pcomp_rate_03$Month3-Pcomp_rate_03$Month0))) #cal rate for 3 months
+Pcomp_rate_03<-na.omit(Pcomp_rate_03) #get rid of NAs
+
+Pcomp_rate_36<-Pcomp_rate[,c(1,2,4:5,8,10)] # months 3-6,select cols
+Pcomp_rate_36$Rate<-(((Pcomp_rate_36$Month6-Pcomp_rate_36$Month3))) #cal rate for next 3 months
+Pcomp_rate_36<-na.omit(Pcomp_rate_36) #get rid of NAs
+
+#Average the means of the rates. 
+# calc average  tissue loss rate/month in %  per grouping
+p03means <- ddply(Pcomp_rate_03, c("Site", "B2015"), summarise, 
+                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#p03means #display table
+
+p03means$code<-paste0(p03means$Site, p03means$B2015)
+p03means #display table 
+
+## 2. months 3-6
+# means of the rates. 
+# calc average  tissue loss rate/month in %  per grouping
+p36means <- ddply(Pcomp_rate_36, c("Site", "B2015"), summarise, 
+                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#p36means #display table
+
+p36means$code<-paste0(p36means$Site, p36means$B2015, p36means$Species)
+p36means #display table
+```
+
 
 #Tissue Loss  Models  
 SI Table 2 and SI Table 12.  
 `Mortality Score ~ Reef Site * Bleaching History * Coral Species`  
  *Montipora capiatata*  
 ```{r}
- 
-#Month0
+  
+#Month0 
 Mcap_m0<-subset(Mcap_mort, month=="Month0")
 Mcap_m0_mod1<-lm(score~Site*B2015, Mcap_m0)
 summary(Mcap_m0_mod1) 
@@ -399,10 +418,10 @@ summary(Mcap_m0_mod1)
 Mcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
 Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
 summary(Mcap_m1_5_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
-#letter display
-cld(emm)
+    #conduct Tukey post hoc test 
+    emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
 
 #Month3
 Mcap_m3<-subset(Mcap_mort, month=="Month3")
@@ -479,7 +498,7 @@ summary(Mcap_m24_mod1)
 *Porites compressa*  mixed model
 SI Table 2 and SI Table 12
 ```{r}
-
+ 
 #Month0
 Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
 Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
@@ -547,163 +566,199 @@ cld(emm)
 
 # Partial mortality rates, by reef Site and Bleaching History  
 SI Table 13  
-*M. capitata*
-Changed to all months
+*M. capitata* RATE
 ```{r}
-#subset Mcap
-Mcap_m03<-subset(Mcap_mort, Species=="Montipora capitata") #subset Mcap
 #0-3 months
-Mcap_m03r<-aov(Rate03~Site  * B2015, Mcap_m03)
-summary(Mcap_m03r)
-TukeyHSD(Mcap_m03r)
-#0-6 months
-#subset Mcap
-#Mcap_m36<-subset(m36, Species=="Montipora capitata") #subset Mcap
-#Mcap_m36r<-aov(Rate36~Site  * B2015, Mcap_m36)
-#summary(Mcap_m36r)
+Mcap_m03rate<-lm(Rate~Site*B2015, Mcap_rate_03)
+summary(Mcap_m03rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(Mcap_m03rate, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+    emm = emmeans(Mcap_m03rate, ~ B2015*Site, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#3-6 months
+Mcap_m36rate<-lm(Rate~Site*B2015, Mcap_rate_36)
+summary(Mcap_m36rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(Mcap_m36rate, ~ Site, adjust="tukey")
+    #letter display
+    cld(emm)
+ 
 ```
 
 *Porites compressa only*
-SI Table 13  
-###Months 0-3
+SI Table 13   RATE
 ```{r}
-#subset Pcomp
-Pcomp_m03<-subset(m03, Species=="Porites compressa") #subset Pcomp
 #0-3 months
-Pcomp_m03r<-aov(Rate03~Site  * B2015, Pcomp_m03)
-summary(Pcomp_m03r)
-TukeyHSD(Pcomp_m03r)
-#0-6 months
-#Pcomp_m36<-subset(m36, Species=="Porites compressa") #subset Pcomp
-#Pcomp_m36r<-aov(Rate36~Site * B2015, Pcomp_m36)
-#summary(Pcomp_m36r)
+Pcomp_m03rate<-lm(Rate~Site*B2015, Pcomp_rate_03)
+summary(Pcomp_m03rate)
+
+#3-6 months
+Pcomp_m36rate<-lm(Rate~Site*B2015, Pcomp_rate_36)
+summary(Pcomp_m36rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(Pcomp_m36rate, ~ Site*B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+ 
 ```
 
-## Pairs comparison   
+# Pairs comparison   
 (only include colonies when both partners of a pair are found)
-
+df: mALLDataPER
 ```{r,results="hide"}
 #Figure out which of the pairs we lose 
-naData<-mALLData1
 #dataset to work from (pull unwanted from)
-pData<-mALLData1
+pData<-mALLDataPER
+
+#subset by month
+M0<-subset(pData,month=="Month0")
+M1.5<-subset(pData,month=="Month1.5")
+M3<-subset(pData,month=="Month3")
+M4.5<-subset(pData,month=="Month4.5")
+M6<-subset(pData,month=="Month6")
+M10<-subset(pData,month=="Month10")
+M18<-subset(pData,month=="Month18")
+M24<-subset(pData,month=="Month24")
+
 
 # Identify which pairs have a partner not found
-# Subset Month0 (two colonies missing values, checked datasheet)
-M0<-subset(naData, month=="Month0") # subset month 0
-M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-
-  # subset month 0
-  M0a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
-  M0<-pData[M0a]
-  M0<-subset(M0, month=="Month0")
-  M0<-na.omit(M0) # remove the NA colums
-  #DIFFS (Nonbleached-Bleached, each pair)
-  M0diff<-M0  
+# month 0
+ M0diff<-M0 
   M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
   M0diff$diff<-M0diff$N-M0diff$Y
 
 # Subset Month1.5 
-M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
-M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-# 113_114, 115_116, 117_118, 7_8
-  # subset month 1.5
-  M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
-  M1.5<-pData[M1.5a]
-  M1.5<-subset(M1.5, month=="Month1.5")
-  M1.5<-na.omit(M1.5) # remove the NA colums
-    M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
-    M1.5<-M1.5[!(M1.5$Pair=="115_116"),]
-    M1.5<-M1.5[!(M1.5$Pair=="117_118"),]
-    M1.5<-M1.5[!(M1.5$Pair=="7_8"),]
-  #DIFFS
+  M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
+ #DIFFS
   M1.5diff<-M1.5  
   M1.5diff<-dcast(M1.5diff, Species+Site+Pair+month~B2015) # cast()
   M1.5diff$diff<-M1.5diff$N-M1.5diff$Y
   
 ## Subset Month3
-M3<-subset(naData, month=="Month3") # subset month 3
-M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#7_8, 213_214,215_216, 217_218, 7_8 <- Pairs where only one was not found :/
-
-  # subset month 3
-  M3a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
-  M3<-pData[M3a]
-  M3<-subset(M3, month=="Month3")
-  M3<-na.omit(M3) # remove the NA colums
-  # remove  Pairs where only one was not found :/
+  # remove 
   M3<-M3[!(M3$Pair=="7_8"),]
-  M3<-M3[!(M3$Pair=="213_214"),]
-  M3<-M3[!(M3$Pair=="215_216"),]
-  M3<-M3[!(M3$Pair=="217_218"),]
-  M3<-M3[!(M3$Pair=="7_8"),]
+  M3<-M3[!(M3$Pair=="113_114"),]
+  M3<-M3[!(M3$Pair=="255_256"),]
+  M3<-M3[!(M3$Pair=="259_260"),]
   #DIFFS
   M3diff<-M3  
   M3diff<-dcast(M3diff, Species+Site+Pair+month~B2015) # cast()
   M3diff$diff<-M3diff$N-M3diff$Y
 
 ## Subset Month 4.5
-M4.5<-subset(naData, month=="Month4.5") # subset month 3
-M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-# 15_16, 17_18, 19_20, 9_10<- both not found
-# 107_108, 255_256, 261_262, 263_264, 267_268, 7_8, 82_83<- Pairs where only one was not found not 
-
-  # subset month 4.5
-  M4.5a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
-  M4.5<-pData[M4.5a]
-  M4.5<-subset(M4.5, month=="Month4.5")
-  M4.5<-na.omit(M4.5) # remove the NA colums
-  # remove # 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83
-  M4.5<-M4.5[!(M4.5$Pair=="107_108"),]
+  # remove 
+  M4.5<-M4.5[!(M4.5$Pair=="7_8"),]
+  M4.5<-M4.5[!(M4.5$Pair=="113_114"),]
   M4.5<-M4.5[!(M4.5$Pair=="255_256"),]
-  M4.5<-M4.5[!(M4.5$Pair=="261_262"),]
+  M4.5<-M4.5[!(M4.5$Pair=="259_260"),]
   M4.5<-M4.5[!(M4.5$Pair=="263_264"),]
   M4.5<-M4.5[!(M4.5$Pair=="267_268"),]
   M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
-  M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
-  #DIFFS
+ #DIFFS
   M4.5diff<-M4.5  
   M4.5diff<-dcast(M4.5diff, Species+Site+Pair+month~B2015) # cast()
   M4.5diff$diff<-M4.5diff$N-M4.5diff$Y
-  
 
 # Subset month 6
-M6<-subset(naData, month=="Month6")
-M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#15_16, 17_18, 19_20, 215_216, 82_83, 9_10
-#115_116, 119_120, 13_14,213_214,217_218,263_264, 267_268, 7_8   <-  <-Pairs where only one was not found
-
-  # Subset month 6
-  M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
-  M6<-pData[M6a]
-  M6<-subset(M6, month=="Month6")
-  M6<-na.omit(M6) # remove the NA colums
-  ##115_116, 119_120, 13_14,213_214,217_218,263_264, 267_268, 7_8  
+  # remove 
+  M6<-M6[!(M6$Pair=="111_112"),] # remove the other partner
   M6<-M6[!(M6$Pair=="115_116"),]
   M6<-M6[!(M6$Pair=="119_120"),]
-  M6<-M6[!(M6$Pair=="13_14"),]
-  M6<-M6[!(M6$Pair=="213_214"),]
-  M6<-M6[!(M6$Pair=="217_218"),]
+  M6<-M6[!(M6$Pair=="207_208"),]
+  M6<-M6[!(M6$Pair=="255_256"),]
+  M6<-M6[!(M6$Pair=="259_260"),]
   M6<-M6[!(M6$Pair=="263_264"),]
   M6<-M6[!(M6$Pair=="267_268"),]
-  M6<-M6[!(M6$Pair=="7_8"),]
+  M6<-M6[!(M6$Pair=="263_264"),]
   #DIFFS
   M6diff<-M6  
   M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
   M6diff$diff<-M6diff$N-M6diff$Y
 
-```
+  # Subset month 10
+  #M10<-na.omit(M10) # remove the NA colums
+  # remove 253_254, 259_260, 161_262, 263_264, 267_268, 271_272, 273_274, 275_276,277_278 , 31_2
+  M10<-M10[!(M10$Pair=="253_254"),] # remove the other partner
+  M10<-M10[!(M10$Pair=="259_260"),]
+  M10<-M10[!(M10$Pair=="113_114"),]
+  M10<-M10[!(M10$Pair=="161_262"),]
+  M10<-M10[!(M10$Pair=="263_264"),]
+  M10<-M10[!(M10$Pair=="267_268"),]
+  M10<-M10[!(M10$Pair=="271_272"),]
+  M10<-M10[!(M10$Pair=="273_274"),]
+  M10<-M10[!(M10$Pair=="275_276"),]
+  M10<-M10[!(M10$Pair=="277_278"),]
+  M10<-M10[!(M10$Pair=="31_32"),]
+  M10<-M10[!(M10$Pair=="261_262"),]
 
-Mean bleaching scores across the entire project, pairs
-```{r}
-MortPairs<-rbind(M0,M1.5,M3,M4.5,M6)
-PairDat<-MortPairs
-MortPairs06<-rbind(M0,M1.5,M3,M4.5,M6)
-MortPairs03<-rbind(M0,M1.5,M3)
-MortPairs36<-rbind(M3,M4.5,M6)
+  #DIFFS
+  M10diff<-M10  
+  M10diff<-dcast(M10diff, Species+Site+Pair+month~B2015) # cast()
+  M10diff$diff<-M10diff$N-M10diff$Y
+  
+# Subset month 18
+  M18<-M18[!(M18$Pair=="253_254"),] # remove the other partner
+  M18<-M18[!(M18$Pair=="259_260"),]
+  M18<-M18[!(M18$Pair=="161_262"),]
+  M18<-M18[!(M18$Pair=="263_264"),]
+  M18<-M18[!(M18$Pair=="267_268"),]
+  M18<-M18[!(M18$Pair=="271_272"),]
+  M18<-M18[!(M18$Pair=="273_274"),]
+  M18<-M18[!(M18$Pair=="275_276"),]
+  M18<-M18[!(M18$Pair=="277_278"),]
+  M18<-M18[!(M18$Pair=="31_2"),]
+  M18<-M18[!(M18$Pair=="115_116"),]
+  M18<-M18[!(M18$Pair=="119_120"),]
+  M18<-M18[!(M18$Pair=="261_262"),]
+  M18<-M18[!(M18$Pair=="269_270"),]
+  M18<-M18[!(M18$Pair=="101_102"),]
+  M18<-M18[!(M18$Pair=="117_118"),]
+  M18<-M18[!(M18$Pair=="265_266"),]
+  M18<-M18[!(M18$Pair=="19_20"),]
+  M18<-M18[!(M18$Pair=="205_206"),]
+  M18<-M18[!(M18$Pair=="223_224"),]
+  M18<-M18[!(M18$Pair=="39_40"),]
+    M18<-M18[!(M18$Pair=="103_104"),]
+
+  #DIFFS
+  M18diff<-M18  
+  M18diff<-dcast(M18diff, Species+Site+Pair+month~B2015) # cast()
+  M18diff$diff<-M18diff$N-M18diff$Y
+  
+  # Subset month 24
+  M24<-M24[!(M24$Pair=="107_108"),] # remove the other partner
+  M24<-M24[!(M24$Pair=="13_14"),]
+  M24<-M24[!(M24$Pair=="223_224"),]
+  M24<-M24[!(M24$Pair=="231_232"),]
+  M24<-M24[!(M24$Pair=="261_262"),]
+  M24<-M24[!(M24$Pair=="263_264"),]
+  M24<-M24[!(M24$Pair=="265_266"),]
+  M24<-M24[!(M24$Pair=="283_284"),]
+  M24<-M24[!(M24$Pair=="289_290"),]
+  M24<-M24[!(M24$Pair=="31_32"),]
+  M24<-M24[!(M24$Pair=="33_34"),]
+  M24<-M24[!(M24$Pair=="39_40"),]
+  M24<-M24[!(M24$Pair=="76_77"),]
+  M24<-M24[!(M24$Pair=="78_79"),]
+  #DIFFS
+  M24diff<-M24  
+  M24diff<-dcast(M24diff, Species+Site+Pair+month~B2015) # cast()
+  M24diff$diff<-M24diff$N-M24diff$Y
+  
+#make dfs  
+PairDat<-rbind(M0,M1.5,M3,M4.5,M6,M10,M18,M24)
+diffDat<-rbind(M0diff,M1.5diff,M3diff,M4.5diff,M6diff,M10diff,M18diff,M24diff)
+
+
+
+#Mean bleaching scores across the entire project
 
 #calc average bleaching score per grouping by time point
-pairmeans <- ddply(MortPairs, c("Site", "Species", "B2015", "month"), summarise, #
+pairmeans <- ddply(PairDat, c("Site", "Species", "B2015", "month"), summarise, #
                    N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(score, na.rm=TRUE), #calculate standard deviation
@@ -714,104 +769,150 @@ pairmeans <- ddply(MortPairs, c("Site", "Species", "B2015", "month"), summarise,
 
 pairmeans$code<-paste0(pairmeans$Site, pairmeans$B2015, pairmeans$Species)
 pairmeans #display table
+
 ```
+
 
 SI Table 2:
 *M. capitata* partial mortality, pairs
+lm() and lmer()
 ```{r}
 #set up Pairs data
-McapMort<-subset(PairDat, Species =="Montipora capitata")            
+Mcappig<-subset(PairDat, Species =="Montipora capitata")            
  
-#Does bleaching score differ at Month 0?
-MmortPair0<-subset(McapMort, month =="Month0")           
-MmortPair0_mod1<-aov(score~Site*B2015, MmortPair0)
-summary(MmortPair0_mod1)
-TukeyHSD(MmortPair0_mod1) #post hoc
+#All
+MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID), Mcappig) #if we add in (1|Pair) we get failure to converge
+summary(MpigPair_all_mod1)
+anova(MpigPair_all_mod1)
+
+#Month0
+MpigPair0<-subset(Mcappig, month =="Month0")           
+MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
+summary(MpigPair0_mod1)
 
 #Month1.5
-MmortPair1.5<-subset(McapMort, month =="Month1.5")
-MmortPair1.5_mod1<-aov(score~Site*B2015, MmortPair1.5)
-summary(MmortPair1.5_mod1)
-TukeyHSD(MmortPair1.5_mod1)
+MpigPair1.5<-subset(Mcappig, month =="Month1.5")
+MpigPair1.5_mod1<-lm(score~Site*B2015, MpigPair1.5)
+summary(MpigPair1.5_mod1)
 
 #Month3
-MmortPair3<-subset(McapMort, month =="Month3")
-MmortPair3_mod1<-aov(score~Site*B2015, MmortPair3)
-summary(MmortPair3_mod1)
-TukeyHSD(MmortPair3_mod1)
+MpigPair3<-subset(Mcappig, month =="Month3")
+MpigPair3_mod1<-lm(score~Site*B2015, MpigPair3)
+summary(MpigPair3_mod1)
 
 #Month4.5
-MmortPair4.5<-subset(McapMort, month =="Month4.5")
-# ANOVA
-MmortPair4.5_mod1<-aov(score~Site*B2015, MmortPair4.5)
-summary(MmortPair4.5_mod1)
-TukeyHSD(MmortPair4.5_mod1)
+MpigPair4.5<-subset(Mcappig, month =="Month4.5")
+MpigPair4.5_mod1<-lm(score~Site*B2015, MpigPair4.5)
+summary(MpigPair4.5_mod1)
 
 #Month6
-# pull out Month6
-MmortPair6<-subset(McapMort, month =="Month6")
-MmortPair6_mod1<-aov(score~Site*B2015, MmortPair6)
-summary(MmortPair6_mod1)
-TukeyHSD(MmortPair6_mod1)
+MpigPair6<-subset(Mcappig, month =="Month6")
+MpigPair6_mod1<-lm(score~Site*B2015, MpigPair6)
+summary(MpigPair6_mod1)
+
+#Month10
+MpigPair10<-subset(Mcappig, month =="Month10")
+MpigPair10_mod1<-lm(score~Site*B2015, MpigPair10)
+summary(MpigPair10_mod1)
+
+#Month18
+MpigPair18<-subset(Mcappig, month =="Month18")
+# anova
+MpigPair18_mod1<-lm(score~Site*B2015, MpigPair18)
+summary(MpigPair18_mod1)
+
+#Month24
+MpigPair24<-subset(Mcappig, month =="Month24")
+# anova
+MpigPair24_mod1<-lm(score~Site*B2015, MpigPair24)
+summary(MpigPair24_mod1)
 ```
+
+
 
 SI Table 2  
 *P. compressa* partial mortality pairs  
 Model: `score~Site*B2015`  
 ```{r}
-PcompMort<- subset(PairDat, Species == "Porites compressa") 
+#set up Pairs data
+Pcomppig<-subset(PairDat, Species =="Porites compressa")            
 
-###Does bleaching score differ at Month 0?
-PmortPair0<-subset(PcompMort, month =="Month0")            
-PmortPair0_mod1<-aov(score~Site*B2015, PmortPair0)
-summary(PmortPair0_mod1)
-TukeyHSD(PmortPair0_mod1) 
+#All
+PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID), Pcomppig) #if we add in (1|Pair) we get failure to converge
+summary(PpigPair_all_mod1)
+anova(PpigPair_all_mod1)
+
+#Month0
+PpigPair0<-subset(Pcomppig, month =="Month0")           
+PpigPair0_mod1<-lm(score~Site*B2015, PpigPair0)
+summary(PpigPair0_mod1)
 
 #Month1.5
-PmortPair1.5<-subset(PcompMort, month =="Month1.5")
-PmortPair1.5_mod1<-aov(score~Site*B2015, PmortPair1.5)
-summary(PmortPair1.5_mod1)
-TukeyHSD(PmortPair1.5_mod1)
+PpigPair1.5<-subset(Pcomppig, month =="Month1.5")
+PpigPair1.5_mod1<-lm(score~Site*B2015, PpigPair1.5)
+summary(PpigPair1.5_mod1)
 
 #Month3
-PmortPair3<-subset(PcompMort, month =="Month3")
-PmortPair3_mod1<-aov(score~Site*B2015, PmortPair3)
-summary(PmortPair3_mod1)
-TukeyHSD(PmortPair3_mod1)
+PpigPair3<-subset(Pcomppig, month =="Month3")
+PpigPair3_mod1<-lm(score~Site*B2015, PpigPair3)
+summary(PpigPair3_mod1)
 
 #Month4.5
-PmortPair4.5<-subset(PcompMort, month =="Month4.5")
-PmortPair4.5_mod1<-aov(score~Site*B2015, PmortPair4.5)
-summary(PmortPair4.5_mod1)
-TukeyHSD(PmortPair4.5_mod1)
+PpigPair4.5<-subset(Pcomppig, month =="Month4.5")
+PpigPair4.5_mod1<-lm(score~Site*B2015, PpigPair4.5)
+summary(PpigPair4.5_mod1)
 
 #Month6
-PmortPair6<-subset(PcompMort, month =="Month6")
-PmortPair6_mod1<-aov(score~Site*B2015, PmortPair6)
-summary(PmortPair6_mod1)
-TukeyHSD(PmortPair6_mod1)
+PpigPair6<-subset(Pcomppig, month =="Month6")
+PpigPair6_mod1<-lm(score~Site*B2015, PpigPair6)
+summary(PpigPair6_mod1)
+
+#Month10
+PpigPair10<-subset(Pcomppig, month =="Month10")
+PpigPair10_mod1<-lm(score~Site*B2015, PpigPair10)
+summary(PpigPair10_mod1)
+
+#Month18
+PpigPair18<-subset(Pcomppig, month =="Month18")
+# anova
+PpigPair18_mod1<-lm(score~Site*B2015, PpigPair18)
+summary(PpigPair18_mod1)
+
+#Month24
+PpigPair24<-subset(Pcomppig, month =="Month24")
+# anova
+PpigPair24_mod1<-lm(score~Site*B2015, PpigPair24)
+summary(PpigPair24_mod1)
 ```
 
-Table 3:
-0-3 and 0-6 month differences, Pairs data
-Partial mortality 0-3 months and 0-6 months
+#Table 3: DIFFS
+Pairs data
+Partial mortalityall months
 score~month*B2015*lagoon
 *M. capitata* Pairs
-```{r}
-Mcapmort03Pairs<-subset(MortPairs03, Species=="Montipora capitata")
-Mcapmort06Pairs<-subset(MortPairs06, Species=="Montipora capitata") 
-Mcapmort36Pairs<-subset(MortPairs36, Species=="Montipora capitata") 
+df Mcappig
+# DIFF DATA
+Differences (nonbleached-bleached) for pairs
+df: diffDat
+Mean bleaching scores across the entire project
+```{r, results=TRUE}
+#calc average bleaching score per grouping by time point
+diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
+                   N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(diff, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+#ballmeans #display table
 
-#0-3 
-Mcapmort03Pairs_mod<-aov(score~month*Site*B2015, Mcapmort03Pairs)
-summary(Mcapmort03Pairs_mod)
-#0-6
-Mcapmort06Pairs_mod<-aov(score~month*Site*B2015, Mcapmort06Pairs)
-summary(Mcapmort06Pairs_mod)
+diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
+diffmeans #display table
 ```
 
+
 Table 3:
-*P. compressa* Pairs
+*P. compressa* Pairs  - cut since we use full model? 
 ```{r}
 Pcompmort03Pairs<-subset(MortPairs03, Species=="Porites compressa") 
 Pcompmort06Pairs<-subset(MortPairs06, Species=="Porites compressa")
@@ -827,19 +928,35 @@ summary(Pcompmort06Pairs_mod)
 ```
 
 
-# Diffs data: Nonbleached-bleach for pairs
-*M. capitata*
+# Diffs data: pairs
+dfs
 ```{r}
-# data = combine all the M#diffs into a single dataframe 
-DiffData06<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff)
-DiffData03<-rbind(M0diff, M1.5diff, M3diff)
-DiffData36<-rbind(M3diff, M4.5diff, M6diff)
+#subset the masterDiff
+Mcap_diff<-subset(diffDat, Species=="Montipora capitata")
+Mcap_diff<-na.omit(Mcap_diff)
+Pcomp_diff<-subset(diffDat, Species=="Porites compressa")
+Pcomp_diff<-na.omit(Pcomp_diff)
+
+#full models
+#Mcap
+
+#All
+MpigDiff_all_mod1<-lmer(diff~Site*month+(1|Pair), Mcap_diff) 
+summary(MpigDiff_all_mod1)
+anova(MpigDiff_all_mod1)
+
+#Month0
+MpigPair0<-subset(Mcappig, month =="Month0")           
+MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
+summary(MpigPair0_mod1)
+
+
 ```
 
 Mean pairs mortality scores across the entire project
 ```{r, results=TRUE}
 #calc average bleaching score per grouping by time point
-diffmeans <- ddply(DiffData06, c("Site", "Species", "month"), summarise, #
+diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
                    N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
@@ -867,7 +984,7 @@ Mcapdiffplotc<-ggplot(data=Mcapdiffplotb, aes(x=month, y=mean, group = code, col
   scale_color_manual(values=c("black","black"))+
   ylab("Difference score") +
     xlab("") + #Label the X Axis
-    ylim(-.5, .5) + #set Y limits
+   #ylim(-.5, .5) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
