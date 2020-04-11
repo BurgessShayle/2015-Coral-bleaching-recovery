@@ -126,21 +126,21 @@ mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Sp
 Figure 5
 ```{r}
 #subset for Mcap only
-Mcap024Allplot<-subset(mALLmeansPER, Species=="Montipora capitata")     #subset Mcap
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month0"]<-0              # new col with month #s only
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month1.5"]<-1.5  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month3"]<-3 
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month4.5"]<-4.5
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month6"]<-6  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month10"]<-10  
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month18"]<-18
-Mcap024Allplot$Month[Mcap024Allplot$month=="Month24"]<-24 
+Mcap024AllplotM<-subset(mALLmeansPER, Species=="Montipora capitata")     #subset Mcap
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month0"]<-0              # new col with month #s only
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month1.5"]<-1.5  
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month3"]<-3 
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month4.5"]<-4.5
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month6"]<-6  
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month10"]<-10  
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month18"]<-18
+Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month24"]<-24 
 
 
 #PR13
-Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
+Mcap024AllplotPR13M<-subset(Mcap024AllplotM, Site==13)
 #PR4
-Mcap024AllplotPR4<-subset(Mcap024Allplot, Site==4)
+Mcap024AllplotPR4M<-subset(Mcap024AllplotM, Site==4)
 ```
 
 Mcap PR13
@@ -172,7 +172,7 @@ McapOuter<-mallplotMcapPR13 + theme(legend.position = "none") #remove legend
 
 Mcap PR4
 ```{r}
-ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
+ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -195,9 +195,9 @@ ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=Month, y=mean, group = cod
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ggtitle("Inner Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4
-McapInner<-ballplotMcapPR4 + theme(legend.position = "none") #remove legend
-McapInner
+          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4M
+McapInnerMORT<-ballplotMcapPR4M + theme(legend.position = "none") #remove legend
+McapInnerMORT
 ```
 
 ###*Porites compressa*  
