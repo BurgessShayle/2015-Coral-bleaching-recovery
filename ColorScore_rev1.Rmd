@@ -289,62 +289,62 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 
 #Table 2  
 PIGMENTATION
-glmer(score~month*B2015*lagoon+(1|TagID)
-Mcap_df  full model, GLMER
+lmer(score~month*B2015*lagoon+(1|TagID)
+Mcap_df  full model, lmer
 ```{r}
 #MONTH AS FACTOR
 Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
 summary(Mcap_df_mod)
 anova(Mcap_df_mod) #pvals
 
-qqPlot(residuals(Mcap_df_mod))    # DO WE INCLUDE RESIDUALS QQPLOTS, THEY SHOW WE ARE NOT NORMAL (GOOD AND BAD)
+#####qqPlot(residuals(Mcap_df_mod))    # DO WE INCLUDE RESIDUALS QQPLOTS, THEY SHOW WE ARE NOT NORMAL
 
 #post hoc
 test<-emmeans(Mcap_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
 cld(test, Letter="abcde")
 
- emm<-emmeans(Mcap_df_mod,  ~ B2015*Site|time, adjust="Tukey")
+ emm<-emmeans(Mcap_df_mod,  ~ B2015*Site*month, adjust="Tukey")
 cld(emm, Letter="abcdefg")
 
 test1a<-emmeans(Mcap_df_mod, "time")
 cld(test1a, Letter="abcdefg")
 
 ## trying GLMER
-Mcap_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=gaussian, data=Mcap_df)
-Anova(Mcap_df_mod_glmer) #pvals use Anova()
+#Mcap_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=poisson(link="log"), data=Mcap_df)
+#Anova(Mcap_df_mod_glmer) #pvals use Anova()
   #conduct Tukey post hoc test 
-  emm = emmeans(Mcap_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
+ # emm = emmeans(Mcap_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
   #letter display
-  cld(emm, Letter="abcdefghijklmnopq")
+  #cld(emm, Letter="abcdefghijklmnopq")
 ```
 
-Pcomp_df - full model GLMER
+Pcomp_df - full model lmer()
 ```{r}
 #pcomp full model
 Pcomp_df_mod2<-lmer(score~B2015*Site*month+(1|TagID), data=Pcomp_df)
 summary(Pcomp_df_mod2)
 anova(Pcomp_df_mod2) #pvals
 
-#post hoc
-test<-emmeans(Pcomp_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
-cld(test, Letter="abcde")
+#post hoc <- if you can use full do that!!!!!!!
+emmeans(Pcomp_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
+cld(Letter="abcde")
 
-test2<-emmeans(Pcomp_df_mod, "Site","B2015","time") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
-cld(test2, Letter="abcde")
+emm<-emmeans(Pcomp_df_mod,  ~ B2015*Site*month) #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
+cld(emm)
 
 
 ## trying GLMER
-Pcomp_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=gaussian, data=Pcomp_df)
-Anova(Pcomp_df_mod_glmer) #pvals use Anova()
+#Pcomp_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=gaussian, data=Pcomp_df)
+#Anova(Pcomp_df_mod_glmer) #pvals use Anova()
 
   #conduct Tukey post hoc test 
-  emm = emmeans(Pcomp_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
+#  emm = emmeans(Pcomp_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
   #letter display
-  cld(emm)
+#  cld(emm)
 ```
 
 Models at each timepoint -NEW
-Mcap lmer/lm
+Mcap lm
 ```{r} 
 Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
@@ -369,6 +369,7 @@ anova(Month1.5_mcap1.5)
 #Month3
 Month3_mcap3<-lm(score~Site*B2015, Mcap_3)
 summary(Month3_mcap3)
+anova(Month3_mcap3)
 
 #Month4.5
 Month4.5_mcap4.5<-lm(score~Site*B2015, Mcap_4.5)
@@ -377,6 +378,7 @@ summary(Month4.5_mcap4.5)
 #Month6
 Month6_mcap6<-lm(score~Site*B2015, Mcap_6)
 summary(Month6_mcap6)
+anova(Month6_mcap6)
 
 #Month10
 Month10_mcap10<-lm(score~Site*B2015, Mcap_10)
@@ -385,13 +387,15 @@ summary(Month10_mcap10)
 #Month18
 Month18_mcap18<-lm(score~Site*B2015, Mcap_18)
 summary(Month18_mcap18)
+anova(Month18_mcap18)
 
 #Month24
-Month24_mcap24<-lm(score~Site*B2015, Mcap_24)
-summary(Month24_mcap24)
+Month24_mcap24t<-lm(score~Site*B2015, Mcap_24)
+summary(Month24_mcap24t)
+anova(Month24_mcap24t)
 ```
 
-Mcap glm (by month)
+Mcap glm (by month) DELETE
 ```{r} 
 Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
@@ -436,7 +440,7 @@ gMonth24_mcap24<-glm(score~Site*B2015, family=gaussian, Mcap_24)
 Anova(gMonth24_mcap24)
 ```
 
-Pcomp glm (by month)
+Pcomp lm (by month)
 ```{r} 
 Pcomp_0<-subset(Pcomp_df, month=="Month0")
 Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
@@ -449,36 +453,45 @@ Pcomp_24<-subset(Pcomp_df, month=="Month24")
 
 
 #Month0
-gMonth0_Pcomp0<-glm(score~Site*B2015, family=gaussian, Pcomp_0)
-Anova(gMonth0_Pcomp0)
+Month0_Pcomp0<-lm(score~Site*B2015, Pcomp_0)
+summary(Month0_Pcomp0)
+anova(Month0_Pcomp0)
 
 #Month1.5
-gMonth1.5_Pcomp1.5<-glm(score~Site*B2015,family=gaussian, Pcomp_1.5)
-Anova(gMonth1.5_Pcomp1.5)
+Month1.5_Pcomp1.5<-lm(score~Site*B2015, Pcomp_1.5)
+summary(Month1.5_Pcomp1.5)
+anova(Month1.5_Pcomp1.5)
 
 #Month3
-gMonth3_Pcomp3<-glm(score~Site*B2015,family=gaussian, Pcomp_3)
-Anova(gMonth3_Pcomp3)
+Month3_Pcomp3<-lm(score~Site*B2015, Pcomp_3)
+summary(Month3_Pcomp3)
+anova(Month3_Pcomp3)
 
 #Month4.5
-gMonth4.5_Pcomp4.5<-glm(score~Site*B2015,family=gaussian, Pcomp_4.5)
-Anova(gMonth4.5_Pcomp4.5)
+Month4.5_Pcomp4.5<-lm(score~Site*B2015, Pcomp_4.5)
+summary(Month4.5_Pcomp4.5)
+anova(Month4.5_Pcomp4.5)
 
 #Month6
-gMonth6_Pcomp6<-glm(score~Site*B2015, family=gaussian,Pcomp_6)
-Anova(gMonth6_Pcomp6)
+Month6_Pcomp6<-lm(score~Site*B2015,Pcomp_6)
+summary(Month6_Pcomp6)
+anova(Month6_Pcomp6)
 
 #Month10
-gMonth10_Pcomp10<-glm(score~Site*B2015,family=gaussian, Pcomp_10)
-Anova(gMonth10_Pcomp10)
+Month10_Pcomp10<-lm(score~Site*B2015, Pcomp_10)
+summary(Month10_Pcomp10)
+anova(Month10_Pcomp10)
 
 #Month18
-gMonth18_Pcomp18<-glm(score~Site*B2015, family=gaussian,Pcomp_18)
-Anova(gMonth18_Pcomp18)
+Month18_Pcomp18<-lm(score~Site*B2015,Pcomp_18)
+summary(Month18_Pcomp18)
+anova(Month18_Pcomp18)
 
 #Month24
-gMonth24_Pcomp24<-glm(score~Site*B2015,family=gaussian, Pcomp_24)
-Anova(gMonth24_Pcomp24)
+Month24_Pcomp24<-lm(score~Site*B2015,Pcomp_24)
+summary(Month24_Pcomp24)
+anova(Month24_Pcomp24)
+
 ```
 
 # Pairs only bleaching recovery models
@@ -785,52 +798,53 @@ anova(MpigPair_all_mod1)
  
 #Month0
 MpigPair0<-subset(Mcappig, month =="Month0")           
-MpigPair0_mod1<-aov(score~Site*B2015, MpigPair0)
+MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
 summary(MpigPair0_mod1)
+anova(MpigPair0_mod1)
 
 #Month1.5
 MpigPair1.5<-subset(Mcappig, month =="Month1.5")
-MpigPair1.5_mod1<-aov(score~Site*B2015, MpigPair1.5)
+MpigPair1.5_mod1<-lm(score~Site*B2015, MpigPair1.5)
 summary(MpigPair1.5_mod1)
+anova(MpigPair1.5_mod1)
 
 #Month3
 MpigPair3<-subset(Mcappig, month =="Month3")
-MpigPair3_mod1<-aov(score~Site*B2015, MpigPair3)
+MpigPair3_mod1<-lm(score~Site*B2015, MpigPair3)
 summary(MpigPair3_mod1)
+anova(MpigPair3_mod1)
 
 #Month4.5
 MpigPair4.5<-subset(Mcappig, month =="Month4.5")
-MpigPair4.5_mod1<-aov(score~Site*B2015, MpigPair4.5)
+MpigPair4.5_mod1<-lm(score~Site*B2015, MpigPair4.5)
 summary(MpigPair4.5_mod1)
+anova(MpigPair4.5_mod1)
 
 #Month6
 MpigPair6<-subset(Mcappig, month =="Month6")
-# anova
-MpigPair6_mod1<-aov(score~Site*B2015, MpigPair6)
+MpigPair6_mod1<-lm(score~Site*B2015, MpigPair6)
 summary(MpigPair6_mod1)
+anova(MpigPair6_mod1)
 
 #Month10
 MpigPair10<-subset(Mcappig, month =="Month10")
-# anova
-MpigPair10_mod1<-aov(score~Site*B2015, MpigPair10)
+MpigPair10_mod1<-lm(score~Site*B2015, MpigPair10)
 summary(MpigPair10_mod1)
-TukeyHSD(MpigPair10_mod1)
+anova(MpigPair10_mod1)
 
 #Month18
 MpigPair18<-subset(Mcappig, month =="Month18")
-# anova
-MpigPair18_mod1<-aov(score~Site*B2015, MpigPair18)
+MpigPair18_mod1<-lm(score~Site*B2015, MpigPair18)
 summary(MpigPair18_mod1)
-TukeyHSD(MpigPair18_mod1)
+anova(MpigPair18_mod1)
 
 #Month24
 MpigPair24<-subset(Mcappig, month =="Month24")
-# anova
-MpigPair24_mod1<-aov(score~Site*B2015, MpigPair24)
+MpigPair24_mod1<-lm(score~Site*B2015, MpigPair24)
 summary(MpigPair24_mod1)
-TukeyHSD(MpigPair24_mod1)
+anova(MpigPair24_mod1)
 ```
-GLMER/glm
+GLMER/glm DELETE
 ```{r}
            
 #All glmer
@@ -897,58 +911,51 @@ PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
 summary(PpigPair_all_mod1)
 anova(PpigPair_all_mod1)
 
-#All timepoints glmer
-PpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=poisson(link="log"),Pcomppig)
-PpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=gaussian(link="identity"),Pcomppig)
-
-summary(PpigPair_all_mod1)
-anova(PpigPair_all_mod1)
-
 
 #Month 0
 PpigPair0<-subset(Pcomppig, month =="Month0")            
-PpigPair0_mod1<-aov(score~Site*B2015, PpigPair0)
+PpigPair0_mod1<-lm(score~Site*B2015, PpigPair0)
 summary(PpigPair0_mod1)
-TukeyHSD(PpigPair0_mod1) #post hoc
+anova(PpigPair0_mod1) 
 
 #Month1.5
 PpigPair1.5<-subset(Pcomppig, month =="Month1.5")
-PpigPair1.5_mod1<-aov(score~Site*B2015, PpigPair1.5)
+PpigPair1.5_mod1<-lm(score~Site*B2015, PpigPair1.5)
 summary(PpigPair1.5_mod1)
-TukeyHSD(PpigPair1.5_mod1)
+anova(PpigPair1.5_mod1)
 
 #Month3
 PpigPair3<-subset(Pcomppig, month =="Month3")
-PpigPair3_mod1<-aov(score~Site*B2015, PpigPair3)
-summary(PpigPair3_mod1)
+PpigPair3_mod1<-lm(score~Site*B2015, PpigPair3)
+anova(PpigPair3_mod1)
 
 #Month4.5
 PpigPair4.5<-subset(Pcomppig, month =="Month4.5")
-PpigPair4.5_mod1<-aov(score~Site*B2015, PpigPair4.5)
+PpigPair4.5_mod1<-lm(score~Site*B2015, PpigPair4.5)
 summary(PpigPair4.5_mod1)
-TukeyHSD(PpigPair4.5_mod1)
+anova(PpigPair4.5_mod1)
 
 #Month6
 PpigPair6<-subset(Pcomppig, month =="Month6")
-PpigPair6_mod1<-aov(score~Site*B2015, PpigPair6)
-summary(PpigPair6_mod1)
+PpigPair6_mod1<-lm(score~Site*B2015, PpigPair6)
+anova(PpigPair6_mod1)
 
 #Month10
 PpigPair10<-subset(Pcomppig, month =="Month10")
-PpigPair10_mod1<-aov(score~Site*B2015, PpigPair10)
-summary(PpigPair10_mod1)
+PpigPair10_mod1<-lm(score~Site*B2015, PpigPair10)
+anova(PpigPair10_mod1)
 
 #Month18
 PpigPair18<-subset(Pcomppig, month =="Month18")
-PpigPair18_mod1<-aov(score~Site*B2015, PpigPair18)
-summary(PpigPair18_mod1)
+PpigPair18_mod1<-lm(score~Site*B2015, PpigPair18)
+anova(PpigPair18_mod1)
 
 #Month24
 PpigPair24<-subset(Pcomppig, month =="Month24")
-PpigPair24_mod1<-aov(score~Site*B2015, PpigPair24)
-summary(PpigPair24_mod1)
+PpigPair24_mod1<-lm(score~Site*B2015, PpigPair24)
+anova(PpigPair24_mod1)
 ```
-GLMER
+GLMER Delete
 ```{r}
            
 #All glmer
@@ -1109,48 +1116,50 @@ anova(dMpigPairall_mod1)
 dMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
 dMpigPair03_mod1<-lm(diff~Site, dMpigPair03)
 summary(dMpigPair03_mod1)
+anova(dMpigPair03_mod1)
 
 #Month1.5
 dMpigPair1.5<-subset(DiffData_all_Mcap, month =="Month1.5")
 dMpigPair1.5_mod1<-lm(diff~Site, dMpigPair1.5)
 summary(dMpigPair1.5_mod1)
+anova(dMpigPair1.5_mod1)
 
 #Month3
 dMpigPair3<-subset(DiffData_all_Mcap, month =="Month3")
 dMpigPair3_mod1<-lm(diff~Site, dMpigPair3)
 summary(dMpigPair3_mod1)
-TukeyHSD(dMpigPair3_mod1)
+anova(dMpigPair3_mod1)
 
 #Month4.5
 dMpigPair4.5<-subset(DiffData_all_Mcap, month =="Month4.5")
 dMpigPair4.5_mod1<-lm(diff~Site, dMpigPair4.5)
-summary(dMpigPair4.5_mod1)
+anova(dMpigPair4.5_mod1)
 
 #Month6
 dMpigPair6<-subset(DiffData_all_Mcap, month =="Month6")
 dMpigPair6_mod1<-lm(diff~Site, dMpigPair6)
 summary(dMpigPair6_mod1)
-TukeyHSD(dMpigPair6_mod1)
+anova(dMpigPair6_mod1)
 
 #Month10
 dMpigPair10<-subset(DiffData_all_Mcap, month =="Month10")
 dMpigPair10_mod1<-lm(diff~Site, dMpigPair10)
 summary(dMpigPair10_mod1)
-TukeyHSD(dMpigPair10_mod1)
+anova(dMpigPair10_mod1)
 
 #Month18
 dMpigPair18<-subset(DiffData_all_Mcap, month =="Month18")
 dMpigPair18_mod1<-lm(diff~Site, dMpigPair18)
 summary(dMpigPair18_mod1)
-TukeyHSD(dMpigPair18_mod1)
+anova(dMpigPair18_mod1)
 
 #Month24
 dMpigPair24<-subset(DiffData_all_Mcap, month =="Month24")
 dMpigPair24_mod1<-lm(diff~Site, dMpigPair24)
 summary(dMpigPair24_mod1)
-TukeyHSD(dMpigPair24_mod1)
+anova(dMpigPair24_mod1)
 ```
-Mcap glmer
+Mcap glmer DELETE
 ```{r} 
 DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
 
@@ -1222,48 +1231,51 @@ anova(dPpigPairall_mod1)
 dPpigPair03<-subset(DiffData_all_Pcomp, month =="Month0")          
 dPpigPair03_mod1<-lm(diff~Site, dPpigPair03)
 summary(dPpigPair03_mod1)
+anova(dPpigPair03_mod1)
 
 #Month1.5
 dPpigPair1.5<-subset(DiffData_all_Pcomp, month =="Month1.5")
 dPpigPair1.5_mod1<-lm(diff~Site, dPpigPair1.5)
 summary(dPpigPair1.5_mod1)
+anova(dPpigPair1.5_mod1)
 
 #Month3
 dPpigPair3<-subset(DiffData_all_Pcomp, month =="Month3")
 dPpigPair3_mod1<-lm(diff~Site, dPpigPair3)
 summary(dPpigPair3_mod1)
-TukeyHSD(dPpigPair3_mod1)
+anova(dPpigPair3_mod1)
 
 #Month4.5
 dPpigPair4.5<-subset(DiffData_all_Pcomp, month =="Month4.5")
 dPpigPair4.5_mod1<-lm(diff~Site, dPpigPair4.5)
 summary(dPpigPair4.5_mod1)
+anova(dPpigPair4.5_mod1)
 
 #Month6
 dPpigPair6<-subset(DiffData_all_Pcomp, month =="Month6")
 dPpigPair6_mod1<-lm(diff~Site, dPpigPair6)
 summary(dPpigPair6_mod1)
-TukeyHSD(dPpigPair6_mod1)
+anova(dPpigPair6_mod1)
 
 #Month10
 dPpigPair10<-subset(DiffData_all_Pcomp, month =="Month10")
 dPpigPair10_mod1<-lm(diff~Site, dPpigPair10)
 summary(dPpigPair10_mod1)
-TukeyHSD(dPpigPair10_mod1)
+anova(dPpigPair10_mod1)
 
 #Month18
 dPpigPair18<-subset(DiffData_all_Pcomp, month =="Month18")
 dPpigPair18_mod1<-lm(diff~Site, dPpigPair18)
 summary(dPpigPair18_mod1)
-TukeyHSD(dPpigPair18_mod1)
+anova(dPpigPair18_mod1)
 
 #Month24
 dPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
 dPpigPair24_mod1<-lm(diff~Site, dPpigPair24)
 summary(dPpigPair24_mod1)
-TukeyHSD(dPpigPair24_mod1)
+anova(dPpigPair24_mod1)
 ```
-Pcomp glmer
+Pcomp glmer dELTE
 ```{r} 
 DiffData_all_Pcomp<-subset(All_diff, Species=="Montipora capitata")
 
