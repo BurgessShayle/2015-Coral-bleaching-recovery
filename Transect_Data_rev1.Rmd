@@ -307,8 +307,8 @@ Mcap by Lagoon at each month
 ```{r}
 #FULL MODEL 
 
-Mcap_transect_mod<-lmer(sum~Reef*MonthFactor+(1|Depth)+(1|Rep), data=BS_mcap)
-anova(Mcap_transect_mod)
+#Mcap_transect_mod<-lmer(sum~Reef*MonthFactor+(1|Depth)+(1|Rep), data=BS_mcap)
+#anova(Mcap_transect_mod)
 
 #conduct Tukey post hoc test 
     emm = emmeans(Mcap_transect_mod, ~ MonthFactor, adjust="tukey")
@@ -316,7 +316,7 @@ anova(Mcap_transect_mod)
     cld(emm)
    
     
-#full mod with species added - do we want this?
+#full mod with species added - 
     Mcap_transect_mod_species<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
 anova(Mcap_transect_mod_species)
     #conduct Tukey post hoc test 
@@ -372,7 +372,7 @@ anova(pcomp_transect_mod)
     emm = emmeans(pcomp_transect_mod, ~Reef*MonthFactor, adjust="tukey")
     #letter display
     cld(emm)
-    
+    pairs(emm)
 #pcomp 0
 BSc_pcomp0<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="0"))
 anova(BSc_pcomp0)
