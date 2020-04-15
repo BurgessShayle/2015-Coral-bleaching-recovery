@@ -374,6 +374,7 @@ anova(Month3_mcap3)
 #Month4.5
 Month4.5_mcap4.5<-lm(score~Site*B2015, Mcap_4.5)
 summary(Month4.5_mcap4.5)
+anova(Month4.5_mcap4.5)
 
 #Month6
 Month6_mcap6<-lm(score~Site*B2015, Mcap_6)
@@ -383,6 +384,7 @@ anova(Month6_mcap6)
 #Month10
 Month10_mcap10<-lm(score~Site*B2015, Mcap_10)
 summary(Month10_mcap10)
+anova(Month10_mcap10)
 
 #Month18
 Month18_mcap18<-lm(score~Site*B2015, Mcap_18)
@@ -785,7 +787,7 @@ PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, co
 ```
 #Mcap: Pairs 
 SI Table 1 
-Model: glmer(score~Site*B2015*Species+(1|Pair)+(1|TagID))
+Model: lmer(score~Site*B2015*Species+(1|Pair)+(1|TagID))
 LMER/lm
 ```{r}
 #set up Pairs data
@@ -910,7 +912,6 @@ Pcomppig<- subset(PairDat, Species == "Porites compressa")
 PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
 summary(PpigPair_all_mod1)
 anova(PpigPair_all_mod1)
-
 
 #Month 0
 PpigPair0<-subset(Pcomppig, month =="Month0")            
@@ -1220,7 +1221,7 @@ Anova(gdMpigPair24_mod1)
 Pcomp diff
 lmer
 ```{r} 
-DiffData_all_Pcomp<-subset(All_diff, Species=="Porites capitata")
+DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
 
 #Month ALL
 dPpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Pcomp)

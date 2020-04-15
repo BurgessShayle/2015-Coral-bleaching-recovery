@@ -97,7 +97,7 @@ rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10"
 # Transect color score prevalence plots
 SI Figure 1, Mean Table
 ```{r, results="hide", message=FALSE}
-# Calc. mean, sd,se
+# Calc. mean, sd,se 
 # remove rep column
 repcol<-c("Species", "Reef", "Month","MonthFactor", "Bleaching_status","Percent")
   rDataPlot<-rData1[repcol]
@@ -270,10 +270,10 @@ Plot all four together: for Manuscript SI Figure 1
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
-#Coral bleaching prevalence
+#Coral bleaching prevalence  
+set up df:
 Here we sum White (W) + Pale (P) to get the total % of affected corals.
 ```{r}
-
 rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]    # Remove Healthy 
 rData2$code<-paste0(rData2$Species, rData2$Month, rData2$MonthFactor, rData2$Depth, rData2$Reef, rData2$Rep)#create a code for groups by Species, Month, Depth, Reef, Rep 
 rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))# Group Data: combine P and B %s
@@ -315,6 +315,16 @@ anova(Mcap_transect_mod)
     #letter display
     cld(emm)
    
+    
+#full mod with species added - do we want this?
+    Mcap_transect_mod_species<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
+anova(Mcap_transect_mod_species)
+    #conduct Tukey post hoc test 
+    emm = emmeans(Mcap_transect_mod_species, ~ MonthFactor:Species, adjust="tukey")
+    #letter display
+    cld(emm)
+         pairs(emm)
+
     
 #mcap 0
 BSc_mcap0<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="0"))
@@ -430,6 +440,7 @@ anova(CoralCoverMod)
     emm = emmeans(CoralCoverMod, ~ Reef, adjust="tukey")
     #letter display
     cld(emm)
+    pairs(emm)
 
 ```
 
@@ -439,6 +450,7 @@ SI Table 3: CoralCover~Lagoon at peak bleaching
 ccMonth0<-subset(ccData, Month=="0")
 ccMonth0<-lmer(CoralCover~Reef+(1|Depth)+(1|Survey), ccMonth0)
 anova(ccMonth0) 
+
 ```
 
 SI Table 4: CoralCover~Month at each Lagoon  <- delete
@@ -478,6 +490,7 @@ anova(WhiteMod)
     emm = emmeans(WhiteMod, ~ Reef*Species*MonthFactor, adjust="tukey")
     #letter display
     cld(emm)
+    pairs(emm)
     
     
     
@@ -547,6 +560,7 @@ anova(SeverityMod)
     emm = emmeans(SeverityMod, ~ Species*MonthFactor*Reef, adjust="tukey")
     #letter display
     cld(emm)
+    pairs(emm)
  #conduct Tukey post hoc test 
     emm = emmeans(SeverityMod, ~ Reef*Species, adjust="tukey")
     #letter display
