@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, results="hide", message=FALSE}
-#rm(list=ls(all=TRUE)) 
+rm(list=ls(all=TRUE)) 
 library("reshape2") #reshape data
 library("plotrix") #functions in tapply
 library("ggplot2") #plotting
@@ -69,7 +69,7 @@ mData$Site<-as.factor(mData$Site)
 ```
 
 # Partial mortality rate  
-Time points: 0-3 months,0-6 months
+set up df
 ```{r,results="hide", }
 #all Months
   mALL<-mData
@@ -107,8 +107,6 @@ mALLmeans$code<-paste0(mALLmeans$Site, mALLmeans$B2015, mALLmeans$Species)
 ## Partial mortality score means 0-24 months by species/site/bleaching history
 For paper figure, as percents
 ```{r, results=TRUE}
-
-
 #calc average tissue loss score per grouping by time point
 mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summarise, #
                    N    = length(Score[!is.na(Score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
@@ -123,7 +121,7 @@ mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Sp
 ```
 
 ###*Montipora capitata*: Partial mortality
-Figure 5
+Figure 5, setup df
 ```{r}
 #subset for Mcap only
 Mcap024AllplotM<-subset(mALLmeansPER, Species=="Montipora capitata")     #subset Mcap
@@ -138,14 +136,14 @@ Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month24"]<-24
 
 
 #PR13
-Mcap024AllplotPR13M<-subset(Mcap024AllplotM, Site==13)
+Mcap024AllplotPR13M<-subset(Mcap024AllplotM, Site=="13")
 #PR4
 Mcap024AllplotPR4M<-subset(Mcap024AllplotM, Site==4)
 ```
 
-Mcap PR13
+Mcap PR13 plot
 ```{r}
-mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13M, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=3)+
@@ -170,8 +168,9 @@ mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=Month, y=mean, group = c
 McapOuter<-mallplotMcapPR13 + theme(legend.position = "none") #remove legend
 ```
 
-Mcap PR4
+Mcap PR4 plot
 ```{r}
+
 ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -200,8 +199,8 @@ McapInnerMORT<-ballplotMcapPR4M + theme(legend.position = "none") #remove legend
 McapInnerMORT
 ```
 
-###*Porites compressa*  
-Figure 5
+*Porites compressa*  
+Figure 5, set up df
 ```{r}
 Pcomp024Allplot<-subset(mALLmeansPER, Species=="Porites compressa")
 
@@ -219,7 +218,7 @@ Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
 Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
 ```
 
-Pcomp PR13
+Pcomp PR13 plot
 ```{r}
 b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -246,7 +245,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group =
 PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
 ```
 
-Pcomp PR4
+Pcomp PR4 plot
 ```{r}
 b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -295,6 +294,7 @@ Pcomp_mort<-subset(mALLDataPER, Species=="Porites compressa")
 
 Table 3
 Mortality across all timepoints, Mcap and Pcomp
+LMER
 ```{r}
 #Mcap
 Mcap_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Mcap_mort)
@@ -314,13 +314,426 @@ emm = emmeans(Pcomp_mort_mod, ~ Site*B2015*month, adjust="tukey")
 #letter display
 cld(emm)
 ```
+GLMER Delete
+```{r}
+#Mcap
+gMcap_mort_mod<-glmer(Score~Site*B2015*month+(1|TagID), family = gaussian, Mcap_mort)
+Anova(gMcap_mort_mod)
+
+#conduct Tukey post hoc test 
+emm = emmeans(gMcap_mort_mod, ~ Site*B2015*month, adjust="tukey")
+#letter display
+cld(emm)
+ 
+#Pcomp
+gPcomp_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), family = gaussian, Pcomp_mort)
+Anova(Pcomp_mort_mod)
+
+#conduct Tukey post hoc test 
+emm = emmeans(gPcomp_mort_mod, ~ Site*B2015*month, adjust="tukey")
+#letter display
+cld(emm)
+```
+
+
+#Tissue Loss  Models  by month
+SI Table 2 and SI Table 12.  
+*Montipora capiatata*  
+lm
+```{r} 
+#Month0 
+Mcap_m0<-subset(Mcap_mort, month=="Month0")
+Mcap_m0_mod1<-lm(score~Site*B2015, Mcap_m0)
+summary(Mcap_m0_mod1) 
+anova(Mcap_m0_mod1) 
+
+# Month1.5
+Mcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
+Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
+summary(Mcap_m1_5_mod1)
+anova(Mcap_m1_5_mod1)
+
+    #conduct Tukey post hoc test 
+    emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#Month3
+Mcap_m3<-subset(Mcap_mort, month=="Month3")
+Mcap_m3_mod1<-lm(score~Site*B2015, Mcap_m3)
+summary(Mcap_m3_mod1)
+anova(Mcap_m3_mod1)
+
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m3_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      emm = emmeans(Mcap_m3_mod1, ~ Site, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
+      #letter display
+      cld(emm)
+
+#Month4.5
+Mcap_m4_5<-subset(Mcap_mort, month=="Month4.5")
+Mcap_m4_5_mod1<-lm(score~Site*B2015, Mcap_m4_5)
+summary(Mcap_m4_5_mod1)
+anova(Mcap_m4_5_mod1)
+ #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m4_5_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month6
+Mcap_m6<-subset(Mcap_mort, month=="Month6")
+Mcap_m6_mod1<-lm(score~Site*B2015, Mcap_m6)
+summary(Mcap_m6_mod1)
+anova(Mcap_m6_mod1)
+
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m6_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m6_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month10
+Mcap_m10<-subset(Mcap_mort, month=="Month10")
+Mcap_m10_mod1<-lm(score~Site*B2015, Mcap_m10)
+summary(Mcap_m10_mod1)
+anova(Mcap_m10_mod1)
+
+  #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m10_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m10_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month18
+Mcap_m18<-subset(Mcap_mort, month=="Month18")
+Mcap_m18_mod1<-lm(score~Site*B2015, Mcap_m18)
+summary(Mcap_m18_mod1)
+anova(Mcap_m18_mod1)
+
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m18_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month24
+Mcap_m24<-subset(Mcap_mort, month=="Month24")
+Mcap_m24_mod1<-lm(score~Site*B2015, Mcap_m24)
+summary(Mcap_m24_mod1)
+anova(Mcap_m24_mod1)
+
+      #conduct Tukey post hoc test 
+      emm = emmeans(Mcap_m24_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+```
+glmer() delete
+```{r}
+#Month0 
+gMcap_m0<-subset(Mcap_mort, month=="Month0")
+gMcap_m0_mod1<-glm(score~Site*B2015, family=gaussian, gMcap_m0)
+summary(gMcap_m0_mod1) 
+Anova(gMcap_m0_mod1)
+
+# Month1.5
+gMcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
+gMcap_m1_5_mod1<-glm(score~Site*B2015, family=gaussian, gMcap_m1_5)
+summary(gMcap_m1_5_mod1)
+Anova(gMcap_m1_5_mod1)
+    #conduct Tukey post hoc test 
+    emm = emmeans(gMcap_m1_5_mod1, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#Month3
+gMcap_m3<-subset(Mcap_mort, month=="Month3")
+gMcap_m3_mod1<-glm(score~Site*B2015,family=gaussian, gMcap_m3)
+summary(gMcap_m3_mod1)
+Anova(gMcap_m3_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m3_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
+      #letter display
+      cld(emm)
+
+#Month4.5
+gMcap_m4_5<-subset(Mcap_mort, month=="Month4.5")
+gMcap_m4_5_mod1<-glm(score~Site*B2015, family=gaussian,gMcap_m4_5)
+summary(gMcap_m4_5_mod1)
+Anova(gMcap_m4_5_mod1)
+ #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m4_5_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month6
+gMcap_m6<-subset(Mcap_mort, month=="Month6")
+gMcap_m6_mod1<-glm(score~Site*B2015, family=gaussian,gMcap_m6)
+summary(gMcap_m6_mod1)
+Anova(gMcap_m6_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m6_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m6_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month10
+gMcap_m10<-subset(Mcap_mort, month=="Month10")
+gMcap_m10_mod1<-glm(score~Site*B2015,family=gaussian, gMcap_m10)
+summary(gMcap_m10_mod1)
+Anova(gMcap_m10_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m10_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m10_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month18
+gMcap_m18<-subset(Mcap_mort, month=="Month18")
+gMcap_m18_mod1<-glm(score~Site*B2015, family=gaussian,gMcap_m18)
+summary(gMcap_m18_mod1)
+Anova(gMcap_m18_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m18_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month24
+gMcap_m24<-subset(Mcap_mort, month=="Month24")
+gMcap_m24_mod1<-glm(score~Site*B2015, family=gaussian,gMcap_m24)
+summary(gMcap_m24_mod1)
+Anova(gMcap_m24_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gMcap_m24_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+```
+
+*Porites compressa*  mixed model
+SI Table 2 and SI Table 12
+lm()
+```{r}
+ 
+#Month0
+Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
+Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
+summary(Pcomp_m0_mod1) 
+anova(Pcomp_m0_mod1) 
+
+  #conduct Tukey post hoc test 
+  emm = emmeans(Pcomp_m0_mod1, ~ Site*B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+
+# Month1.5
+Pcomp_m1_5<-subset(Pcomp_mort, month=="Month1.5")
+Pcomp_m1_5_mod1<-lm(score~Site*B2015, Pcomp_m1_5)
+summary(Pcomp_m1_5_mod1)
+anova(Pcomp_m1_5_mod1)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m1_5_mod1, ~ Site*B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#Month3
+Pcomp_m3<-subset(Pcomp_mort, month=="Month3")
+Pcomp_m3_mod1<-lm(score~Site*B2015, Pcomp_m3)
+summary(Pcomp_m3_mod1)
+anova(Pcomp_m3_mod1)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m3_mod1, ~ Site*B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#Month4.5
+Pcomp_m4_5<-subset(Pcomp_mort, month=="Month4.5")
+Pcomp_m4_5_mod1<-lm(score~Site*B2015, Pcomp_m4_5)
+summary(Pcomp_m4_5_mod1)
+anova(Pcomp_m4_5_mod1)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m4_5_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#Month6
+Pcomp_m6<-subset(Pcomp_mort, month=="Month6")
+Pcomp_m6_mod1<-lm(score~Site*B2015, Pcomp_m6)
+summary(Pcomp_m6_mod1)
+anova(Pcomp_m6_mod1)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m6_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+
+#Month10
+Pcomp_m10<-subset(Pcomp_mort, month=="Month10")
+Pcomp_m10_mod1<-lm(score~Site*B2015, Pcomp_m10)
+summary(Pcomp_m10_mod1)
+anova(Pcomp_m10_mod1)
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+
+#Month18
+Pcomp_m18<-subset(Pcomp_mort, month=="Month18")
+Pcomp_m18_mod1<-lm(score~Site*B2015, Pcomp_m18)
+summary(Pcomp_m18_mod1)
+anova(Pcomp_m18_mod1)
+
+#Month24
+Pcomp_m24<-subset(Pcomp_mort, month=="Month24")
+Pcomp_m24_mod1<-lm(score~Site*B2015, Pcomp_m24)
+summary(Pcomp_m24_mod1)
+anova(Pcomp_m24_mod1)
+
+#conduct Tukey post hoc test 
+emm = emmeans(Pcomp_m24_mod1, ~ B2015, adjust="tukey")
+#letter display
+cld(emm)
+```
+
+glmer()
+```{r}
+#Month0 
+gPcomp_m0<-subset(Pcomp_mort, month=="Month0")
+gPcomp_m0_mod1<-glm(score~Site*B2015, family=gaussian, gPcomp_m0)
+summary(gPcomp_m0_mod1) 
+Anova(gPcomp_m0_mod1)
+
+# Month1.5
+gPcomp_m1_5<-subset(Pcomp_mort, month=="Month1.5")
+gPcomp_m1_5_mod1<-glm(score~Site*B2015, family=gaussian, gPcomp_m1_5)
+summary(gPcomp_m1_5_mod1)
+Anova(gPcomp_m1_5_mod1)
+    #conduct Tukey post hoc test 
+    emm = emmeans(gPcomp_m1_5_mod1, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#Month3
+gPcomp_m3<-subset(Pcomp_mort, month=="Month3")
+gPcomp_m3_mod1<-glm(score~Site*B2015,family=gaussian, gPcomp_m3)
+summary(gPcomp_m3_mod1)
+Anova(gPcomp_m3_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m3_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
+      #letter display
+      cld(emm)
+
+#Month4.5
+gPcomp_m4_5<-subset(Pcomp_mort, month=="Month4.5")
+gPcomp_m4_5_mod1<-glm(score~Site*B2015, family=gaussian,gPcomp_m4_5)
+summary(gPcomp_m4_5_mod1)
+Anova(gPcomp_m4_5_mod1)
+ #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m4_5_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month6
+gPcomp_m6<-subset(Pcomp_mort, month=="Month6")
+gPcomp_m6_mod1<-glm(score~Site*B2015, family=gaussian,gPcomp_m6)
+summary(gPcomp_m6_mod1)
+Anova(gPcomp_m6_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m6_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m6_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month10
+gPcomp_m10<-subset(Pcomp_mort, month=="Month10")
+gPcomp_m10_mod1<-glm(score~Site*B2015,family=gaussian, gPcomp_m10)
+summary(gPcomp_m10_mod1)
+Anova(gPcomp_m10_mod1)
+  #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m10_mod1, ~ B2015, adjust="tukey") #B2015
+      #letter display
+      cld(emm)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m10_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month18
+gPcomp_m18<-subset(Pcomp_mort, month=="Month18")
+gPcomp_m18_mod1<-glm(score~Site*B2015, family=gaussian,gPcomp_m18)
+summary(gPcomp_m18_mod1)
+Anova(gPcomp_m18_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m18_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+      
+#Month24
+gPcomp_m24<-subset(Pcomp_mort, month=="Month24")
+gPcomp_m24_mod1<-glm(score~Site*B2015, family=gaussian,gPcomp_m24)
+summary(gPcomp_m24_mod1)
+Anova(gPcomp_m24_mod1)
+      #conduct Tukey post hoc test 
+      emm = emmeans(gPcomp_m24_mod1, ~ Site, adjust="tukey")  #Site
+      #letter display
+      cld(emm)
+```
+
+
 
 # Partial mortality RATE - 
 Mean partial mortality rate for all time points 
-## 0-3 Months RATE calculation
+0-3 Months RATE calculation
 df: mALLData_cast
-Mcap rate
-```{r} 
+Mcap rate plot
+```{r}  
 #Mcap
 Mcap_rate<-subset(mALLData_cast, Species=="Montipora capitata")
 Mcap_rate_03<-Mcap_rate[,c(1,2,4:6,8)] # months 0-3,select cols
@@ -360,8 +773,8 @@ m36means <- ddply(Mcap_rate_36, c("Site", "B2015"), summarise,
 m36means$code<-paste0(m36means$Site, m36means$B2015, m36means$Species)
 m36means #display table
 ```
-Pcomp rate
-```{r}
+Pcomp rate plot
+```{r} 
 #Pcomp
 Pcomp_rate<-subset(mALLData_cast, Species=="Porites compressa")
 Pcomp_rate_03<-Pcomp_rate[,c(1,2,4:6,8)] # months 0-3,select cols
@@ -402,176 +815,15 @@ p36means$code<-paste0(p36means$Site, p36means$B2015, p36means$Species)
 p36means #display table
 ```
 
-
-#Tissue Loss  Models  
-SI Table 2 and SI Table 12.  
-`Mortality Score ~ Reef Site * Bleaching History * Coral Species`  
- *Montipora capiatata*  
-```{r}
-  
-#Month0 
-Mcap_m0<-subset(Mcap_mort, month=="Month0")
-Mcap_m0_mod1<-lm(score~Site*B2015, Mcap_m0)
-summary(Mcap_m0_mod1) 
-
-# Month1.5
-Mcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
-Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
-summary(Mcap_m1_5_mod1)
-    #conduct Tukey post hoc test 
-    emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
-    #letter display
-    cld(emm)
-
-#Month3
-Mcap_m3<-subset(Mcap_mort, month=="Month3")
-Mcap_m3_mod1<-lm(score~Site*B2015, Mcap_m3)
-summary(Mcap_m3_mod1)
-  #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m3_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
-      cld(emm)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
-      #letter display
-      cld(emm)
-
-#Month4.5
-Mcap_m4_5<-subset(Mcap_mort, month=="Month4.5")
-Mcap_m4_5_mod1<-lm(score~Site*B2015, Mcap_m4_5)
-summary(Mcap_m4_5_mod1)
-
- #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
-      cld(emm)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m4_5_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
-      cld(emm)
-      
-#Month6
-Mcap_m6<-subset(Mcap_mort, month=="Month6")
-Mcap_m6_mod1<-lm(score~Site*B2015, Mcap_m6)
-summary(Mcap_m6_mod1)
-  #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m6_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
-      cld(emm)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m6_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
-      cld(emm)
-      
-#Month10
-Mcap_m10<-subset(Mcap_mort, month=="Month10")
-Mcap_m10_mod1<-lm(score~Site*B2015, Mcap_m10)
-summary(Mcap_m10_mod1)
-  #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m10_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
-      cld(emm)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m10_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
-      cld(emm)
-      
-#Month18
-Mcap_m18<-subset(Mcap_mort, month=="Month18")
-Mcap_m18_mod1<-lm(score~Site*B2015, Mcap_m18)
-summary(Mcap_m18_mod1)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m18_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
-      cld(emm)
-      
-#Month24
-Mcap_m24<-subset(Mcap_mort, month=="Month24")
-Mcap_m24_mod1<-lm(score~Site*B2015, Mcap_m24)
-summary(Mcap_m24_mod1)
-      #conduct Tukey post hoc test 
-      emm = emmeans(Mcap_m24_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
-      cld(emm)
-```
-
-*Porites compressa*  mixed model
-SI Table 2 and SI Table 12
-```{r}
- 
-#Month0
-Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
-Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
-summary(Pcomp_m0_mod1) 
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m0_mod1, ~ Site*B2015, adjust="tukey")
-#letter display
-cld(emm)
-
-# Month1.5
-Pcomp_m1_5<-subset(Pcomp_mort, month=="Month1.5")
-Pcomp_m1_5_mod1<-lm(score~Site*B2015, Pcomp_m1_5)
-summary(Pcomp_m1_5_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m1_5_mod1, ~ Site*B2015, adjust="tukey")
-#letter display
-cld(emm)
-
-#Month3
-Pcomp_m3<-subset(Pcomp_mort, month=="Month3")
-Pcomp_m3_mod1<-lm(score~Site*B2015, Pcomp_m3)
-summary(Pcomp_m3_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m3_mod1, ~ Site*B2015, adjust="tukey")
-#letter display
-cld(emm)
-
-#Month4.5
-Pcomp_m4_5<-subset(Pcomp_mort, month=="Month4.5")
-Pcomp_m4_5_mod1<-lm(score~Site*B2015, Pcomp_m4_5)
-summary(Pcomp_m4_5_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m4_5_mod1, ~ B2015, adjust="tukey")
-#letter display
-cld(emm)
-
-#Month6
-Pcomp_m6<-subset(Pcomp_mort, month=="Month6")
-Pcomp_m6_mod1<-lm(score~Site*B2015, Pcomp_m6)
-summary(Pcomp_m6_mod1)
-
-#Month10
-Pcomp_m10<-subset(Pcomp_mort, month=="Month10")
-Pcomp_m10_mod1<-lm(score~Site*B2015, Pcomp_m10)
-summary(Pcomp_m10_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
-#letter display
-cld(emm)
-
-#Month18
-Pcomp_m18<-subset(Pcomp_mort, month=="Month18")
-Pcomp_m18_mod1<-lm(score~Site*B2015, Pcomp_m18)
-summary(Pcomp_m18_mod1)
-
-#Month24
-Pcomp_m24<-subset(Pcomp_mort, month=="Month24")
-Pcomp_m24_mod1<-lm(score~Site*B2015, Pcomp_m24)
-summary(Pcomp_m24_mod1)
-#conduct Tukey post hoc test 
-emm = emmeans(Pcomp_m24_mod1, ~ B2015, adjust="tukey")
-#letter display
-cld(emm)
-```
-
 # Partial mortality rates, by reef Site and Bleaching History  
 SI Table 13  
-*M. capitata* RATE
-```{r}
+*M. capitata* RATE lmer
+```{r} 
 #0-3 months
 Mcap_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Mcap_rate_03)
 summary(Mcap_m03rate)
 anova(Mcap_m03rate)
+
  #conduct Tukey post hoc test 
     emm = emmeans(Mcap_m03rate, ~ B2015, adjust="tukey")
     #letter display
@@ -593,11 +845,38 @@ anova(Mcap_m36rate)
     cld(emm)
  
 ```
+glmer delete
+```{r}
+#0-3 months
+gMcap_m03rate<-glmer(Rate~Site*B2015+(1|Pair), family=gaussian, Mcap_rate_03)
+summary(gMcap_m03rate)
+Anova(gMcap_m03rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(gMcap_m03rate, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+    emm = emmeans(gMcap_m03rate, ~ Site, adjust="tukey")
+    #letter display
+    cld(emm)
+    emm = emmeans(Mcap_m03rate, ~ B2015*Site, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#3-6 months
+gMcap_m36rate<-glmer(Rate~Site*B2015+(1|Pair), family = gaussian, Mcap_rate_36)
+summary(gMcap_m36rate)
+Anova(gMcap_m36rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(gMcap_m36rate, ~ Site, adjust="tukey")
+    #letter display
+    cld(emm)
+ 
+```
 
 *Porites compressa only*
 SI Table 13   RATE
 ```{r}
-#0-3 months
+#0-3 months 
 Pcomp_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Pcomp_rate_03)
 summary(Pcomp_m03rate)
 anova(Pcomp_m03rate)
@@ -608,6 +887,31 @@ summary(Pcomp_m36rate)
 anova(Pcomp_m36rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Pcomp_m36rate, ~ Site*B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+ 
+```
+glmer delete
+
+```{r}
+#0-3 months
+gPcomp_m03rate<-glmer(Rate~Site*B2015+(1|Pair), family=gaussian, Pcomp_rate_03)
+summary(gPcomp_m03rate)
+Anova(gPcomp_m03rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(gPcomp_m03rate, ~ B2015, adjust="tukey")
+    #letter display
+    cld(emm)
+
+#3-6 months
+gPcomp_m36rate<-glmer(Rate~Site*B2015+(1|Pair), family = gaussian, Pcomp_rate_36)
+summary(gPcomp_m36rate)
+Anova(gPcomp_m36rate)
+ #conduct Tukey post hoc test 
+    emm = emmeans(gPcomp_m36rate, ~ Site, adjust="tukey")
+    #letter display
+    cld(emm)
+    emm = emmeans(gPcomp_m36rate, ~ Site*B2015, adjust="tukey")
     #letter display
     cld(emm)
  
@@ -783,59 +1087,173 @@ pairmeans #display table
 SI Table 2:
 *M. capitata* partial mortality, pairs
 lm() and lmer()
-```{r}
+```{r} 
 #set up Pairs data
 Mcappig<-subset(PairDat, Species =="Montipora capitata")            
- 
+  
 #All
-MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID), Mcappig) #if we add in (1|Pair) we get failure to converge
+MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
 summary(MpigPair_all_mod1)
 anova(MpigPair_all_mod1)
+  #conduct Tukey post hoc test 
+  emm = emmeans(MpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month0
 MpigPair0<-subset(Mcappig, month =="Month0")           
 MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
 summary(MpigPair0_mod1)
+anova(MpigPair0_mod1)
+  #conduct Tukey post hoc test 
+  emm = emmeans(MpigPair0_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
 
-#Month1.5
+  #Month1.5
 MpigPair1.5<-subset(Mcappig, month =="Month1.5")
 MpigPair1.5_mod1<-lm(score~Site*B2015, MpigPair1.5)
 summary(MpigPair1.5_mod1)
+anova(MpigPair1.5_mod1)
+  #conduct Tukey post hoc test 
+  emm = emmeans(MpigPair1.5_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+  #conduct Tukey post hoc test 
+  emm = emmeans(MpigPair1.5_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month3
 MpigPair3<-subset(Mcappig, month =="Month3")
 MpigPair3_mod1<-lm(score~Site*B2015, MpigPair3)
 summary(MpigPair3_mod1)
+anova(MpigPair3_mod1)
+  #conduct Tukey post hoc test 
+  emm = emmeans(MpigPair3_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+   emm = emmeans(MpigPair3_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
+  emm = emmeans(MpigPair3_mod1, ~ B2015*Site, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month4.5
 MpigPair4.5<-subset(Mcappig, month =="Month4.5")
 MpigPair4.5_mod1<-lm(score~Site*B2015, MpigPair4.5)
 summary(MpigPair4.5_mod1)
+anova(MpigPair4.5_mod1)
+#conduct Tukey post hoc test 
+  emm = emmeans(MpigPair4.5_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+   emm = emmeans(MpigPair4.5_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month6
 MpigPair6<-subset(Mcappig, month =="Month6")
 MpigPair6_mod1<-lm(score~Site*B2015, MpigPair6)
 summary(MpigPair6_mod1)
-
+anova(MpigPair6_mod1)
+#conduct Tukey post hoc test 
+  emm = emmeans(MpigPair6_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+   emm = emmeans(MpigPair6_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
+  
 #Month10
 MpigPair10<-subset(Mcappig, month =="Month10")
 MpigPair10_mod1<-lm(score~Site*B2015, MpigPair10)
 summary(MpigPair10_mod1)
-
+anova()
+#conduct Tukey post hoc test 
+  emm = emmeans(MpigPair10_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+   emm = emmeans(MpigPair10_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
+  
 #Month18
 MpigPair18<-subset(Mcappig, month =="Month18")
-# anova
 MpigPair18_mod1<-lm(score~Site*B2015, MpigPair18)
 summary(MpigPair18_mod1)
+anova(MpigPair18_mod1)
+#conduct Tukey post hoc test 
+  emm = emmeans(MpigPair18_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+   emm = emmeans(MpigPair18_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month24
 MpigPair24<-subset(Mcappig, month =="Month24")
-# anova
 MpigPair24_mod1<-lm(score~Site*B2015, MpigPair24)
 summary(MpigPair24_mod1)
+anova(MpigPair24_mod1)
+#conduct Tukey post hoc test 
+  emm = emmeans(MpigPair24_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)
 ```
+glmer delete
+```{r}
+#set up Pairs data
+Mcappig<-subset(PairDat, Species =="Montipora capitata")            
+ 
+#All
+gMpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID), family=gaussian, Mcappig) #if we add in (1|Pair) we get failure to converge
+summary(gMpigPair_all_mod1)
+Anova(gMpigPair_all_mod1)
 
+#Month0
+gMpigPair0<-subset(Mcappig, month =="Month0")           
+gMpigPair0_mod1<-gglm(score~Site*B2015, gMpigPair0)
+summary(gMpigPair0_mod1)
 
+#Month1.5
+gMpigPair1.5<-subset(Mcappig, month =="Month1.5")
+gMpigPair1.5_mod1<-glm(score~Site*B2015, gMpigPair1.5)
+summary(gMpigPair1.5_mod1)
+
+#Month3
+gMpigPair3<-subset(Mcappig, month =="Month3")
+gMpigPair3_mod1<-glm(score~Site*B2015, gMpigPair3)
+summary(gMpigPair3_mod1)
+
+#Month4.5
+gMpigPair4.5<-subset(Mcappig, month =="Month4.5")
+gMpigPair4.5_mod1<-glm(score~Site*B2015, gMpigPair4.5)
+summary(gMpigPair4.5_mod1)
+
+#Month6
+gMpigPair6<-subset(Mcappig, month =="Month6")
+gMpigPair6_mod1<-glm(score~Site*B2015, gMpigPair6)
+summary(gMpigPair6_mod1)
+
+#Month10
+gMpigPair10<-subset(Mcappig, month =="Month10")
+gMpigPair10_mod1<-glm(score~Site*B2015, gMpigPair10)
+summary(gMpigPair10_mod1)
+
+#Month18
+gMpigPair18<-subset(Mcappig, month =="Month18")
+# anova
+gMpigPair18_mod1<-glm(score~Site*B2015, gMpigPair18)
+summary(gMpigPair18_mod1)
+
+#Month24
+gMpigPair24<-subset(Mcappig, month =="Month24")
+# anova
+gMpigPair24_mod1<-glm(score~Site*B2015, gMpigPair24)
+summary(gMpigPair24_mod1)
+```
 
 SI Table 2  
 *P. compressa* partial mortality pairs  
@@ -845,51 +1263,103 @@ Model: `score~Site*B2015`
 Pcomppig<-subset(PairDat, Species =="Porites compressa")            
 
 #All
-PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID), Pcomppig) #if we add in (1|Pair) we get failure to converge
+PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig) #if we add in (1|Pair) we get failure to converge
 summary(PpigPair_all_mod1)
 anova(PpigPair_all_mod1)
+  #conduct Tukey post hoc test 
+  emm = emmeans(PpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
+  #letter display
+  cld(emm)
+
 
 #Month0
 PpigPair0<-subset(Pcomppig, month =="Month0")           
 PpigPair0_mod1<-lm(score~Site*B2015, PpigPair0)
 summary(PpigPair0_mod1)
+anova(PpigPair0_mod1)
+ #conduct Tukey post hoc test 
+  emm = emmeans(PpigPair0_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair0_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair0_mod1, ~ Site*B2015, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month1.5
 PpigPair1.5<-subset(Pcomppig, month =="Month1.5")
 PpigPair1.5_mod1<-lm(score~Site*B2015, PpigPair1.5)
 summary(PpigPair1.5_mod1)
+anova(PpigPair1.5_mod1)
+ #conduct Tukey post hoc test 
+  emm = emmeans(PpigPair1.5_mod1, ~ Site, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair1.5_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair1.5_mod1, ~ Site*B2015, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month3
 PpigPair3<-subset(Pcomppig, month =="Month3")
 PpigPair3_mod1<-lm(score~Site*B2015, PpigPair3)
 summary(PpigPair3_mod1)
-
+anova(PpigPair3_mod1)
+ emm = emmeans(PpigPair3_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair3_mod1, ~ Site*B2015, adjust="tukey")
+  #letter display
+  cld(emm)
 #Month4.5
 PpigPair4.5<-subset(Pcomppig, month =="Month4.5")
 PpigPair4.5_mod1<-lm(score~Site*B2015, PpigPair4.5)
 summary(PpigPair4.5_mod1)
+anova(PpigPair4.5_mod1)
+emm = emmeans(PpigPair4.5_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)  
 
 #Month6
 PpigPair6<-subset(Pcomppig, month =="Month6")
 PpigPair6_mod1<-lm(score~Site*B2015, PpigPair6)
 summary(PpigPair6_mod1)
-
+anova(PpigPair6_mod1)
+emm = emmeans(PpigPair6_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
+  
 #Month10
 PpigPair10<-subset(Pcomppig, month =="Month10")
 PpigPair10_mod1<-lm(score~Site*B2015, PpigPair10)
 summary(PpigPair10_mod1)
+anova(PpigPair10_mod1)
+emm = emmeans(PpigPair10_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)
 
 #Month18
 PpigPair18<-subset(Pcomppig, month =="Month18")
-# anova
 PpigPair18_mod1<-lm(score~Site*B2015, PpigPair18)
 summary(PpigPair18_mod1)
+anova(PpigPair18_mod1)
+emm = emmeans(PpigPair18_mod1, ~ B2015, adjust="tukey")
+  #letter display
+  cld(emm)  
+  emm = emmeans(PpigPair18_mod1, ~ Site*B2015, adjust="tukey")
+  cld(emm)  
 
 #Month24
 PpigPair24<-subset(Pcomppig, month =="Month24")
-# anova
 PpigPair24_mod1<-lm(score~Site*B2015, PpigPair24)
 summary(PpigPair24_mod1)
+anova(PpigPair24_mod1)
+emm = emmeans(PpigPair24_mod1, ~ Site*B2015, adjust="tukey")
+  cld(emm)  
 ```
 
 #Table 3: DIFFS
