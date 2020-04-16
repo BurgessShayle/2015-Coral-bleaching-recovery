@@ -20,18 +20,14 @@ editor_options:
   chunk_output_type: console
 ---
 
-This script is for the 2015 bleaching recovery paper's transect data at the Inner and Outer Lagoons. Here, we look at std error in the transect replicates. 
-
-*This script includes a look at depth, it's not significant at any timepoint but 4.5 months. We are removing it from the analyses.*   
-
+This script is the analysis of the 2015 coral bleaching recovery paper's transect data at the Inner and Outer Lagoons in Kaneohe Bay, Oahu, HI.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, results="hide", message=FALSE}
-rm(list=ls(all=TRUE)) 
-#setwd("~/Desktop/B_NB")
+#rm(list=ls(all=TRUE)) 
 
 library("reshape2") #reshape data
 library("plotrix") #functions in tapply
@@ -72,23 +68,21 @@ library(ggstance)
 library(officer)
 library(huxtable)
 library(flextable)
-library(ARTool)
 ```
 
+Setup df:
 ```{r,results="hide", message=FALSE}
 #Setup workspace:
-rData1<- read.csv("transect_data_20191022.csv", header=T) # load in transect data for corals by W, P, H
+rData1<- read.csv("transect_data_20191022.csv", header=T) # load in transect data
 
 # set levels of factor for Bleaching_status
 levels(rData1$Bleaching_score)
 rData1$BNB<-as.factor(rData1$BNB)
-
 rData1$MonthFactor<-rData1$Month
 
 #combine month 18 and 19 for end of experiment time point comparisons (<3 weeks apart)
 rData1$MonthFactor[rData1$MonthFactor=="18"] <-"1819"
 rData1$MonthFactor[rData1$MonthFactor=="19"] <-"1819"
-
 
 rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10","1819")) #specify order
 
@@ -97,8 +91,7 @@ rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10"
 # Transect color score prevalence plots
 SI Figure 1, Mean Table
 ```{r, results="hide", message=FALSE}
-# Calc. mean, sd,se 
-# remove rep column
+# Calc. mean, sd,se  
 repcol<-c("Species", "Reef", "Month","MonthFactor", "Bleaching_status","Percent")
   rDataPlot<-rData1[repcol]
 
@@ -110,14 +103,14 @@ transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month","MonthFactor",
                    se   = sd / sqrt(N), #calculate standard error
                    max = max(Percent, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-#Monthmeans #display table
+Monthmeans #display table
 
-transectPlotmean$code<-paste0(transectPlotmean$Species, transectPlotmean$Reef, transectPlotmean$Bleaching_status)
+transectPlotmean$code<-paste0(transectPlotmean$Species, transectPlotmean$Reef, transectPlotmean$Bleaching_status) #code for plotting
 ```
 
-Subsets by Coral and Lagoon:   
+Subsets by Coral and Lagoon for plots:   
 *Montipora capitata* Inner Lagoon  
-```{r, results="hide", message=FALSE}
+```{r, results="hide", message=FALSE} 
 McapInner1<-subset(transectPlotmean, Species=="Mcap")
 McapInner<-subset(McapInner1, Reef=="Inner")
 
@@ -271,8 +264,8 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
 #Coral bleaching prevalence  
-set up df:
-Here we sum White (W) + Pale (P) to get the total % of affected corals.
+Sum: White (W) + Pale (P) 
+Set up df:  
 ```{r}
 rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]    # Remove Healthy 
 rData2$code<-paste0(rData2$Species, rData2$Month, rData2$MonthFactor, rData2$Depth, rData2$Reef, rData2$Rep)#create a code for groups by Species, Month, Depth, Reef, Rep 
@@ -288,126 +281,11 @@ rData3$MonthFactor<-rData2$MonthFactor[match(rData3$code, rData2$code)]
 rData3<-rData3[,c(1,3,5:8,2)]
 rData3$Depth<-as.factor(rData3$Depth)
 rData3$Rep<-as.factor(rData3$Rep)
-
-
-# subset by species
-BS_mcap<-subset(rData3, Species=="Mcap")
-BS_mcap<-BS_mcap[,c(1,3:7)]
-BS_pcomp<-subset(rData3, Species=="Pcomp")
-BS_pcomp<-BS_pcomp[,c(1,3:7)]
-
-#subset by reef
-#BS_Inner<-subset(rData3, Reef=="Inner")
 ```
 
 
-
-Prevalence all timepoints and by month - W+P
-Mcap by Lagoon at each month
-```{r}
-#FULL MODEL 
-
-#Mcap_transect_mod<-lmer(sum~Reef*MonthFactor+(1|Depth)+(1|Rep), data=BS_mcap)
-#anova(Mcap_transect_mod)
-
-#conduct Tukey post hoc test 
-    emm = emmeans(Mcap_transect_mod, ~ MonthFactor, adjust="tukey")
-    #letter display
-    cld(emm)
-   
-    
-#full mod with species added - 
-    Mcap_transect_mod_species<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
-anova(Mcap_transect_mod_species)
-    #conduct Tukey post hoc test 
-    emm = emmeans(Mcap_transect_mod_species, ~ MonthFactor:Species, adjust="tukey")
-    #letter display
-    cld(emm)
-         pairs(emm)
-
-    
-#mcap 0
-BSc_mcap0<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="0"))
-anova(BSc_mcap0)
-#conduct Tukey post hoc test 
-    emm = emmeans(BSc_mcap0, ~ Reef, adjust="tukey")
-    #letter display
-    cld(emm)
-   
-
-#mcap 1.5
-BSc_mcap1.5<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="1.5"))
-anova(BSc_mcap1.5)
-
-#mcap 4.5
-BSc_mcap4.5<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="4.5"))
-anova(BSc_mcap4.5)
-
-#mcap 10
-BSc_mcap10<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="10"))
-anova(BSc_mcap10)
-
-#mcap 1819
-BSc_mcap1819<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_mcap, MonthFactor=="1819"))
-anova(BSc_mcap1819)
-
-```
-
-Pcomp- prev (P+W)
-```{r} 
-#FULL MODEL
-
-pcomp_transect_mod<-lmer(sum~Reef*MonthFactor+(1|Depth)+(1|Rep), data=BS_pcomp)
-anova(pcomp_transect_mod)
-
-#conduct Tukey post hoc test 
-    emm = emmeans(pcomp_transect_mod, ~ MonthFactor, adjust="tukey")
-    #letter display
-    cld(emm)
-    #conduct Tukey post hoc test 
-    emm = emmeans(pcomp_transect_mod, ~Reef, adjust="tukey")
-    #letter display
-    cld(emm)
-   #conduct Tukey post hoc test 
-    emm = emmeans(pcomp_transect_mod, ~Reef*MonthFactor, adjust="tukey")
-    #letter display
-    cld(emm)
-    pairs(emm)
-#pcomp 0
-BSc_pcomp0<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="0"))
-anova(BSc_pcomp0)
-#conduct Tukey post hoc test 
-    emm = emmeans(BSc_pcomp0, ~ Reef, adjust="tukey")
-    #letter display
-    cld(emm)
-   
-
-#pcomp 1.5
-BSc_pcomp1.5<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="1.5"))
-anova(BSc_pcomp1.5)
-#conduct Tukey post hoc test 
-    emm = emmeans(BSc_pcomp1.5, ~ Reef, adjust="tukey")
-    #letter display
-    cld(emm)
-
-#pcomp 4.5
-BSc_pcomp4.5<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="4.5"))
-anova(BSc_pcomp4.5)
-
-#pcomp 10
-BSc_pcomp10<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="10"))
-anova(BSc_pcomp10)
-
-#pcomp 1819
-BSc_pcomp1819<-lmer(sum~Reef+(1|Depth)+(1|Rep), data=subset(BS_pcomp, MonthFactor=="1819"))
-anova(BSc_pcomp1819)
-
-```
-
-
-
-#Benthic section: coral cover
-Benthic transect data here.   
+#Benthic section: Coral cover
+Benthic transect df setup:   
 ```{r} 
 ccData<-read.csv("benthicTransectCoralcover20191024.csv", header=T)
 ccData$MonthFactor<-ccData$Month
@@ -427,116 +305,106 @@ ccMeans <- ddply(ccData, c("Reef",  "Month"), summarise,
                    max = max(CoralCover, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
 ccMeans
-#write.csv(ccMeans, "ccMeans_20191024.csv")
 ```
 
-Coral cover full model lmer (not in paper yet)
+Supplementary Table 3.  
+Coral cover full model lmer 
 ```{r}
-
 CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth)+(1|Survey), ccData)
-anova(CoralCoverMod)
+anova(CoralCoverMod, type=2)
 
 #conduct Tukey post hoc test 
     emm = emmeans(CoralCoverMod, ~ Reef, adjust="tukey")
     #letter display
     cld(emm)
     pairs(emm)
-
 ```
 
-
-SI Table 3: CoralCover~Lagoon at peak bleaching
-```{r} 
-ccMonth0<-subset(ccData, Month=="0")
-ccMonth0<-lmer(CoralCover~Reef+(1|Depth)+(1|Survey), ccMonth0)
-anova(ccMonth0) 
-
-```
-
-SI Table 4: CoralCover~Month at each Lagoon  <- delete
-```{r} 
-#SI2
-#coral cover at each reef
-ccPR13<-subset(ccData, Reef=="13")
-ccPR4<-subset(ccData, Reef=="4")
-
-ccMod13<-aov(CoralCover~Month, ccPR13)
-#qqPlot(residuals(ccMod13))
-summary(ccMod13) 
-
-ccMod4<-aov(CoralCover~Month, ccPR4)
-#qqPlot(residuals(ccMod4)) # looks good
-summary(ccMod4) # 
-```
-
-SI Table 5: Bleaching prevalence~Lagoon*Species at peak bleaching  
+Supplemental table 4.
+Prevalence, peak bleaching, all timepoints and by month: W+P  
+Full model:lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep)) and plot
 ```{r}
-#see above line 300
+#fullmodel, df=rData3
+    Prev_transect_full<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
+anova(Prev_transect_full, type=2)
+    #conduct Tukey post hoc test 
+    emm = emmeans(Prev_transect_full, ~ Reef*MonthFactor, adjust="tukey")
+    #letter display
+      pairs(emm) #Inner,0 - Outer,0  p  <.0001
+    emm = emmeans(Prev_transect_full, ~ Species*MonthFactor, adjust="tukey")
+    #letter display
+    pairs(emm) 
+    #Mcap,1.5 - Pcomp,1.5    p=  0.0155
+    #Mcap,4.5 - Pcomp,4.5    p=  0.7068
+    #Mcap,10 - Pcomp,10      p=  0.0001
+    #Mcap,1819 - Pcomp,1819  p=  0.1864
+       
+#plot
+# calc average  bleaching rate/month in %  per grouping
+transectPlotmeanprev <- ddply(prev_peak, c("Species", "Reef"), summarise, 
+                   N    = length(sum[!is.na(sum)]), #calculate the length of the data frame, excluding NA’s *this part is important*
+                   mean = mean(sum, na.rm=TRUE), #calculate mean of response variable, removing NA's
+                   sd   = sd(sum, na.rm=TRUE), #calculate standard deviation
+                   se   = sd / sqrt(N), #calculate standard error
+                   max = max(sum, na.rm=TRUE) #calculate max, could also calculate min () if desired
+)
+
+transectPlotmeanprev$code<-paste0(transectPlotmeanprev$Species, transectPlotmeanprev$Reef)
+
+prev_plot<-ggplot(data=transectPlotmeanprev, aes(x=Reef, y=mean, group = Species, color=Species)) + 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1)+
+  geom_point(aes(shape=code), size=3)+
+  #geom_line(aes(color=code, linetype=code))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  #scale_color_manual(values=c("black", "black","black"))+
+  ylab("Percent") +
+    xlab("Lagoon") + #Label the X Axis
+    #ylim(1, 3) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+  ggtitle("Peak bleaching, prev")+
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));prev_plot
 ```
 
-SI 6: Month 0, by reef, bleaching (white, not pale) prevalence.  
+
+Supplementary Table 5.  
+Bleaching prevalence: White only 
 ```{r}
 #bleached
 prevWhite<-subset(rData1, Bleaching_status=="Bleached")
 
 WhiteMod<-lmer(Percent~Species*Reef*MonthFactor+(1|Depth)+(1|Rep),prevWhite)
-anova(WhiteMod)
-#all significant 
-#conduct Tukey post hoc test 
+anova(WhiteMod, type=2)
+  #conduct Tukey post hoc test 
     emm = emmeans(WhiteMod, ~ Reef, adjust="tukey")
     #letter display
     cld(emm)
-#conduct Tukey post hoc test 
+  #conduct Tukey post hoc test 
     emm = emmeans(WhiteMod, ~ Reef*Species*MonthFactor, adjust="tukey")
     #letter display
     cld(emm)
     pairs(emm)
-    
-    
-    
-#Only month0
-
-M0PrevWhite<-subset(prevWhite, MonthFactor=="0")
-M0PrevWhiteMod<-lmer(Percent~Reef*Species+(1|Depth)+(1|Rep),M0PrevWhite)
-anova(M0PrevWhiteMod) 
- #conduct Tukey post hoc test 
-    emm = emmeans(M0PrevWhiteMod, ~ Species, adjust="tukey")
-    #letter display
-    cld(emm)
- #conduct Tukey post hoc test 
-    emm = emmeans(M0PrevWhiteMod, ~ Reef*Species, adjust="tukey")
-    #letter display
-    cld(emm)   
-    
-    
-    
-# we shouldn't do by reef    
-    
-#PR4
-PrevWhite0Inner<-subset(prevWhite0, Reef=="Inner")
-prev0WhiteMod4<-aov(Percent~Species, PrevWhite0Inner)
-summary(prev0WhiteMod4)
-
-#PR13
-#PrevWhite0Outer<-subset(prevWhite0, Reef=="Outer")
-#prev0WhiteMod13<-aov(Percent~Species, PrevWhite0Outer)
-#summary(prev0WhiteMod13)
+   # Inner,Mcap,0 - Inner,Pcomp,0        -44.84422 4.3 58 -10.420 <.0001
+    #Outer,Mcap,0 - Outer,Pcomp,0          1.02260 4.3 58   0.238 1.0000
 ```
 
-##Severity
+##Severity (white/white+pale)
+Supplemental table 6 (setup)
 ```{r}
 rData4<-rData2 #make a copy of rData2
 rData4$Depth<-as.factor(rData4$Depth)
 rData4$Rep<-as.factor(rData4$Rep)
 
-# add the sum row by code to get sum of W+P
-rData4$sum<-rData3$sum[match(rData4$code, rData3$code)]
-
-# Make new row of new percents which is P%/(W+P%)
-rData4$newPer<-rData4$Percent/rData4$sum
-
-# get rid of Pale
-rData4<-subset(rData4, Bleaching_status=="Bleached")
+rData4$sum<-rData3$sum[match(rData4$code, rData3$code)] # add the sum row by code to get sum of W+P
+rData4$newPer<-rData4$Percent/rData4$sum # Make new row of new percents which is W%/(W%+P%)
+rData4<-subset(rData4, Bleaching_status=="Bleached") # get rid of Pale
 
 # calc average  bleaching rate/month in %  per grouping
 rMeans <- ddply(rData4, c("Species", "Reef", "Month", "Bleaching_status"), summarise, 
@@ -546,108 +414,31 @@ rMeans <- ddply(rData4, c("Species", "Reef", "Month", "Bleaching_status"), summa
                    se   = sd / sqrt(N), #calculate standard error
                    max = max(newPer, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-rMeans
-#write.csv(rMeans, "BleachingSeverityTransects_20191023.csv")
+
 ```
 
-SI Table 7: Bleaching severity (white) at PR4 by coral species. 
+SI Table 6:  
+Bleaching severity (white/w+p)
+lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep))
 ```{r}
 #full model
 SeverityMod<-lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep),rData4)
-anova(SeverityMod)
+anova(SeverityMod, type="2")
 
  #conduct Tukey post hoc test 
     emm = emmeans(SeverityMod, ~ Species*MonthFactor*Reef, adjust="tukey")
     #letter display
     cld(emm)
-    pairs(emm)
+    pairs(emm) 
+    #Mcap,0,Inner - Pcomp,0,Inner        -0.428518 0.0789 41.0 -5.432  0.0004 
+    #Mcap,0,Outer - Pcomp,0,Outer         0.044986 0.0789 41.0  0.570  1.0000
  #conduct Tukey post hoc test 
     emm = emmeans(SeverityMod, ~ Reef*Species, adjust="tukey")
     #letter display
     cld(emm)   
-
-
-
-#previously how you did it.
-pr4Sev<-subset(rData4, Reef=="Inner") # subset reef
-pr4Sev1<-subset(pr4Sev, Month=="0") #subset only month 0
-pr4Sev2<-subset(pr4Sev1, Bleaching_status=="Bleached") #subset only bleached
-
-pr4Sev2_aov<-aov(newPer~Species, pr4Sev2) 
-summary(pr4Sev2_aov)
-TukeyHSD(pr4Sev2_aov)
-```
-
-SI Table 8: *M. capitata* bleaching severity (white) at peak bleaching: white~Lagoon
-```{r}
-mcapSev<-subset(rData4, Species=="Mcap") # subset mcap
-mcapSev<-subset(mcapSev, Bleaching_status=="Bleached") #subset only bleached
-mcapSev_0<-subset(mcapSev, Month=="0") #subset month 0 only
-mcapSev_0_aov<-aov(newPer~Reef, mcapSev_0) 
-summary(mcapSev_0_aov)
-
-#pcomp
-pcompSev<-subset(rData4, Species=="Pcomp") # subset mcap
-pcompSev<-subset(pcompSev, Bleaching_status=="Bleached") #subset only bleached
-pcompSev_0<-subset(pcompSev, Month=="0") #subset month 0 only
-pcompSev_0_aov<-aov(newPer~Reef, pcompSev_0) 
-summary(pcompSev_0_aov)
-TukeyHSD(pcompSev_0_aov)
-```
-
-
-SI Table 9: Prevalence of bleaching (white+pale) post peak bleaching during the first year of recovery. 
-```{r}
-#Month 1.5
-M1.5_post<-aov(sum~Species,   data=subset(rData3,Month=="1.5"))
-summary(M1.5_post)
-TukeyHSD(M1.5_post) #  significant. 
-
-#Month 4.5
-M4.5_post<-aov(sum~Species,   data=subset(rData3,Month=="4.5"))
-summary(M4.5_post)
-TukeyHSD(M4.5_post) #  significant. 
-
-#Month 10
-M10_post<-aov(sum~Species,   data=subset(rData3,Month=="10"))
-summary(M10_post)
-TukeyHSD(M10_post) #  significant. 
-```
-
-SI Table 10: Bleaching prevalence (white+pale)~Lagoon at each month of recovery within the first year.     
-```{r}
-#mcap 0
-BSc_mcap<-aov(sum~Reef, data=subset(BS_mcap, Month=="0"))
-summary(BSc_mcap)
-TukeyHSD(BSc_mcap)
-
-#pcomp 0
-BSc_pcomp<-aov(sum~Reef, data=subset(BS_pcomp, Month=="0"))
-summary(BSc_pcomp)
-TukeyHSD(BSc_pcomp)
-
-#mcap 1.5
-BSc_mcap1.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="1.5"))
-summary(BSc_mcap1.5)
-
-#pcomp 1.5
-BSc_pcomp1.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="1.5"))
-summary(BSc_pcomp1.5)
-TukeyHSD(BSc_pcomp1.5)
-
-#mcap 4.5
-BSc_mcap4.5<-aov(sum~Reef, data=subset(BS_mcap, Month=="4.5"))
-summary(BSc_mcap4.5)
-
-#pcomp 4.5
-BSc_pcomp4.5<-aov(sum~Reef, data=subset(BS_pcomp, Month=="4.5"))
-summary(BSc_pcomp4.5)
-
-#mcap 10
-BSc_mcap10<-aov(sum~Reef, data=subset(BS_mcap, Month=="10"))
-summary(BSc_mcap10)
-
-#pcomp 10
-BSc_pcomp10<-aov(sum~Reef, data=subset(BS_pcomp, Month=="10"))
-summary(BSc_pcomp10)
+    #post hoc
+    #Mcap,0,Outer - Pcomp,0,Outer         0.044986 0.0789 41.0  0.570  1.0000
+    #Mcap,0,Inner - Pcomp,0,Inner        -0.428518 0.0789 41.0 -5.432  0.0004
+    #Pcomp,0,Inner - Pcomp,0,Outer        0.515064 0.0789 41.0  6.529  <.0001 
+    #Mcap,0,Inner - Mcap,0,Outer          0.041560 0.0789 41.0  0.527  1.0000
 ```
