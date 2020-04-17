@@ -13,15 +13,15 @@ output:
 editor_options: 
   chunk_output_type: console
 ---
-update:"03/31/3030"
+update:"04/15/2020"
 
-Color score for *M. capitata* and *P. compressa* colonies at the Inner Lagoon (PR4) and Outer Lagoon (PR13) after the 2015 coral bleaching event in Kaneohe Bay.  Tagged individuals were given a color score based on their visual color: 1) white (>80% of colony white with no visible pigmentation); 2) pale (>10% colony affected by pigment loss); or 3) fully pigmented (<10% colony with any pale coloration). 
+Color score for *M. capitata* and *P. compressa* colonies at the Inner Lagoon and Outer Lagoon after the 2015 coral bleaching event in Kaneohe Bay.  Tagged individuals were given a color score based on their visual color: 1) white (>80% of colony white with no visible pigmentation); 2) pale (>10% colony affected by pigment loss); or 3) fully pigmented (<10% colony with any pale coloration). 
 
 ```{r setup, include=FALSE,results="hide"}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Bleached/Non Bleached data 
+Set up: 
 ```{r, results="hide", message=FALSE}
 #Set up: load libraries
 
@@ -69,10 +69,8 @@ library(huxtable)
 library(flextable)
 ```
 
-Load in data and organize 
+Load in data  
 ```{r}
-#We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
-
 # Bleaching data
 bData<-read.csv("Bleaching_FINAL.csv") #read in bleaching df
 bData$Site<-as.factor(bData$Site) #site as factor
@@ -90,8 +88,7 @@ bALL<-bData
 #Remove all NON PAIRS and all NAs
   bALLData<-na.omit(bALLData1) # remove the NA rows (this removes individuals and NAs from pairs with no score at particular timepoints (due to not finding the coral))
   
-  
-  #Change month into TIME numeric 
+  #Change month into TIME numeric for plots
   bALLData$time[bALLData$month=="Month0"]<-0
   bALLData$time[bALLData$month=="Month1.5"]<-1.5
   bALLData$time[bALLData$month=="Month3"]<-3
@@ -101,8 +98,6 @@ bALL<-bData
   bALLData$time[bALLData$month=="Month18"]<-18
   bALLData$time[bALLData$month=="Month19"]<-19
   bALLData$time[bALLData$month=="Month24"]<-24
-
-  
 ```
 
 Subsets of df for Mcap and Pcomp
@@ -132,7 +127,6 @@ ballmeans #display table
 #Figure 5
 Bleaching score means 0-24 months by species. 
 *Montipora capitata*  
-Figure 5 
 ```{r}
 #subset for Mcap only 
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
@@ -144,10 +138,8 @@ Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
 Mcap024AllplotPR4<-subset(Mcap024Allplot, Site==4)
 ```
 
-*M. capitata* PR13
-
+*M. capitata* Outer Lagoon
 ```{r}
-
 ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -173,7 +165,7 @@ ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=time, y=mean, group = co
 McapOuter<-ballplotMcapPR13 + theme(legend.position = "none") #remove legend
 ```
 
-*M. capitata* PR4
+*M. capitata* Inner Lagoon
 ```{r}
 ballplotMcapPR4<-ggplot(data=Mcap024AllplotPR4, aes(x=time, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -204,7 +196,6 @@ McapInner
 ```
 
 *Porites compressa*  
-Figure 5
 ```{r}
 Pcomp024Allplot<-subset(ballmeans, Species=="Porites compressa")
 
@@ -213,8 +204,7 @@ Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
 Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
 ```
 
-*P. compress* 
-Outer PR13
+*P. compress* Outer Lagoon
 ```{r}
 b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -244,8 +234,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=time, y=mean, group = 
 PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
 ```
 
-*P. compressa*   
-Inner PR4
+*P. compressa* Inner Lagoon
 ```{r}
 b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=time, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -287,35 +276,27 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 
 # Bleaching Recovery Models
 
-#Table 2  
-PIGMENTATION
+Table 2: Color score recovery  
 lmer(score~month*B2015*lagoon+(1|TagID)
-Mcap_df  full model, lmer
 ```{r}
-#MONTH AS FACTOR
+#full model
 Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
 summary(Mcap_df_mod)
-anova(Mcap_df_mod) #pvals
+anova(Mcap_df_mod, type=2) #pvals
 
-#####qqPlot(residuals(Mcap_df_mod))    # DO WE INCLUDE RESIDUALS QQPLOTS, THEY SHOW WE ARE NOT NORMAL
-
-#post hoc
-test<-emmeans(Mcap_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
-cld(test, Letter="abcde")
-
- emm<-emmeans(Mcap_df_mod,  ~ B2015*Site*month, adjust="Tukey")
-cld(emm, Letter="abcdefg")
-
-test1a<-emmeans(Mcap_df_mod, "time")
-cld(test1a, Letter="abcdefg")
-
-## trying GLMER
-#Mcap_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=poisson(link="log"), data=Mcap_df)
-#Anova(Mcap_df_mod_glmer) #pvals use Anova()
-  #conduct Tukey post hoc test 
- # emm = emmeans(Mcap_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
-  #letter display
-  #cld(emm, Letter="abcdefghijklmnopq")
+ #posthoc
+  emm<-emmeans(Mcap_df_mod,  ~ Site*month)
+  pairs(emm)
+  
+  #4,Month0 - 13,Month0      -0.049784 0.0806 346 -0.618  1.0000 
+  #4,Month1.5 - 13,Month1.5  -0.157858 0.0858 377 -1.841  0.8999 
+  #4,Month3 - 13,Month3       0.082619 0.0872 383  0.948  0.9999
+  #4,Month4.5 - 13,Month4.5   0.119074 0.0854 373  1.394  0.9912 
+  #4,Month6 - 13,Month6       0.206844 0.0931 412  2.221  0.6815 
+  #4,Month10 - 13,Month10     0.214367 0.0968 427  2.215  0.6859 
+  # 4,Month18 - 13,Month18     0.104741 0.1202 478  0.871  1.0000 
+  #4,Month24 - 13,Month24     0.156023 0.1256 482  1.242  0.9974
+  
 ```
 
 Pcomp_df - full model lmer()
@@ -323,28 +304,25 @@ Pcomp_df - full model lmer()
 #pcomp full model
 Pcomp_df_mod2<-lmer(score~B2015*Site*month+(1|TagID), data=Pcomp_df)
 summary(Pcomp_df_mod2)
-anova(Pcomp_df_mod2) #pvals
-
-#post hoc <- if you can use full do that!!!!!!!
-emmeans(Pcomp_df_mod, "Site","B2015") #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
-cld(Letter="abcde")
-
-emm<-emmeans(Pcomp_df_mod,  ~ B2015*Site*month) #this right for showing bleached corals differeed btwn sites over entire experiment (aka across timepoints)?
-cld(emm)
-
-
-## trying GLMER
-#Pcomp_df_mod_glmer<-glmer(score~B2015*Site*month+(1|TagID), family=gaussian, data=Pcomp_df)
-#Anova(Pcomp_df_mod_glmer) #pvals use Anova()
-
-  #conduct Tukey post hoc test 
-#  emm = emmeans(Pcomp_df_mod_glmer, ~ Site*B2015*month, adjust="tukey")
-  #letter display
-#  cld(emm)
+anova(Pcomp_df_mod2, type=2) #pvals
+  #posthoc
+  emm<-emmeans(Pcomp_df_mod2,  ~ B2015*Site*month)
+  pairs(emm)
+   emm<-emmeans(Pcomp_df_mod2,  ~ Site*month)
+  pairs(emm)
+      # 4,Month0 - 13,Month0      -0.190476 0.0583 545  -3.268 0.0844 
+      #4,Month1.5 - 13,Month1.5  -0.049478 0.0590 545  -0.839 1.0000
+  #4,Month3 - 13,Month3      -0.022300 0.0598 545  -0.373 1.0000 
+  #4,Month4.5 - 13,Month4.5  -0.151734 0.0610 545  -2.488 0.4822
+  #4,Month6 - 13,Month6       0.000289 0.0590 545   0.005 1.0000 
+  #4,Month10 - 13,Month10    -0.024925 0.0602 545  -0.414 1.0000 
+  #4,Month18 - 13,Month18    -0.033845 0.0694 547  -0.488 1.0000
+  #4,Month24 - 13,Month24    -0.074803 0.0779 548  -0.960 0.9999 
 ```
 
-Models at each timepoint -NEW
-Mcap lm
+Supplemental Table 7
+*Models at each timepoint
+*M. capitata* lm, monthly
 ```{r} 
 Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
@@ -354,7 +332,6 @@ Mcap_6<-subset(Mcap_df, month=="Month6")
 Mcap_10<-subset(Mcap_df, month=="Month10")
 Mcap_18<-subset(Mcap_df, month=="Month18")
 Mcap_24<-subset(Mcap_df, month=="Month24")
-
 
 #Month0
 Month0_mcap0<-lm(score~Site*B2015, Mcap_0)
@@ -366,11 +343,14 @@ Month1.5_mcap1.5<-lm(score~Site*B2015, Mcap_1.5)
 summary(Month1.5_mcap1.5)
 anova(Month1.5_mcap1.5)
 
+
 #Month3
 Month3_mcap3<-lm(score~Site*B2015, Mcap_3)
 summary(Month3_mcap3)
 anova(Month3_mcap3)
-
+ emm<-emmeans(Month3_mcap3,  ~ B2015*Site)
+  pairs(emm)
+  
 #Month4.5
 Month4.5_mcap4.5<-lm(score~Site*B2015, Mcap_4.5)
 summary(Month4.5_mcap4.5)
@@ -380,6 +360,8 @@ anova(Month4.5_mcap4.5)
 Month6_mcap6<-lm(score~Site*B2015, Mcap_6)
 summary(Month6_mcap6)
 anova(Month6_mcap6)
+emm<-emmeans(Month6_mcap6,  ~ Site)
+  pairs(emm)
 
 #Month10
 Month10_mcap10<-lm(score~Site*B2015, Mcap_10)
@@ -397,52 +379,7 @@ summary(Month24_mcap24t)
 anova(Month24_mcap24t)
 ```
 
-Mcap glm (by month) DELETE
-```{r} 
-Mcap_0<-subset(Mcap_df, month=="Month0")
-Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
-Mcap_3<-subset(Mcap_df, month=="Month3")
-Mcap_4.5<-subset(Mcap_df, month=="Month4.5")
-Mcap_6<-subset(Mcap_df, month=="Month6")
-Mcap_10<-subset(Mcap_df, month=="Month10")
-Mcap_18<-subset(Mcap_df, month=="Month18")
-Mcap_24<-subset(Mcap_df, month=="Month24")
-
-
-#Month0
-gMonth0_mcap0<-glm(score~Site*B2015, family=gaussian, Mcap_0)
-Anova(gMonth0_mcap0)
-
-#Month1.5
-gMonth1.5_mcap1.5<-glm(score~Site*B2015, family=gaussian,Mcap_1.5)
-Anova(gMonth1.5_mcap1.5)
-
-#Month3
-gMonth3_mcap3<-glm(score~Site*B2015,family=gaussian,  Mcap_3)
-Anova(gMonth3_mcap3)
-
-#Month4.5
-gMonth4.5_mcap4.5<-glm(score~Site*B2015, family=gaussian, Mcap_4.5)
-Anova(gMonth4.5_mcap4.5)
-
-#Month6
-gMonth6_mcap6<-glm(score~Site*B2015, family=gaussian, Mcap_6)
-Anova(gMonth6_mcap6)
-
-#Month10
-gMonth10_mcap10<-glm(score~Site*B2015,family=gaussian,  Mcap_10)
-Anova(gMonth10_mcap10)
-
-#Month18
-gMonth18_mcap18<-glm(score~Site*B2015, family=gaussian, Mcap_18)
-Anova(gMonth18_mcap18)
-
-#Month24
-gMonth24_mcap24<-glm(score~Site*B2015, family=gaussian, Mcap_24)
-Anova(gMonth24_mcap24)
-```
-
-Pcomp lm (by month)
+*P. compressa* lm (by month)
 ```{r} 
 Pcomp_0<-subset(Pcomp_df, month=="Month0")
 Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
@@ -493,44 +430,36 @@ anova(Month18_Pcomp18)
 Month24_Pcomp24<-lm(score~Site*B2015,Pcomp_24)
 summary(Month24_Pcomp24)
 anova(Month24_Pcomp24)
-
 ```
 
 # Pairs only bleaching recovery models
-(subset of full dataset whi colonies only when both partners of a pair are found at each time point)  
-Setup df.
+(subset of full dataset with only colonies when both partners of a pair are found at each time point)   
+Setup df:
 ```{r,results="hide"}
-#Figure out which of the pairs we lose 
-#subset only pairs
-naData<-bALLData
-#dataset to work from (pull unwanted from)
-pData<-bALLData
+naData<-bALLData   #subset only pairs
+pData<-bALLData   #dataset to work from (pull unwanted from)
 
-# Identify which pairs have a partner not found
+# Identify which pairs have a partner not found by month:
+
 # Subset Month0 (two colonies missing values, checked datasheet)
 M0<-subset(naData, month=="Month0") # subset month 0
-#M0_NA <- M0 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#keep it all
 
   # subset month 0
   M0a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
   M0<-pData[M0a]
   M0<-subset(M0, month=="Month0")
-  #M0<-na.omit(M0) # remove the NA colums
-  #DIFFS
+
+    #For DIFFS df
   M0diff<-M0  
   M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
   M0diff$diff<-M0diff$N-M0diff$Y
 
 # Subset Month1.5 
 M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
-#M1.5_NA <- M1.5 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-# 113_114 remove
   # subset month 1.5
   M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
   M1.5<-pData[M1.5a]
   M1.5<-subset(M1.5, month=="Month1.5")
-  #M1.5<-na.omit(M1.5) # remove the NA colums
   M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
  #DIFFS 
   M1.5diff<-M1.5  
@@ -539,16 +468,9 @@ M1.5<-subset(naData, month=="Month1.5") # subset month 1.5
   
 ## Subset Month3
 M3<-subset(naData, month=="Month3") # subset month 3
-#M3_NA <- M3 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-# 107_108, 13_14, 213_214, 215_216, 217_218, 285_286, 31_32 <- both not found
-#7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
-
-  # subset month 3
   M3a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
   M3<-pData[M3a]
   M3<-subset(M3, month=="Month3")
-  #M3<-na.omit(M3) # remove the NA colums
-  # remove 7_8, 113_114,255_256, 259_260 <- Pairs where only one was not found :/
   M3<-M3[!(M3$Pair=="7_8"),]
   M3<-M3[!(M3$Pair=="113_114"),]
   M3<-M3[!(M3$Pair=="255_256"),]
@@ -561,15 +483,10 @@ M3<-subset(naData, month=="Month3") # subset month 3
 
 ## Subset Month 4.5
 M4.5<-subset(naData, month=="Month4.5") # subset month 3
-#M4.5_NA <- M4.5 %>% filter_all(any_vars(is.na(.))) 
-# 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83 <- Pairs where only one was not found not 
-
-  # subset month 4.5
   M4.5a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
   M4.5<-pData[M4.5a]
   M4.5<-subset(M4.5, month=="Month4.5")
   M4.5<-na.omit(M4.5) # remove the NA colums
-  # remove # 7_8, 113_114,255_256, 259_260, 263_264, 267_268, 82_83
   M4.5<-M4.5[!(M4.5$Pair=="7_8"),]
   M4.5<-M4.5[!(M4.5$Pair=="113_114"),]
   M4.5<-M4.5[!(M4.5$Pair=="255_256"),]
@@ -586,16 +503,9 @@ M4.5<-subset(naData, month=="Month4.5") # subset month 3
 
 # Subset month 6
 M6<-subset(naData, month=="Month6")
-#M6_NA <- M6 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#  113_114,13_14, 17_18, 213_214, 215_216, 217_218, 223_224,82_83
-#<- 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264,267_269 <-Pairs where only one was not found
-
-  # Subset month 6
   M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M6<-pData[M6a]
   M6<-subset(M6, month=="Month6")
-  #M6<-na.omit(M6) # remove the NA colums
-  # remove 111_112, 115_116, 119_120, 207_208, 255_256, 259_260, 263_264, 267_269 <-Pairs where only one was not found :/
   M6<-M6[!(M6$Pair=="111_112"),] # remove the other partner
   M6<-M6[!(M6$Pair=="115_116"),]
   M6<-M6[!(M6$Pair=="119_120"),]
@@ -611,19 +521,11 @@ M6<-subset(naData, month=="Month6")
   M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
   M6diff$diff<-M6diff$N-M6diff$Y
   
-  
 # Subset month 10
 M10<-subset(naData, month=="Month10")
-#M10_NA <- M10 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#  113_114,13_14, 17_18, 213_214, 215_2110, 217_218, 223_224,82_83
-#<- 111_112, 115_1110, 119_120, 207_208, 255_2510, 259_2100, 2103_2104,2107_2109 <-Pairs where only one was not found
-
-  # Subset month 10
   M10a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M10<-pData[M10a]
   M10<-subset(M10, month=="Month10")
-  #M10<-na.omit(M10) # remove the NA colums
-  # remove 253_254, 259_260, 161_262, 263_264, 267_268, 271_272, 273_274, 275_276,277_278 , 31_2
   M10<-M10[!(M10$Pair=="253_254"),] # remove the other partner
   M10<-M10[!(M10$Pair=="259_260"),]
   M10<-M10[!(M10$Pair=="113_114"),]
@@ -635,26 +537,17 @@ M10<-subset(naData, month=="Month10")
   M10<-M10[!(M10$Pair=="275_276"),]
   M10<-M10[!(M10$Pair=="277_278"),]
   M10<-M10[!(M10$Pair=="31_32"),]
-    M10<-M10[!(M10$Pair=="261_262"),]
-
-
-  
+  M10<-M10[!(M10$Pair=="261_262"),]
   #DIFFS
   M10diff<-M10  
   M10diff<-dcast(M10diff, Species+Site+Pair+month~B2015) # cast()
   M10diff$diff<-M10diff$N-M10diff$Y
   
-  
   # Subset month 18
 M18<-subset(naData, month=="Month18")
-#M18_NA <- M18 %>% filter_all(any_vars(is.na(.))) #pull out NAs to see what rows you need to get rid of 
-#<- 101_102,1-3_104, 115_116, 117_118, 119_120, 19_20, 205-206, 223_224, 261_262, 265_266, 269_270, 271_272, 275_276, 39_40
-
-  # Subset month 18
   M18a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M18<-pData[M18a]
   M18<-subset(M18, month=="Month18")
-  #M18<-na.omit(M18) # remove the NA colums
   M18<-M18[!(M18$Pair=="253_254"),] # remove the other partner
   M18<-M18[!(M18$Pair=="259_260"),]
   M18<-M18[!(M18$Pair=="161_262"),]
@@ -665,30 +558,25 @@ M18<-subset(naData, month=="Month18")
   M18<-M18[!(M18$Pair=="275_276"),]
   M18<-M18[!(M18$Pair=="277_278"),]
   M18<-M18[!(M18$Pair=="31_2"),]
-    M18<-M18[!(M18$Pair=="115_116"),]
+  M18<-M18[!(M18$Pair=="115_116"),]
   M18<-M18[!(M18$Pair=="119_120"),]
-    M18<-M18[!(M18$Pair=="261_262"),]
+  M18<-M18[!(M18$Pair=="261_262"),]
   M18<-M18[!(M18$Pair=="269_270"),]
   M18<-M18[!(M18$Pair=="101_102"),]
   M18<-M18[!(M18$Pair=="117_118"),]
-    M18<-M18[!(M18$Pair=="265_266"),]
+  M18<-M18[!(M18$Pair=="265_266"),]
   M18<-M18[!(M18$Pair=="19_20"),]
   M18<-M18[!(M18$Pair=="205_206"),]
   M18<-M18[!(M18$Pair=="223_224"),]
-    M18<-M18[!(M18$Pair=="39_40"),]
-    
-    
+  M18<-M18[!(M18$Pair=="39_40"),]
+  
   #DIFFS
   M18diff<-M18  
   M18diff<-dcast(M18diff, Species+Site+Pair+month~B2015) # cast()
   M18diff$diff<-M18diff$N-M18diff$Y
   
-   
   # Subset month 24
 M24<-subset(naData, month=="Month24")
-
-
-# Subset month 24
   M24a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M24<-pData[M24a]
   M24<-subset(M24, month=="Month24")
@@ -735,7 +623,6 @@ pairmeans #display table
 ```{r}
 #subset for Mcap only
 McapPairplot<-subset(pairmeans, Species=="Montipora capitata")
-
 
 PairplotMcapB<-ggplot(data=McapPairplot, aes(x=month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
@@ -796,7 +683,7 @@ Mcappig<-subset(PairDat, Species =="Montipora capitata")
 #All lmer
 MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
 summary(MpigPair_all_mod1)
-anova(MpigPair_all_mod1)
+anova(MpigPair_all_mod1, type=2)
  
 #Month0
 MpigPair0<-subset(Mcappig, month =="Month0")           
@@ -846,62 +733,6 @@ MpigPair24_mod1<-lm(score~Site*B2015, MpigPair24)
 summary(MpigPair24_mod1)
 anova(MpigPair24_mod1)
 ```
-GLMER/glm DELETE
-```{r}
-           
-#All glmer
-gMpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=gaussian, Mcappig)
-summary(gMpigPair_all_mod1)
-Anova(gMpigPair_all_mod1)
- 
-#Month0
-gMpigPair0<-subset(Mcappig, month =="Month0")           
-gMpigPair0_mod1<-glm(score~Site*B2015, family=gaussian,gMpigPair0)
-summary(gMpigPair0_mod1)
-Anova(gMpigPair0_mod1)
-
-#Month1.5
-gMpigPair1.5<-subset(Mcappig, month =="Month1.5")
-gMpigPair1.5_mod1<-glm(score~Site*B2015, family=gaussian,gMpigPair1.5)
-summary(gMpigPair1.5_mod1)
-Anova(gMpigPair1.5_mod1)
-
-#Month3
-gMpigPair3<-subset(Mcappig, month =="Month3")
-gMpigPair3_mod1<-glm(score~Site*B2015, family=gaussian,gMpigPair3)
-summary(gMpigPair3_mod1)
-Anova(gMpigPair3_mod1)
-
-#Month4.5
-gMpigPair4.5<-subset(Mcappig, month =="Month4.5")
-gMpigPair4.5_mod1<-glm(score~Site*B2015,family=gaussian, gMpigPair4.5)
-summary(gMpigPair4.5_mod1)
-Anova(gMpigPair4.5_mod1)
-
-#Month6
-gMpigPair6<-subset(Mcappig, month =="Month6")
-gMpigPair6_mod1<-glm(score~Site*B2015,family=gaussian, gMpigPair6)
-summary(gMpigPair6_mod1)
-Anova(gMpigPair6_mod1)
-
-#Month10
-gMpigPair10<-subset(Mcappig, month =="Month10")
-gMpigPair10_mod1<-glm(score~Site*B2015,family=gaussian, gMpigPair10)
-summary(gMpigPair10_mod1)
-Anova(gMpigPair10_mod1)
-
-#Month18
-gMpigPair18<-subset(Mcappig, month =="Month18")
-gMpigPair18_mod1<-glm(score~Site*B2015, family=gaussian,gMpigPair18)
-summary(gMpigPair18_mod1)
-Anova(gMpigPair18_mod1)
-
-#Month24
-gMpigPair24<-subset(Mcappig, month =="Month24")
-gMpigPair24_mod1<-glm(score~Site*B2015,family=gaussian, gMpigPair24)
-summary(gMpigPair24_mod1)
-Anova(gMpigPair24_mod1)
-```
 
 #Pcomp Pairs
 LMER
@@ -911,7 +742,7 @@ Pcomppig<- subset(PairDat, Species == "Porites compressa")
 #All timepoints lmer
 PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
 summary(PpigPair_all_mod1)
-anova(PpigPair_all_mod1)
+anova(PpigPair_all_mod1, type=2)
 
 #Month 0
 PpigPair0<-subset(Pcomppig, month =="Month0")            
@@ -956,73 +787,13 @@ PpigPair24<-subset(Pcomppig, month =="Month24")
 PpigPair24_mod1<-lm(score~Site*B2015, PpigPair24)
 anova(PpigPair24_mod1)
 ```
-GLMER Delete
-```{r}
-           
-#All glmer
-gPpigPair_all_mod1<-glmer(score~Site*B2015*month+(1|TagID)+(1|Pair), family=gaussian, Pcomppig)
-summary(gPpigPair_all_mod1)
-Anova(gPpigPair_all_mod1)
- 
-#Month0
-gPpigPair0<-subset(Pcomppig, month =="Month0")           
-gPpigPair0_mod1<-glm(score~Site*B2015, family=gaussian,gPpigPair0)
-summary(gPpigPair0_mod1)
-Anova(gPpigPair0_mod1)
-
-#Month1.5
-gPpigPair1.5<-subset(Pcomppig, month =="Month1.5")
-gPpigPair1.5_mod1<-glm(score~Site*B2015, family=gaussian,gPpigPair1.5)
-summary(gPpigPair1.5_mod1)
-Anova(gPpigPair1.5_mod1)
-
-#Month3
-gPpigPair3<-subset(Pcomppig, month =="Month3")
-gPpigPair3_mod1<-glm(score~Site*B2015, family=gaussian,gPpigPair3)
-summary(gPpigPair3_mod1)
-Anova(gPpigPair3_mod1)
-
-#Month4.5
-gPpigPair4.5<-subset(Pcomppig, month =="Month4.5")
-gPpigPair4.5_mod1<-glm(score~Site*B2015,family=gaussian, gPpigPair4.5)
-summary(gPpigPair4.5_mod1)
-Anova(gPpigPair4.5_mod1)
-
-#Month6
-gPpigPair6<-subset(Pcomppig, month =="Month6")
-gPpigPair6_mod1<-glm(score~Site*B2015,family=gaussian, gPpigPair6)
-summary(gPpigPair6_mod1)
-Anova(gPpigPair6_mod1)
-
-#Month10
-gPpigPair10<-subset(Pcomppig, month =="Month10")
-gPpigPair10_mod1<-glm(score~Site*B2015,family=gaussian, gPpigPair10)
-summary(gPpigPair10_mod1)
-Anova(gPpigPair10_mod1)
-
-#Month18
-gPpigPair18<-subset(Pcomppig, month =="Month18")
-gPpigPair18_mod1<-glm(score~Site*B2015, family=gaussian,gPpigPair18)
-summary(gPpigPair18_mod1)
-Anova(gPpigPair18_mod1)
-
-#Month24
-gPpigPair24<-subset(Pcomppig, month =="Month24")
-gPpigPair24_mod1<-glm(score~Site*B2015,family=gaussian, gPpigPair24)
-summary(gPpigPair24_mod1)
-Anova(gPpigPair24_mod1)
-```
-
-
 # DIFF DATA
-Differences (nonbleached-bleached) for pairs over time
-
+Differences (nonbleached-bleached) for pairs over time: df
 ```{r}
 # data = combine all the M#diffs into a single dataframe
 All_diff<-rbind(M0diff, M1.5diff, M3diff, M4.5diff, M6diff,M10diff, M18diff, M24diff)
 ```
- 
-Mean bleaching scores across the entire project
+Mean color scores across the entire project
 ```{r, results=TRUE}
 #calc average bleaching score per grouping by time point
 diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
@@ -1038,7 +809,7 @@ diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
 diffmeans #display table
 ```
 
-SI Figure 2
+#SI Figure 2
 *Montipora capitata* diff plot
 ```{r}
 #subset for Mcap only 
@@ -1067,7 +838,6 @@ Mcapdiffplota<-ggplot(data=Mcapdiffplot, aes(x=month, y=mean, group = code, colo
 Mcapdiffplota<-Mcapdiffplota + theme(legend.position = "none") #remove legend
 Mcapdiffplota
 ```
-
 *Porites compressa* diff plot
 ```{r}
 #subset for Mcap only
@@ -1096,22 +866,20 @@ Pcompdiffplota<-ggplot(data=Pcomdiffplot, aes(x=month, y=mean, group = code, col
 Pcompdiffplota<-Pcompdiffplota + theme(legend.position = "none") #remove legend
 
 ```
-
 SI Figure 2 combined
 ```{r}
 grid.arrange(Mcapdiffplota, Pcompdiffplota, nrow = 1) 
 ```
 
-SI Table 1-full mod, difference data only
-Mcap diff
-lmer
+#SI Table 1
+Diffs: *M. capitata*
 ```{r} 
 DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
 
 #Month ALL
 dMpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Mcap)
 summary(dMpigPairall_mod1)
-anova(dMpigPairall_mod1)
+anova(dMpigPairall_mod1, type=2)
 
 #Month0 
 dMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
@@ -1160,73 +928,15 @@ dMpigPair24_mod1<-lm(diff~Site, dMpigPair24)
 summary(dMpigPair24_mod1)
 anova(dMpigPair24_mod1)
 ```
-Mcap glmer DELETE
-```{r} 
-DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
 
-#Month ALL
-gdMpigPairall_mod1<-glmer(diff~Site*month+(1|Pair), family=gaussian, DiffData_all_Mcap)
-summary(gdMpigPairall_mod1)
-Anova(gdMpigPairall_mod1)
-
-#Month0 
-gdMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
-gdMpigPair03_mod1<-glm(diff~Site, family=gaussian,gdMpigPair03)
-summary(gdMpigPair03_mod1)
-Anova(gdMpigPair03_mod1)
-
-#Month1.5
-gdMpigPair1.5<-subset(DiffData_all_Mcap, month =="Month1.5")
-gdMpigPair1.5_mod1<-glm(diff~Site, family=gaussian,gdMpigPair1.5)
-summary(gdMpigPair1.5_mod1)
-Anova(gdMpigPair1.5_mod1)
-
-#Month3
-gdMpigPair3<-subset(DiffData_all_Mcap, month =="Month3")
-gdMpigPair3_mod1<-glm(diff~Site, family=gaussian,gdMpigPair3)
-summary(gdMpigPair3_mod1)
-Anova(gdMpigPair3_mod1)
-
-#Month4.5
-gdMpigPair4.5<-subset(DiffData_all_Mcap, month =="Month4.5")
-gdMpigPair4.5_mod1<-glm(diff~Site, family=gaussian,gdMpigPair4.5)
-summary(gdMpigPair4.5_mod1)
-Anova(gdMpigPair4.5_mod1)
-
-#Month6
-gdMpigPair6<-subset(DiffData_all_Mcap, month =="Month6")
-gdMpigPair6_mod1<-glm(diff~Site, family=gaussian,gdMpigPair6)
-summary(gdMpigPair6_mod1)
-Anova(gdMpigPair6_mod1)
-
-#Month10
-gdMpigPair10<-subset(DiffData_all_Mcap, month =="Month10")
-gdMpigPair10_mod1<-glm(diff~Site,family=gaussian, gdMpigPair10)
-summary(gdMpigPair10_mod1)
-Anova(gdMpigPair10_mod1)
-
-#Month18
-gdMpigPair18<-subset(DiffData_all_Mcap, month =="Month18")
-gdMpigPair18_mod1<-glm(diff~Site, family=gaussian,gdMpigPair18)
-summary(gdMpigPair18_mod1)
-Anova(gdMpigPair18_mod1)
-
-#Month24
-gdMpigPair24<-subset(DiffData_all_Mcap, month =="Month24")
-gdMpigPair24_mod1<-glm(diff~Site, family=gaussian,gdMpigPair24)
-summary(gdMpigPair24_mod1)
-Anova(gdMpigPair24_mod1)
-```
-
-Pcomp diff
-lmer
+Diffs: *P. compressa*
 ```{r} 
 DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
 
 #Month ALL
 dPpigPairall_mod1<-lmer(diff~Site*month+(1|Pair), DiffData_all_Pcomp)
 summary(dPpigPairall_mod1)
-anova(dPpigPairall_mod1)
+anova(dPpigPairall_mod1, type=2)
 
 #Month0 
 dPpigPair03<-subset(DiffData_all_Pcomp, month =="Month0")          
@@ -1275,876 +985,4 @@ dPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
 dPpigPair24_mod1<-lm(diff~Site, dPpigPair24)
 summary(dPpigPair24_mod1)
 anova(dPpigPair24_mod1)
-```
-Pcomp glmer dELTE
-```{r} 
-DiffData_all_Pcomp<-subset(All_diff, Species=="Montipora capitata")
-
-#Month ALL
-gdPpigPairall_mod1<-glmer(diff~Site*month+(1|Pair), family=gaussian, DiffData_all_Pcomp)
-summary(gdPpigPairall_mod1)
-Anova(gdPpigPairall_mod1)
-
-#Month0 
-gdPpigPair03<-subset(DiffData_all_Pcomp, month =="Month0")          
-gdPpigPair03_mod1<-glm(diff~Site, family=gaussian,gdPpigPair03)
-summary(gdPpigPair03_mod1)
-Anova(gdPpigPair03_mod1)
-
-#Month1.5
-gdPpigPair1.5<-subset(DiffData_all_Pcomp, month =="Month1.5")
-gdPpigPair1.5_mod1<-glm(diff~Site, family=gaussian,gdPpigPair1.5)
-summary(gdPpigPair1.5_mod1)
-Anova(gdPpigPair1.5_mod1)
-
-#Month3
-gdPpigPair3<-subset(DiffData_all_Pcomp, month =="Month3")
-gdPpigPair3_mod1<-glm(diff~Site, family=gaussian,gdPpigPair3)
-summary(gdPpigPair3_mod1)
-Anova(gdPpigPair3_mod1)
-
-#Month4.5
-gdPpigPair4.5<-subset(DiffData_all_Pcomp, month =="Month4.5")
-gdPpigPair4.5_mod1<-glm(diff~Site, family=gaussian,gdPpigPair4.5)
-summary(gdPpigPair4.5_mod1)
-Anova(gdPpigPair4.5_mod1)
-
-#Month6
-gdPpigPair6<-subset(DiffData_all_Pcomp, month =="Month6")
-gdPpigPair6_mod1<-glm(diff~Site, family=gaussian,gdPpigPair6)
-summary(gdPpigPair6_mod1)
-Anova(gdPpigPair6_mod1)
-
-#Month10
-gdPpigPair10<-subset(DiffData_all_Pcomp, month =="Month10")
-gdPpigPair10_mod1<-glm(diff~Site,family=gaussian, gdPpigPair10)
-summary(gdPpigPair10_mod1)
-Anova(gdPpigPair10_mod1)
-
-#Month18
-gdPpigPair18<-subset(DiffData_all_Pcomp, month =="Month18")
-gdPpigPair18_mod1<-glm(diff~Site, family=gaussian,gdPpigPair18)
-summary(gdPpigPair18_mod1)
-Anova(gdPpigPair18_mod1)
-
-#Month24
-gdPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
-gdPpigPair24_mod1<-glm(diff~Site, family=gaussian,gdPpigPair24)
-summary(gdPpigPair24_mod1)
-Anova(gdPpigPair24_mod1)
-```
-
-
-
-
-
-
-
-DELETE below. 
-
-
-
-
-
-ARTools diffs DELETE
-Mcap
-```{r}
-DiffData_all_Mcap<-subset(All_diff, Species=="Montipora capitata")
-DiffData_all_Mcap<-na.omit(DiffData_all_Mcap)
-#Month ALL
-DiffdMpigPairall_mod1<-art(diff~Site*month+(1|Pair), DiffData_all_Mcap)
-summary(DiffdMpigPairall_mod1) #Max is 4.8, violation
-anova(DiffdMpigPairall_mod1)
-
-#Month0
-DiffdMpigPair03<-subset(DiffData_all_Mcap, month =="Month0")          
-DiffdMpigPair03_mod1<-art(diff~Site, DiffdMpigPair03)
-summary(DiffdMpigPair03_mod1)
-anova(DiffdMpigPair03_mod1)
-
-
-#Month1.5
-DiffdMpigPair1.5<-subset(DiffData_all_Mcap, month =="Month1.5")
-DiffdMpigPair1.5_mod1<-art(diff~Site, DiffdMpigPair1.5)
-summary(DiffdMpigPair1.5_mod1)
-anova(DiffdMpigPair1.5_mod1)
-
-#Month3
-DiffdMpigPair3<-subset(DiffData_all_Mcap, month =="Month3")
-DiffdMpigPair3_mod1<-art(diff~Site, DiffdMpigPair3)
-summary(DiffdMpigPair3_mod1)
-anova(DiffdMpigPair3_mod1)
-
-#Month4.5
-DiffdMpigPair4.5<-subset(DiffData_all_Mcap, month =="Month4.5")
-DiffdMpigPair4.5_mod1<-art(diff~Site, DiffdMpigPair4.5)
-summary(DiffdMpigPair4.5_mod1)
-anova(DiffdMpigPair4.5_mod1)
-
-#Month6
-DiffdMpigPair6<-subset(DiffData_all_Mcap, month =="Month6")
-DiffdMpigPair6_mod1<-art(diff~Site, DiffdMpigPair6)
-summary(DiffdMpigPair6_mod1)
-anova(DiffdMpigPair6_mod1)
-
-#Month10
-DiffdMpigPair10<-subset(DiffData_all_Mcap, month =="Month10")
-DiffdMpigPair10_mod1<-art(diff~Site, DiffdMpigPair10)
-summary(DiffdMpigPair10_mod1)
-anova(DiffdMpigPair10_mod1)
-
-#Month18
-DiffdMpigPair18<-subset(DiffData_all_Mcap, month =="Month18")
-DiffdMpigPair18_mod1<-art(diff~Site, DiffdMpigPair18)
-summary(DiffdMpigPair18_mod1)
-anova(DiffdMpigPair18_mod1)
-
-#Month24
-DiffdMpigPair24<-subset(DiffData_all_Mcap, month =="Month24")
-DiffdMpigPair24_mod1<-art(diff~Site, DiffdMpigPair24)
-summary(DiffdMpigPair24_mod1)
-anova(DiffdMpigPair24_mod1)
-```
-
-Pcomp diff ARTools (CODE not edited yet) Delete
-```{r}
-DiffData_all_Pcomp<-subset(All_diff, Species=="Porites compressa")
-DiffData_all_Pcomp<-na.omit(DiffData_all_Pcomp)
-#Month ALL
-DiffdPpigPairall_mod1<-art(diff~Site*month+(1|Pair), DiffData_all_Pcomp)
-summary(DiffdPpigPairall_mod1) #violation
-anova(DiffdPpigPairall_mod1)
-
-#Month0
-DiffdPpigPair03<-subset(DiffData_all_Pcomp, month =="Month0")          
-DiffdPpigPair03_mod1<-aov(diff~Site, DiffdPpigPair03)
-summary(DiffdPpigPair03_mod1)
-
-#Month1.5
-DiffdPpigPair1.5<-subset(DiffData_all_Pcomp, month =="Month1.5")
-DiffdPpigPair1.5_mod1<-aov(diff~Site, DiffdPpigPair1.5)
-summary(DiffdPpigPair1.5_mod1)
-
-#Month3
-DiffdPpigPair3<-subset(DiffData_all_Pcomp, month =="Month3")
-DiffdPpigPair3_mod1<-aov(diff~Site, DiffdPpigPair3)
-summary(DiffdPpigPair3_mod1)
-
-#Month4.5
-DiffdPpigPair4.5<-subset(DiffData_all_Pcomp, month =="Month4.5")
-DiffdPpigPair4.5_mod1<-aov(diff~Site, DiffdPpigPair4.5)
-summary(DiffdPpigPair4.5_mod1)
-
-#Month6
-DiffdPpigPair6<-subset(DiffData_all_Pcomp, month =="Month6")
-DiffdPpigPair6_mod1<-aov(diff~Site, DiffdPpigPair6)
-summary(DiffdPpigPair6_mod1)
-
-#Month10
-DiffdPpigPair10<-subset(DiffData_all_Pcomp, month =="Month10")
-DiffdPpigPair10_mod1<-aov(diff~Site, DiffdPpigPair10)
-summary(DiffdPpigPair10_mod1)
-
-#Month18
-DiffdPpigPair18<-subset(DiffData_all_Pcomp, month =="Month18")
-DiffdPpigPair18_mod1<-aov(diff~Site, DiffdPpigPair18)
-summary(DiffdPpigPair18_mod1)
-
-#Month24
-DiffdPpigPair24<-subset(DiffData_all_Pcomp, month =="Month24")
-DiffdPpigPair24_mod1<-aov(diff~Site, DiffdPpigPair24)
-summary(DiffdPpigPair24_mod1)
-```
-
-
-
-diffs 0-3 months and 0-6 months
-*P. compressa*
-```{r}
-# 0-3
-d_Pcomp03_mod1<-aov(diff~Site*month, DiffData03_Pcomp)
-summary(d_Pcomp03_mod1)
-TukeyHSD(d_Pcomp03_mod1)
-
-# 0-6
-d_Pcomp06_mod1<-aov(diff~Site*month, DiffData06_Pcomp)
-summary(d_Pcomp06_mod1)
-TukeyHSD(d_Pcomp06_mod1)
-
-# 3-6
-d_Pcomp36_mod1<-aov(diff~Site*month, DiffData36_Pcomp)
-summary(d_Pcomp36_mod1)
-TukeyHSD(d_Pcomp36_mod1)
-```
-
-
-
-
-
-
-
-ARTools, keep?
-# ARTools stats for non-parametric non-normality  
-Full model
-```{r} 
-# replace Site with PR4 and PR13
-
-
-#Full timeframe Mcap (log, arcsinsqrt don't help normailty)
-
-hist(Mcap_df$sqrt) #not normal,use ARTools for non-parametric
-Mcap_df$sqrt<- arcsin(sqrt(Mcap_df$score))
-  
-Mcap_df<-Mcap_df[,c(1,2,4:7)] #subset and order cols for ARTool
-
-Full_mod_mcap<-art(score~month*Site*B2015+(1|TagID), Mcap_df)  #using TagID as only random factor not PAIR
-summary(Full_mod_mcap) #all should be ~0 and are
-anova(Full_mod_mcap) # Everything is significant
-
-#Analysis of Variance of Aligned Rank Transformed Data
-
-    #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
-    #Model: Mixed Effects (lmer)
-    #Response: art(score)
-
-    #                          F Df  Df.res     Pr(>F)    
-    #1 month             40.8916  7 417.205 < 2.22e-16 ***
-    #2 Site               7.0226  1  90.170  0.0095052  **
-    #3 B2015            371.2417  1  90.061 < 2.22e-16 ***
-    #4 month:Site         9.2513  7 417.356 1.1689e-10 ***
-    #5 month:B2015       44.4792  7 417.394 < 2.22e-16 ***
-    #6 Site:B2015         4.8256  1  90.062  0.0306073   *
-    #7 month:Site:B2015   9.1426  7 417.452 1.5846e-10 ***
-
-
-### tried with error not sure how to interpret
-#Full_mod_mcaperr<-art(score~month*Site*B2015+Error(TagID), Mcap_df)  #using TagID as only random factor not PAIR
-
-#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
-		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
- 	#Reef by Bleaching history (not by month! moths are averaged)
-		model.int_1=artlm(Full_mod_mcap, "Site:B2015")
-		marginal1=emmeans(model.int_1, ~Site:B2015)
-      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
-		  contrast(marginal1, method="pairwise", adjust="tukey")	#only 13N-13Y show sig diff across months.
-
-		  	  
-		  
-#### My argument is that we use this model to show that all interactions are significant, and THEN we run models at specific time points to show what is going on at that time. I feel like that should make reviewers happy. 
-		  
-  ##** I dont think we want this
- 	   #posthoc lib phia, testInteractions, Site:B2015  
-    testInteractions(artlm(Month1.5_mcap, "Site:B2015"), pairwise=c("Site", "B2015"), adjustment="holm")	
-      # 4-13 : N-Y 0.0111  
-      # This is testing diffs between 4-13 NB corals vs diffs between 4-13 B corals, can't switch it...Any ideas?
-    
-        testInteractions(artlm(Month1.5_mcap, "B2015:Site"), across=c("B2015", "Site"), adjustment="holm")	#Works         across not pairwise. "The factors contained in across will appear as a full set of contrasts. By default          they will be orthogonal contrasts, unless overriden by the contrasts of the model data frame or by the            arguments passed down to testFactors. See the documentation of that function for further details.
-        
-        #F Test: 
-            #P-value adjustment method: holm
-            #           Value Df Sum of Sq      F Pr(>F)  
-            #Mean      23.017  1      2461 6.8013 0.0111 *
-            #Residuals        71     25691   		  
-
-
-```
-
-Mcap models at each time point, main effects Reef and B2015
-```{r}
-Mcap_0<-subset(Mcap_df, month=="Month0")
-Mcap_0<-Mcap_0[,c(1,3,4,6)] 
-Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
-Mcap_1.5<-Mcap_1.5[,c(1,3,4,6)] 
-Mcap_3<-subset(Mcap_df, month=="Month3")
-Mcap_3<-Mcap_1.5[,c(1,3,4,6)] 
-Mcap_4.5<-subset(Mcap_df, month=="Month4.5")
-Mcap_4.5<-Mcap_4.5[,c(1,3,4,6)] 
-Mcap_6<-subset(Mcap_df, month=="Month6")
-Mcap_6<-Mcap_6[,c(1,3,4,6)] 
-Mcap_10<-subset(Mcap_df, month=="Month10")
-Mcap_10<-Mcap_10[,c(1,3,4,6)] 
-Mcap_18<-subset(Mcap_df, month=="Month18")
-Mcap_18<-Mcap_18[,c(1,3,4,6)] 
-Mcap_24<-subset(Mcap_df, month=="Month24")
-Mcap_24<-Mcap_24[,c(1,3,4,6)] 
-
-
-#Month0
-Month0_mcap<-art(score~Site*B2015, Mcap_0)  #TagID removed bc not repeated measures
-summary(Month0_mcap) #all should be ~0
-anova(Month0_mcap) 
-  #posthoc for single factors:
- 	   contrast(emmeans(artlm(Month0_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
- 	
- 	   
-#Month1.5
-Month1.5_mcap<-art(score~B2015+Site+B2015:Site, Mcap_1.5)  #using TagID as only random factor not PAIR
-summary(Month1.5_mcap) #all should be ~0,F-vals not all ~0, other options? 
-anova(Month1.5_mcap) 
-
-  #posthoc for single factors:
- 	   contrast(emmeans(artlm(Month1.5_mcap, "Site"), ~ Site), method="pairwise") 
-        #4-13 0.0051
- 	   contrast(emmeans(artlm(Month1.5_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-            
-# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
-        #Mann-Whitney U tests tests on the original data.
-        # cross-factor pairwise comparisons using Mann-Whitney U tests.
- 	   ### AH can you look at the WARNINGS thrown and give your opinion?
-
-		N4.Y4 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "N",]$score, Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "Y",]$score)$p.value  
-		N13.Y13 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "N",]$score, Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "Y",]$score)$p.value 
-	Y4.Y13 <- wilcox.test(Mcap_1.5[Mcap_1.5$Site == "4" & Mcap_1.5$B2015 == "Y",]$score, Mcap_1.5[Mcap_1.5$Site == "13" & Mcap_1.5$B2015 == "Y",]$score)$p.value 
-        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
-		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
-		# This returns all significantly different. 
-    
-#Month3
-Month3_mcap<-art(score~Site+B2015+Site:B2015, Mcap_3)  #using TagID as only random factor not PAIR
-summary(Month3_mcap) #all should be ~0, are for cols, aren't for F-value
-anova(Month3_mcap)
-
-  contrast(emmeans(artlm(Month3_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
-        #Mann-Whitney U tests tests on the original data.
-        # cross-factor pairwise comparisons using Mann-Whitney U tests.
-
-		N4.Y4 <- wilcox.test(Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "N",]$score, Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "Y",]$score)$p.value  
-		N13.Y13 <- wilcox.test(Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "N",]$score, Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "Y",]$score)$p.value 
-	Y4.Y13 <- wilcox.test(Mcap_3[Mcap_3$Site == "4" & Mcap_3$B2015 == "Y",]$score, Mcap_3[Mcap_3$Site == "13" & Mcap_3$B2015 == "Y",]$score)$p.value 
-        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
-		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
-		# This returns all significantly different.  4.443438e-04 1.227426e-07 3.355914e-02
-
-#Month4.5
-Month4.5_mcap<-art(score~Site*B2015, Mcap_4.5)  #TagID removed bc not repeated measures
-summary(Month4.5_mcap) #all should be ~0 and are
-anova(Month4.5_mcap) 
-
- contrast(emmeans(artlm(Month4.5_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
-        #Mann-Whitney U tests tests on the original data.
-        # cross-factor pairwise comparisons using Mann-Whitney U tests.
-
-		N4.Y4 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "N",]$score, Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "Y",]$score)$p.value  
-		N13.Y13 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "N",]$score, Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "Y",]$score)$p.value 
-	Y4.Y13 <- wilcox.test(Mcap_4.5[Mcap_4.5$Site == "4" & Mcap_4.5$B2015 == "Y",]$score, Mcap_4.5[Mcap_4.5$Site == "13" & Mcap_4.5$B2015 == "Y",]$score)$p.value 
-        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
-		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
-		# This returns all significantly different.  3.333033e-02 4.355652e-07 3.333033e-02
-
-#Month6
-Month6_mcap<-art(score~Site*B2015, Mcap_6)  #TagID removed bc not repeated measures
-summary(Month6_mcap) #all should be ~0 and are
-anova(Month6_mcap) 
-
-contrast(emmeans(artlm(Month6_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-# WE WANT THIS FOR INTERACTIONS THAT ARE ALREADY SIG. 
-        #Mann-Whitney U tests tests on the original data.
-        # cross-factor pairwise comparisons using Mann-Whitney U tests.
-
-		N4.Y4 <- wilcox.test(Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "N",]$score, Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "Y",]$score)$p.value  
-		N13.Y13 <- wilcox.test(Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "N",]$score, Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "Y",]$score)$p.value 
-	Y4.Y13 <- wilcox.test(Mcap_6[Mcap_6$Site == "4" & Mcap_6$B2015 == "Y",]$score, Mcap_6[Mcap_6$Site == "13" & Mcap_6$B2015 == "Y",]$score)$p.value 
-        # correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
-		p.adjust(c(N4.Y4, N13.Y13, Y4.Y13), method="holm")
-		# This returns all significantly different.  7.186167e-02 5.878972e-05 8.629725e-03
-
-#Month10
-Month10_mcap<-art(score~Site+B2015+Site:B2015, Mcap_10)  #using TagID as only random factor not PAIR
-summary(Month10_mcap) #all should be ~0 and are
-anova(Month10_mcap)
-
-
-contrast(emmeans(artlm(Month10_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-#Month18
-Month18_mcap<-art(score~Site+B2015+Site:B2015, Mcap_18)  #using TagID as only random factor not PAIR
-summary(Month18_mcap) #all should be ~0 and are
-anova(Month18_mcap)
-
-contrast(emmeans(artlm(Month18_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-
-#Month24
-Month24_mcap<-art(score~Site+B2015+Site:B2015, Mcap_24)  #using TagID as only random factor not PAIR
-summary(Month24_mcap) #all should be ~0 and are
-anova(Month24_mcap)
-
-contrast(emmeans(artlm(Month24_mcap, "B2015"), ~ B2015), method="pairwise") 
- 	        #N - Y <.0001
-```
-
-*P.comp*  
-# ARTools stats for non-parametric non-normality  
-
-Full model ARTool
-
-```{r} 
-
-#Full timeframe Pcomp (log, arcsinsqrt don't help normailty)
- 
-hist(Pcomp_df$score) #not normal,use ARTools for non-parametric
-
-Pcomp_df<-Pcomp_df[,c(1,2,4:7)] #subset and order cols for ARTool
-
-Full_mod_Pcomp<-art(score~month*Site*B2015+(1|TagID), Pcomp_df)  #using TagID as only random factor not PAIR
-summary(Full_mod_Pcomp) #all should be ~0 and are
-anova(Full_mod_Pcomp) # Everything is significant
-
-#Analysis of Variance of Aligned Rank Transformed Data
-
-    #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
-    #Model: Mixed Effects (lmer)
-    #Response: art(score) 
-    #                             F Df  Df.res     Pr(>F)    
-    #1 month            109.281  7 485.147 < 2.22e-16 ***
-    #2 Site              93.571  1  80.893 3.7726e-15 ***
-    #3 B2015            409.758  1  80.797 < 2.22e-16 ***
-    #4 month:Site        22.472  7 483.989 < 2.22e-16 ***
-    #5 month:B2015      132.779  7 485.104 < 2.22e-16 ***
-    #6 Site:B2015        33.393  1  80.878 1.3546e-07 ***
-    #7 month:Site:B2015  19.542  7 484.067 < 2.22e-16 ***
-
-
-### tried with error not sure how to interpret
-#Full_mod_Pcomperr<-art(score~month*Site*B2015+Error(TagID), Pcomp_df)  #using TagID as only random factor not PAIR
-
-#post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
-		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
- 	#Reef by Bleaching history (not by month! moths are averaged)
-		model.int_1=artlm(Full_mod_Pcomp, "Site:B2015")
-		marginal1=emmeans(model.int_1, ~Site:B2015)
-      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
-		  contrast(marginal1, method="pairwise", adjust="tukey")	#PR4 diff btw B/NB, PR13 diff btwn B/NB
-
-```
-
-Pcomp models at each time point, main effects Reef and B2015 ARTool
-```{r}
-Pcomp_0<-subset(Pcomp_df, month=="Month0") 
-Pcomp_0<-Pcomp_0[,c(1,3,4,6)] 
-Pcomp_1.5<-subset(Pcomp_df, month=="Month1.5")
-Pcomp_1.5<-Pcomp_1.5[,c(1,3,4,6)] 
-Pcomp_3<-subset(Pcomp_df, month=="Month3")
-Pcomp_3<-Pcomp_3[,c(1,3,4,6)] 
-Pcomp_4.5<-subset(Pcomp_df, month=="Month4.5")
-Pcomp_4.5<-Pcomp_4.5[,c(1,3,4,6)] 
-Pcomp_6<-subset(Pcomp_df, month=="Month6")
-Pcomp_6<-Pcomp_6[,c(1,3,4,6)] 
-Pcomp_10<-subset(Pcomp_df, month=="Month10")
-Pcomp_10<-Pcomp_10[,c(1,3,4,6)] 
-Pcomp_18<-subset(Pcomp_df, month=="Month18")
-Pcomp_18<-Pcomp_18[,c(1,3,4,6)] 
-Pcomp_24<-subset(Pcomp_df, month=="Month24")
-Pcomp_24<-Pcomp_24[,c(1,3,4,6)] 
-
-
-#Month0
-Month0_Pcomp<-art(score~Site*B2015, Pcomp_0)  #TagID removed bc not repeated measures
-summary(Month0_Pcomp) #all should be ~0 and are
-anova(Month0_Pcomp) 
-
-#Month1.5
-Month1.5_Pcomp<-art(score~Site*B2015, Pcomp_1.5)  #using TagID as only random factor not PAIR
-summary(Month1.5_Pcomp) #all should be ~0 and are
-anova(Month1.5_Pcomp) 
-
-#Month3
-Month3_Pcomp<-art(score~Site*B2015, Pcomp_3)  #using TagID as only random factor not PAIR
-summary(Month3_Pcomp) #all should be ~0 and most are, max 0.0012
-anova(Month3_Pcomp)
-
-#Month4.5
-Month4.5_Pcomp<-art(score~Site*B2015, Pcomp_4.5)  #TagID removed bc not repeated measures
-summary(Month4.5_Pcomp) #all should be ~0 and are close
-anova(Month4.5_Pcomp) 
-
-
-#Month6
-Month6_Pcomp<-art(score~Site*B2015, Pcomp_6)  #TagID removed bc not repeated measures
-summary(Month6_Pcomp) # all scores are 3, no variation
-anova(Month6_Pcomp) ### Error in Anova.lm(m, type = "III", test = test, ...) : 
-                          #residual sum of squares is 0 (within rounding error)
-
-#Month10
-Month10_Pcomp<-art(score~Site*B2015, Pcomp_10)  #using TagID as only random factor not PAIR
-summary(Month10_Pcomp) #all should be ~0 and are
-anova(Month10_Pcomp)
-
-#Month18
-Month18_Pcomp<-art(score~Site*B2015, Pcomp_18)  #using TagID as only random factor not PAIR
-summary(Month18_Pcomp) #all should be ~0 and are
-anova(Month18_Pcomp)
-
-#Month24
-Month24_Pcomp<-art(score~Site*B2015, Pcomp_24)  #using TagID as only random factor not PAIR
-summary(Month24_Pcomp) #all should be ~0 and are
-anova(Month24_Pcomp)
-```
-
-
-
-
-
-
-
-Do we want to even keep?
-subsets for mcap stats
-```{r} 
-Mcappig06All<-subset(b0153456, Species=="Montipora capitata")
-Mcappig36All<-subset(b3456, Species=="Montipora capitata")
-
-#03
-Mcappig03All_mod<-aov(score~month*Site*B2015, Mcappig03All)
-summary(Mcappig03All_mod)
-TukeyHSD(Mcappig03All_mod)
-#06
-Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
-summary(Mcappig06All_mod)
-TukeyHSD(Mcappig06All_mod)
-
-#36
-Mcappig06All_mod<-aov(score~month*Site*B2015, Mcappig06All)
-summary(Mcappig06All_mod)
-TukeyHSD(Mcappig06All_mod)
-```
-
-
-# ARTools TEST
-
-ARTools: full model  AH START HERE
-https://cran.r-project.org/web/packages/ARTool/vignettes/art-contrasts.html
-```{r}
-
-#03 
-Mcappig03All<-Mcappig03All[,c(1,2,4:7)] #get data in order and only data needed for model (unique ID on left col, variable on far right)
-hist(Mcappig03All$score) #not normal,use ARTools for non-parametric 
- 
-model_mcap03_1<-art(score~month*Site*B2015+(1|Pair)+(1|TagID), Mcappig03All)
-anova(model_mcap03_1)
-  #results
-  #Table Type: Analysis of Deviance Table (Type III Wald F tests with Kenward-Roger df) 
-  #Model: Mixed Effects (lmer)
-  #Response: art(score)
-
-      #                           F Df  Df.res     Pr(>F)    
-      #1 month            120.46674  2 149.303 < 2.22e-16 ***
-      #2 Site               0.93441  1  39.611    0.33958    
-      #3 B2015            918.05363  1  38.942 < 2.22e-16 ***
-      #4 month:Site        19.76773  2 149.737 2.4072e-08 ***
-      #5 month:B2015      115.88767  2 149.945 < 2.22e-16 ***
-      #6 Site:B2015         1.16330  1  39.366    0.28735    
-      #7 month:Site:B2015  23.32563  2 150.006 1.5120e-09 ***
-
-
-#posthoc - so this keeps giving me warnings due to involvement with interactions, ok to use? just warning. These are remodeling! not post hoc on above model
-  
-  #month only		 - over time (regardless of reef or Bleaching history, months differ)
-    model.lm_1<-artlm(model_mcap03_1, "month")  #post hoc, get model ready to be passed into emmeans
-		marginal<-emmeans(model.lm_1, ~month) # only modeling by month
-		pairs(marginal, adjust="tukey") #tukey, all significant
-		cld(marginal, alpha=0.05, Letters=letters, adjust="tukey") # this shows they are all diff. 
-		#OR (this might be the same)
-		contrast(emmeans(model.lm_1, ~month), method = "pairwise") # only modeling by month
-
-  #Bleaching History (B2015)	- (regarless of time, Bleached corals and NB are diff still)	
-		model.lm_2<-artlm(model_mcap03_1, "B2015")  #post hoc, get model ready to be passed into emmeans
-		marginal2<-emmeans(model.lm_2, ~B2015) # only modeling by month
-		pairs(marginal2, adjust="tukey") #tukey, significant
-		cld(marginal2, alpha=0.05, Letters=letters, adjust="tukey") 
-		
-  #post-hoc for 2-way model (From what I read, I think we can do this for things with 2 levels (ie     
-		  #Bleached or not bleached, Reef 4 and Reef13, but not more, so month doesn't work)
- 	#Reef by Bleaching history (not by month! moths are averaged)
-		model.int_1=artlm(model_mcap03_1, "Site:B2015")
-		marginal1=emmeans(model.int_1, ~Site:B2015)
-      contrast(marginal1, method="pairwise", adjust="none")	 #<Thoughts on "adjust"? none vs Tukey?
-		  contrast(marginal, method="pairwise", adjust="tukey")		
-
-#I think we use this for things with 3+ levels)
-		  #Bleaching history by Reef
-testInteractions(artlm(model_mcap03_1, "month:B2015"), pairwise=c("month","B2015"), adjustment="holm")		  #Chisq Test: 
-    #P-value adjustment method: holm
-      #                      Value Df   Chisq Pr(>Chisq)    
-    #Month0-Month1.5 : N-Y 148.760  1 103.645  < 2.2e-16 ***
-    #  Month0-Month3 : N-Y 217.877  1 217.685  < 2.2e-16 ***
-    #Month1.5-Month3 : N-Y  69.117  1  20.488  6.002e-06 ***
-# Interpret above as diff between Month0-Month1.5 of NB, and the diff between Month0-Month1.5 of B. FOr some reason, i can't change the order of "month:B2015" to "B2015:month".
-
-#contrast tests...not sure if ok
-testInteractions(artlm(model_mcap03_1, "month:Site"), pairwise=c("month","Site"), adjustment="holm")		   #month by Reef
-    #Chisq Test: 
-   #		                            Value Df   Chisq Pr(>Chisq)    
-    #Month0-Month1.5 : 4-13   28.507  1  2.9161     0.0877 .  
-    #  Month0-Month3 : 4-13  -77.427  1 21.0712  8.850e-06 ***
-    #Month1.5-Month3 : 4-13 -105.933  1 36.9487  3.638e-09 ***
-		  
-
-#what about nonparametric Mann-Whitney U tests (bewteen subjects) or wilcoxon (within subjects)
-#http://depts.washington.edu/acelab/proj/art/index.html
-# cross-factor pairwise comparisons using Mann-Whitney U tests. Look ok? Not by Month, across them. 
-		N4_vs_Y4 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score)$p.value
-	 	N13_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
-	  Y4_vs_Y13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "Y",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "Y",]$score)$p.value
-	  N4_vs_N13 = wilcox.test(Mcappig03All[Mcappig03All$Site == "4" & Mcappig03All$B2015 == "N",]$score, Mcappig03All[Mcappig03All$Site == "13" & Mcappig03All$B2015 == "N",]$score)$p.value
-
-# did below bc doc suggested, not sure how I feel. Now all are significant. http://depts.washington.edu/acelab/proj/art/index.html
-# correct for multiple comparisons using Holm's sequential Bonferroni procedure (Holm 1979)
-		p.adjust(c(N4_vs_Y4, N13_vs_Y13, Y4_vs_Y13,N4_vs_N13), method="holm")
-
-		
-		
-#new idea #### AH do you think we can present the 'full model' and then for post hoc run specific models (or do we run into same issues again in review)
-  
-
-```
-
-
-## Rare of Bleaching Recovery: Percent change from month 0 to month 3  
-We calculated the mean bleaching recovery at 0-3 months and 3-6 months.      
-0-3 months RATE
-```{r}
-## 1. 0-3 months
-#Calc average rate per colony 0-3 months
-# Recovery in %
-b03$Rate03<-(((b03$Month3-b03$Month0)))
-
-#Average the means of the rates. 
-
-# calc average  bleaching rate/month in %  per grouping
-b03means <- ddply(b03, c("Site", "Species", "B2015"), summarise, 
-                   N    = length(Rate03[!is.na(Rate03)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate03, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate03, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate03, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#b03means #display table
-
-b03means$code<-paste0(b03means$Site, b03means$B2015, b03means$Species)
-b03means #display table
-```
-
-0-6 months RATE
-```{r}
-#recovery in %
-b06$Rate06<-(((b06$Month6-b06$Month0)))
-
-#Average the means of the rates. 
-
-# calc average  bleaching rate/month in %  per grouping
-b06means <- ddply(b06, c("Site", "Species", "B2015"), summarise, 
-                   N    = length(Rate06[!is.na(Rate06)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate06, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate06, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate06, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-b06means #display table
-
-b06means$code<-paste0(b06means$Site, b06means$B2015, b06means$Species)
-```
-
-Rate change       <- we didn't use this for Color score, just Tissue loss
-
-`Rate ~ Lagoon*B2015`  
-*Montipora capitata only*    
- Months 0-3
-```{r}
-#subset Mcap
-Mcap_b03<-subset(b03, Species=="Montipora capitata") #subset Mcap
-#0-3
-Mcap_b03r<-aov(Rate03~Site* B2015, Mcap_b03)
-summary(Mcap_b03r)
-TukeyHSD(Mcap_b03r)
-
-#0-6
-Mcap_b06<-subset(b06, Species=="Montipora capitata") #subset Mcap
-Mcap_b06r<-aov(Rate06~Site * B2015, Mcap_b06)
-summary(Mcap_b06r)
-TukeyHSD(Mcap_b06r)
-```
-
-##*Porites compressa only*
-`Bleaching score ~ Reef Site * Bleaching History`  
-###Months 0-3, Rate change
-Model: `score~Site*B2015`  
-```{r}
-#subset Pcomp
-Pcomp_b03<-subset(b03, Species=="Porites compressa") #subset Pcomp
-Pcomp_b03r<-aov(Rate03~Site  * B2015, Pcomp_b03)
-summary(Pcomp_b03r)
-TukeyHSD(Pcomp_b03r)
-
-#0-6
-Pcomp_b06<-subset(b06, Species=="Porites compressa") #subset Pcomp
-Pcomp_b06r<-aov(Rate06~Site * B2015, Pcomp_b06)
-summary(Pcomp_b06r)
-TukeyHSD(Pcomp_b06r)
-
-```
-ARTools mcap:pairs Delete
-```{r}
-#set up Pairs data
-Mcappig<-subset(PairDat, Species =="Montipora capitata")            
-McappigArt<-Mcappig
-
-
-
-#All
-MpigPair_all_mod1ART<-art(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
-summary(MpigPair_all_mod1ART)
-anova(MpigPair_all_mod1ART)
-
-#Month0
-MpigPair0ART<-subset(Mcappig, month =="Month0")           
-MpigPair0_mod1ART<-art(score~Site*B2015, MpigPair0ART)
-summary(MpigPair0_mod1ART)
-anova(MpigPair0_mod1ART)
-
-#Month1.5
-MpigPair1.5ART<-subset(Mcappig, month =="Month1.5")           
-MpigPair1.5_mod1ART<-art(score~Site*B2015, MpigPair1.5ART)
-summary(MpigPair1.5_mod1ART) #not good
-anova(MpigPair1.5_mod1ART)
-
-#Month3
-MpigPair3ART<-subset(Mcappig, month =="Month3")           
-MpigPair3_mod1ART<-art(score~Site*B2015, MpigPair3ART)
-summary(MpigPair3_mod1ART)
-anova(MpigPair3_mod1ART)
-
-#Month4.5
-MpigPair4.5ART<-subset(Mcappig, month =="Month4.5")           
-MpigPair4.5_mod1ART<-art(score~Site*B2015, MpigPair4.5ART)
-summary(MpigPair4.5_mod1ART) #not good
-anova(MpigPair4.5_mod1ART)
-
-#Month6
-MpigPair6ART<-subset(Mcappig, month =="Month6")           
-MpigPair6_mod1ART<-art(score~Site*B2015, MpigPair6ART)
-summary(MpigPair6_mod1ART)#not good
-anova(MpigPair6_mod1ART)
-
-#Month10
-MpigPair10ART<-subset(Mcappig, month =="Month10")           
-MpigPair10_mod1ART<-art(score~Site*B2015, MpigPair10ART)
-summary(MpigPair10_mod1ART)#not good
-anova(MpigPair10_mod1ART)
-
-#Month18
-MpigPair18ART<-subset(Mcappig, month =="Month18")           
-MpigPair18_mod1ART<-art(score~Site*B2015, MpigPair18ART)
-summary(MpigPair18_mod1ART)#notgood
-anova(MpigPair18_mod1ART)
-
-#Month24
-MpigPair24ART<-subset(Mcappig, month =="Month24")           
-MpigPair24_mod1ART<-art(score~Site*B2015, MpigPair24ART)
-summary(MpigPair24_mod1ART)#really not good
-anova(MpigPair24_mod1ART)
-```
-
-
-
-ARTools pcomp:pairs Delete
-```{r}
-#set up Pairs data
-Pcomppig<-subset(PairDat, Species =="Porites compressa")            
-
-#All
-PpigPair_all_mod1ART<-art(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig)
-summary(PpigPair_all_mod1ART)# not all 0
-anova(PpigPair_all_mod1ART)
-
-#Month0
-PpigPair0ART<-subset(Pcomppig, month =="Month0")           
-PpigPair0_mod1ART<-art(score~Site*B2015, PpigPair0ART)
-summary(PpigPair0_mod1ART)#not0
-anova(PpigPair0_mod1ART)
-
-#Month1.5
-PpigPair1.5ART<-subset(Pcomppig, month =="Month1.5")           
-PpigPair1.5_mod1ART<-art(score~Site*B2015, PpigPair1.5ART)
-summary(PpigPair1.5_mod1ART) #0
-anova(PpigPair1.5_mod1ART)
-
-#Month3
-PpigPair3ART<-subset(Pcomppig, month =="Month3")           
-PpigPair3_mod1ART<-art(score~Site*B2015, PpigPair3ART)
-summary(PpigPair3_mod1ART) #close to 0
-anova(PpigPair3_mod1ART)
-
-#Month4.5
-PpigPair4.5ART<-subset(Pcomppig, month =="Month4.5")           
-PpigPair4.5_mod1ART<-art(score~Site*B2015, PpigPair4.5ART)
-summary(PpigPair4.5_mod1ART) #not all 0
-anova(PpigPair4.5_mod1ART)
-
-#Month6
-PpigPair6ART<-subset(Pcomppig, month =="Month6")           
-PpigPair6_mod1ART<-art(score~Site*B2015, PpigPair6ART)
-summary(PpigPair6_mod1ART)#Error in Anova.lm(m, type = "III", test = test, ...) :residual sum of squares is 0 (within rounding error)
-anova(PpigPair6_mod1ART)
-
-#Month10
-PpigPair10ART<-subset(Pcomppig, month =="Month10")           
-PpigPair10_mod1ART<-art(score~Site*B2015, PpigPair10ART)
-summary(PpigPair10_mod1ART)#not all 0
-anova(PpigPair10_mod1ART)
-
-#Month18
-PpigPair18ART<-subset(Pcomppig, month =="Month18")           
-PpigPair18_mod1ART<-art(score~Site*B2015, PpigPair18ART)
-summary(PpigPair18_mod1ART)#not all 0
-anova(PpigPair18_mod1ART)
-
-#Month24
-PpigPair24ART<-subset(Pcomppig, month =="Month24")           
-PpigPair24_mod1ART<-art(score~Site*B2015, PpigPair24ART)
-summary(PpigPair24_mod1ART)#not all 0
-anova(PpigPair24_mod1ART)
-```
-
-0-3 and 0-6 month differences <- cut?
-Pairs data
-score~month*B2015*lagoon
-*M. capitata* Pairs
-```{r}
-Pcomppig03Pairs<-subset(pigPairs03, Species=="Montipora capitata")
-Pcomppig06Pairs<-subset(pigPairs06, Species=="Montipora capitata")
-
-#0-3
-Pcomppig03Pairs_mod<-aov(score~month*Site*B2015, Pcomppig03Pairs)
-summary(Pcomppig03Pairs_mod)
-
-#0-6
-Pcomppig06Pairs_mod<-aov(score~month*Site*B2015, Pcomppig06Pairs)
-summary(Pcomppig06Pairs_mod)
-```
-
-Pcomp Pairs
-```{r}
-Pcomppig03Pairs<-subset(pigPairs03, Species=="Porites compressa")
-Pcomppig06Pairs<-subset(pigPairs06, Species=="Porites compressa")
-Pcomppig36Pairs<-subset(pigPairs36, Species=="Porites compressa")
-
-#0-3
-Pcomppig03Pairs_mod<-aov(score~month*Site*B2015, Pcomppig03Pairs)
-summary(Pcomppig03Pairs_mod)
-#06
-Pcomppig06Pairs_mod<-aov(score~month*Site*B2015, Pcomppig06Pairs)
-summary(Pcomppig06Pairs_mod)
 ```
