@@ -3,19 +3,13 @@ title: "transect_reps"
 author: "Shayle Matsuda"
 date: "10/23/2019"
 output:
-  pdf_document:
-    toc: yes
-    toc_depth: '6'
-  word_document:
-    toc: yes
-    toc_depth: '6'
   html_document:
     code_folding: hide
-    keep_tex: yes
-    pdf_document: null
     toc: yes
     toc_depth: 6
     toc_float: yes
+  pdf_document:
+    keep_tex: yes
 editor_options: 
   chunk_output_type: console
 ---
@@ -30,44 +24,18 @@ knitr::opts_chunk$set(echo = TRUE)
 #rm(list=ls(all=TRUE)) 
 
 library("reshape2") #reshape data
-library("plotrix") #functions in tapply
 library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
-library("pscl")
 library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
 library("car") #levenes test
 library("lsmeans")
-library(effects)
-library("multcomp") 
-library("multcompView")
-library("coefplot") #coefficient plotting
-library("seacarb") #seawater carbonate chemistry
-library("vegan") #calculating distance matrices
-library(betareg)
-library(coin)
-library(exactRankTests)
-library(mvtnorm)
-library(DTK)
-library(PMCMR)
-library(MuMIn)
 library(glmmTMB)
 library(lme4)
 library(lmerTest)
-library(ggsignif)
-library(latticeExtra)
-library(HH)
-library(PMCMR)
 library(tidyverse)
-library(arm)
-library(jtools)
-library(broom)
-library(ggstance)
-library(officer)
-library(huxtable)
-library(flextable)
 ```
 
 Setup df:
@@ -103,7 +71,7 @@ transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month","MonthFactor",
                    se   = sd / sqrt(N), #calculate standard error
                    max = max(Percent, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-Monthmeans #display table
+#transectPlotmean #display table
 
 transectPlotmean$code<-paste0(transectPlotmean$Species, transectPlotmean$Reef, transectPlotmean$Bleaching_status) #code for plotting
 ```
@@ -132,7 +100,7 @@ col_McapInner_plot<-ggplot(data=col_McapInner, aes(x=Month, y=mean, group = code
   scale_color_manual(values=c("black", "black","black"))+
   ylab("Montipora capitata\nPercent") +
     xlab("Recovery time (months)") + #Label the X Axis
-    #ylim(1, 3) + #set Y limits
+    ylim(0, 100) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -168,7 +136,7 @@ col_McapOuter_plot<-ggplot(data=col_McapOuter, aes(x=Month, y=mean, group = code
   scale_color_manual(values=c("black", "black","black"))+
   ylab("Montipora capitata\nPercent") +
     xlab("Recovery time (months)") + #Label the X Axis
-    #ylim(1, 3) + #set Y limits
+    ylim(0, 100) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -206,7 +174,7 @@ col_PcompInner_plot<-ggplot(data=col_PcompInner, aes(x=Month, y=mean, group = co
   scale_color_manual(values=c("black", "black","black"))+
   ylab("Porites compressa\nPercent") +
     xlab("Recovery time (months)") + #Label the X Axis
-    #ylim(1, 3) + #set Y limits
+    ylim(0,100) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -243,7 +211,7 @@ col_PcompOuter_plot<-ggplot(data=col_PcompOuter, aes(x=Month, y=mean, group = co
   scale_color_manual(values=c("black", "black","black"))+
   ylab("Porites compressa\nPercent") +
     xlab("Recovery time (months)") + #Label the X Axis
-    #ylim(1, 3) + #set Y limits
+    ylim(0,100) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -316,7 +284,6 @@ anova(CoralCoverMod, type=2)
 #conduct Tukey post hoc test 
     emm = emmeans(CoralCoverMod, ~ Reef, adjust="tukey")
     #letter display
-    cld(emm)
     pairs(emm)
 ```
 
@@ -341,7 +308,7 @@ anova(Prev_transect_full, type=2)
        
 #plot
 # calc average  bleaching rate/month in %  per grouping
-transectPlotmeanprev <- ddply(prev_peak, c("Species", "Reef"), summarise, 
+transectPlotmeanprev <- ddply(rData3, c("Species", "Reef"), summarise, 
                    N    = length(sum[!is.na(sum)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(sum, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(sum, na.rm=TRUE), #calculate standard deviation
