@@ -391,8 +391,8 @@ anova(WhiteMod, type=2)
     #letter display
     cld(emm)
     pairs(emm)
-   # Inner,Mcap,0 - Inner,Pcomp,0        -44.84422 4.3 58 -10.420 <.0001
-    #Outer,Mcap,0 - Outer,Pcomp,0          1.02260 4.3 58   0.238 1.0000
+   # Inner,Mcap,0 - Inner,Pcomp,0    p= <.0001
+    #Outer,Mcap,0 - Outer,Pcomp,0    p= 1.0000
 ```
 
 ##Severity (white/white+pale)
@@ -433,9 +433,9 @@ anova(SeverityMod, type="2")
     #Mcap,0,Inner - Pcomp,0,Inner        -0.428518 0.0789 41.0 -5.432  0.0004 
     #Mcap,0,Outer - Pcomp,0,Outer         0.044986 0.0789 41.0  0.570  1.0000
  #conduct Tukey post hoc test 
-    emm = emmeans(SeverityMod, ~ Reef*Species, adjust="tukey")
+    emm = emmeans(SeverityMod, ~ Reef*Species*MonthFactor, adjust="tukey")
     #letter display
-    cld(emm)   
+    pairs(emm)   
     #post hoc
     #Mcap,0,Outer - Pcomp,0,Outer         0.044986 0.0789 41.0  0.570  1.0000
     #Mcap,0,Inner - Pcomp,0,Inner        -0.428518 0.0789 41.0 -5.432  0.0004
