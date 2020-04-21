@@ -4,13 +4,13 @@ title: "ColorScore revision"
 author: "Shayle Matsuda"
 date: "9/25/2019"
 output:
-  pdf_document:
-    keep_tex: yes
   html_document:
     code_folding: hide
     toc: yes
     toc_depth: 6
     toc_float: yes
+  pdf_document:
+    keep_tex: yes
 editor_options: 
   chunk_output_type: console
 ---
@@ -23,7 +23,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, results="hide", message=FALSE}
 rm(list=ls(all=TRUE)) 
 library("reshape2") #reshape data
-library("plotrix") #functions in tapply
 library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
@@ -33,33 +32,12 @@ library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
 library("car") #levenes test
 library("lsmeans")
-library(effects)
 library("multcomp") 
 library("multcompView")
-library("coefplot") #coefficient plotting
-library("seacarb") #seawater carbonate chemistry
-library("vegan") #calculating distance matrices
-library(betareg)
-library(coin)
-library(exactRankTests)
-library(mvtnorm)
-library(DTK)
-library(PMCMR)
-library(MuMIn)
 library(glmmTMB)
 library(lme4)
 library(lmerTest)
-library(ggsignif)
-library(HH)
-library(PMCMR)
 library(tidyverse)
-library(arm)
-library(jtools)
-library(broom)
-library(ggstance)
-library(officer)
-library(huxtable)
-library(flextable)
 
 #load data
 mData<-read.csv("DECIMALmortality_scores_percent_20191110_missingdataremoved.csv")
@@ -68,7 +46,7 @@ mData$Site<-as.factor(mData$Site)
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
 ```
 
-# Partial mortality rate  
+# Partial mortality   
 set up df
 ```{r,results="hide", }
 #all Months
@@ -119,6 +97,7 @@ mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summa
 mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Species)
 #mALLmeansPER #display table
 ```
+
 
 ###*Montipora capitata*: Partial mortality
 Figure 5, setup df
@@ -196,7 +175,6 @@ ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = c
  # ggtitle("Inner Lagoon")+
           theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4M
 McapInnerMORT<-ballplotMcapPR4M + theme(legend.position = "none") #remove legend
-McapInnerMORT
 ```
 
 *Porites compressa*  
@@ -272,7 +250,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = c
   #ggtitle("Porites compressa Bleaching Scores months 0-24")+
           theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
 PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
-PcompInner
+
 ```
 
 Plot all four together: Figure 5
@@ -849,7 +827,7 @@ pairmeans #display table
 ```
 
 
-SI Table 2:
+#SI Table 2: Pairs
 *M. capitata* partial mortality, pairs
 lm() and lmer()
 ```{r} 
@@ -859,12 +837,14 @@ Mcappig<-subset(PairDat, Species =="Montipora capitata")
 #All
 MpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Mcappig)
 summary(MpigPair_all_mod1)
-anova(MpigPair_all_mod1)
+anova(MpigPair_all_mod1, type=2)
   #conduct Tukey post hoc test 
   emm = emmeans(MpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
   #letter display
   cld(emm)
-
+```
+By month:
+```{r}
 #Month0
 MpigPair0<-subset(Mcappig, month =="Month0")           
 MpigPair0_mod1<-lm(score~Site*B2015, MpigPair0)
@@ -968,7 +948,6 @@ anova(MpigPair24_mod1)
   cld(emm)
 ```
 
-SI Table 2    
 PAIRS
 *P. compressa* partial mortality pairs  
 Model: `score~Site*B2015`  
@@ -979,13 +958,14 @@ Pcomppig<-subset(PairDat, Species =="Porites compressa")
 #All
 PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig) #if we add in (1|Pair) we get failure to converge
 summary(PpigPair_all_mod1)
-anova(PpigPair_all_mod1)
+anova(PpigPair_all_mod1, type=2)
   #conduct Tukey post hoc test 
   emm = emmeans(PpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
   #letter display
   cld(emm)
-
-
+```
+By month:
+```{r}
 #Month0
 PpigPair0<-subset(Pcomppig, month =="Month0")           
 PpigPair0_mod1<-lm(score~Site*B2015, PpigPair0)
@@ -1074,351 +1054,5 @@ summary(PpigPair24_mod1)
 anova(PpigPair24_mod1)
 emm = emmeans(PpigPair24_mod1, ~ Site*B2015, adjust="tukey")
   cld(emm)  
-```
-
-#Table 3: DIFFS
-Pairs data
-Partial mortalityall months
-score~month*B2015*lagoon
-*M. capitata* Pairs
-df Mcappig
-# DIFF DATA
-Differences (nonbleached-bleached) for pairs
-df: diffDat
-Mean bleaching scores across the entire project
-```{r, results=TRUE}
-#calc average bleaching score per grouping by time point
-diffmeans <- ddply(All_diff, c("Site", "Species", "month"), summarise, #
-                   N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(diff, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#ballmeans #display table
-
-diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
-diffmeans #display table
-```
-
-
-Table 3:
-*P. compressa* Pairs  - cut since we use full model? 
-```{r}
-Pcompmort03Pairs<-subset(MortPairs03, Species=="Porites compressa") 
-Pcompmort06Pairs<-subset(MortPairs06, Species=="Porites compressa")
-Pcompmort36Pairs<-subset(MortPairs36, Species=="Porites compressa")
-
-#0-3 
-Pcompmort03Pairs_mod<-aov(score~month*Site*B2015, Pcompmort03Pairs)
-summary(Pcompmort03Pairs_mod)
-
-#0-6
-Pcompmort06Pairs_mod<-aov(score~month*Site*B2015, Pcompmort06Pairs)
-summary(Pcompmort06Pairs_mod)
-```
-
-
-# Diffs data: pairs
-dfs
-```{r}
-#subset the masterDiff
-Mcap_diff<-subset(diffDat, Species=="Montipora capitata")
-Mcap_diff<-na.omit(Mcap_diff)
-Pcomp_diff<-subset(diffDat, Species=="Porites compressa")
-Pcomp_diff<-na.omit(Pcomp_diff)
-
-#full models
-#Mcap
-
-#All
-MpigDiff_all_mod1<-lmer(diff~Site*month+(1|Pair), Mcap_diff) 
-summary(MpigDiff_all_mod1)
-anova(MpigDiff_all_mod1)
-
-#Month0
-MpigDiff0<-subset(Mcap_diff, month =="Month0")           
-MpigDiff0_mod1<-lm(diff~Site, MpigDiff0)
-summary(MpigDiff0_mod1)
-
-#Month1.5
-MpigDiff1.5<-subset(Mcap_diff, month =="Month1.5")           
-MpigDiff1.5_mod1<-lm(diff~Site, MpigDiff1.5)
-summary(MpigDiff1.5_mod1)
-
-#Month3
-MpigDiff3<-subset(Mcap_diff, month =="Month3")           
-MpigDiff3_mod1<-lm(diff~Site, MpigDiff3)
-summary(MpigDiff3_mod1)
-
-#Month4.5
-MpigDiff4.5<-subset(Mcap_diff, month =="Month4.5")           
-MpigDiff4.5_mod1<-lm(diff~Site, MpigDiff4.5)
-summary(MpigDiff4.5_mod1)
-
-#Month6
-MpigDiff6<-subset(Mcap_diff, month =="Month6")           
-MpigDiff6_mod1<-lm(diff~Site, MpigDiff6)
-summary(MpigDiff6_mod1)
-
-#Month10
-MpigDiff10<-subset(Mcap_diff, month =="Month10")           
-MpigDiff10_mod1<-lm(diff~Site, MpigDiff10)
-summary(MpigDiff10_mod1)
-
-#Month18
-MpigDiff18<-subset(Mcap_diff, month =="Month18")           
-MpigDiff18_mod1<-lm(diff~Site, MpigDiff18)
-summary(MpigDiff18_mod1)
-
-#Month24
-MpigDiff24<-subset(Mcap_diff, month =="Month24")           
-MpigDiff24_mod1<-lm(diff~Site, MpigDiff24)
-summary(MpigDiff24_mod1)
-
-```
-
-Pcomp diffs
-```{r}
-#subset the masterDiff
-Pcomp_diff<-subset(diffDat, Species=="Porites compressa")
-Pcomp_diff<-na.omit(Pcomp_diff)
-
-#full models
-#Pcomp
-
-#All
-PpigDiff_all_mod1<-lmer(diff~Site*month+(1|Pair), Pcomp_diff) 
-summary(PpigDiff_all_mod1)
-anova(PpigDiff_all_mod1)
-
-#Month0
-PpigDiff0<-subset(Pcomp_diff, month =="Month0")           
-PpigDiff0_mod1<-lm(diff~Site, PpigDiff0)
-summary(PpigDiff0_mod1)
-
-#Month1.5
-PpigDiff1.5<-subset(Pcomp_diff, month =="Month1.5")           
-PpigDiff1.5_mod1<-lm(diff~Site, PpigDiff1.5)
-summary(PpigDiff1.5_mod1)
-
-#Month3
-PpigDiff3<-subset(Pcomp_diff, month =="Month3")           
-PpigDiff3_mod1<-lm(diff~Site, PpigDiff3)
-summary(PpigDiff3_mod1)
-
-#Month4.5
-PpigDiff4.5<-subset(Pcomp_diff, month =="Month4.5")           
-PpigDiff4.5_mod1<-lm(diff~Site, PpigDiff4.5)
-summary(PpigDiff4.5_mod1)
-
-#Month6
-PpigDiff6<-subset(Pcomp_diff, month =="Month6")           
-PpigDiff6_mod1<-lm(diff~Site, PpigDiff6)
-summary(PpigDiff6_mod1)
-
-#Month10
-PpigDiff10<-subset(Pcomp_diff, month =="Month10")           
-PpigDiff10_mod1<-lm(diff~Site, PpigDiff10)
-summary(PpigDiff10_mod1)
-
-#Month18
-PpigDiff18<-subset(Pcomp_diff, month =="Month18")           
-PpigDiff18_mod1<-lm(diff~Site, PpigDiff18)
-summary(PpigDiff18_mod1)
-
-#Month24
-PpigDiff24<-subset(Pcomp_diff, month =="Month24")           
-PpigDiff24_mod1<-lm(diff~Site, PpigDiff24)
-summary(PpigDiff24_mod1)
-
-```
-
-
-
-
-
-
-Mean pairs mortality scores across the entire project
-```{r, results=TRUE} 
-#calc average bleaching score per grouping by time point
-diffmeans <- ddply(diffDat, c("Site", "Species", "month"), summarise, #
-                   N    = length(diff[!is.na(diff)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(diff, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(diff, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(diff, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#ballmeans #display table
-
-diffmeans$code<-paste0(diffmeans$Site, diffmeans$B2015, diffmeans$Species)
-#diffmeans #display table
-```
-
-SI Figure 2:
-*Montipora capitata* diffs Plot
-```{r}
-#subset for Mcap only
-Mcapdiffplotb<-subset(diffmeans, Species=="Montipora capitata")
-
-Mcapdiffplotc<-ggplot(data=Mcapdiffplotb, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1)+
-  geom_point(aes(shape=Site), size=3)+
-  geom_line(aes(color=Site, linetype=Site))+
-  scale_linetype_manual(values=c("solid", "dotted"))+
-  scale_color_manual(values=c("black","black"))+
-  ylab("Difference score") +
-    xlab("") + #Label the X Axis
-   #ylim(-.5, .5) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ggtitle("Montipora capitata")+
-          theme(plot.title = element_text(size=20,face = "italic"));Mcapdiffplotc
-Mcapdiffplotc<-Mcapdiffplotc + theme(legend.position = "none") #remove legend
-Mcapdiffplotc
-```
-
-###Porites compressa diffs 
-```{r}
-#subset for Mcap only
-Pcomdiffplotc<-subset(diffmeans, Species=="Porites compressa")
-
-
-Pcompdiffplotd<-ggplot(data=Pcomdiffplotc, aes(x=month, y=mean, group = code, color=Site)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1)+
-  geom_point(aes(shape=Site), size=3)+
-  geom_line(aes(color=Site, linetype=Site))+
-  scale_linetype_manual(values=c("solid", "dotted"))+
-  scale_color_manual(values=c("black","black"))+
-  ylab("Difference score") +
-    xlab("") + #Label the X Axis
-    ylim(-.5, .5) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
-  ggtitle("Porites compressa")+
-          theme(plot.title = element_text(size=20,face = "italic"));Pcompdiffplotd
-Pcompdiffplotd<-Pcompdiffplotd + theme(legend.position = "none") #remove legend
-Pcompdiffplotd
-```
-
-Plot all diffs plots together: SI Figure 2
-```{r}
-grid.arrange(Mcapdiffplotc, Pcompdiffplotd,Mcapdiffplotc, Pcompdiffplotd, nrow = 2)
-```
-
-
-
-
-Do we even keep this now?
-
-
-
-
-SI Table 2: diff~Lagoon
-*M. capitata*
-```{r} 
-#Month0
-dMmortPair0<-subset(DiffData06, month =="Month0")           
-dMmortPair0_mod1<-aov(diff~Site, dMmortPair0)
-summary(dMmortPair0_mod1)
-
-#Month1.5
-dMmortPair1.5<-subset(DiffData06, month =="Month1.5")
-dMmortPair1.5_mod1<-aov(diff~Site, dMmortPair1.5)
-summary(dMmortPair1.5_mod1)
-
-#Month3
-dMmortPair3<-subset(DiffData06, month =="Month3")
-dMmortPair3_mod1<-aov(diff~Site, dMmortPair3)
-summary(dMmortPair3_mod1)
-
-#Month4.5
-dMmortPair4.5<-subset(DiffData06, month =="Month4.5")
-dMmortPair4.5_mod1<-aov(diff~Site, dMmortPair4.5)
-summary(dMmortPair4.5_mod1)
-
-#month6
-dMmortPair6<-subset(DiffData06, month =="Month6")
-dMmortPair6_mod1<-aov(diff~Site, dMmortPair6)
-summary(dMmortPair6_mod1)
-```
-
-SI Table 2: diff~Lagoon  <---- right
-*P. compressa*
-```{r} 
-#Month0
-dMmortPair0<-subset(DiffData06, month =="Month0")           
-dMmortPair0_mod1<-aov(diff~Site, dMmortPair0)
-summary(dMmortPair0_mod1)
-
-#Month1.5
-dMmortPair1.5<-subset(DiffData06, month =="Month1.5")
-dMmortPair1.5_mod1<-aov(diff~Site, dMmortPair1.5)
-summary(dMmortPair1.5_mod1)
-
-#Month3
-dMmortPair3<-subset(DiffData06, month =="Month3")
-dMmortPair3_mod1<-aov(diff~Site, dMmortPair3)
-summary(dMmortPair3_mod1)
-
-#Month4.5
-dMmortPair4.5<-subset(DiffData06, month =="Month4.5")
-dMmortPair4.5_mod1<-aov(diff~Site, dMmortPair4.5)
-summary(dMmortPair4.5_mod1)
-
-#month6
-dMmortPair6<-subset(DiffData06, month =="Month6")
-dMmortPair6_mod1<-aov(diff~Site, dMmortPair6)
-summary(dMmortPair6_mod1)
-```
-
-Table 3: diffs 03 months and 06 months
-*M. capitat*
-```{r}
-DiffData03_Mcap<-subset(DiffData03, Species=="Montipora capitata")
-DiffData06_Mcap<-subset(DiffData06, Species=="Montipora capitata")
-DiffData36_Mcap<-subset(DiffData36, Species=="Montipora capitata")
-
-# 0-3
-d_Mcap03_mod1<-aov(diff~Site*month, DiffData03_Mcap)
-summary(d_Mcap03_mod1)
-TukeyHSD(d_Mcap03_mod1)
-
-# 0-6
-d_Mcap06_mod1<-aov(diff~Site*month, DiffData06_Mcap)
-summary(d_Mcap06_mod1)
-TukeyHSD(d_Mcap06_mod1)
-```
-
-Table 3: diffs 
-*P. compressa*
-```{r}
-DiffData03_Pcomp<-subset(DiffData03, Species=="Porites compressa")
-DiffData06_Pcomp<-subset(DiffData06, Species=="Porites compressa")
-DiffData36_Pcomp<-subset(DiffData36, Species=="Porites compressa")
-
-# 0-3
-d_Pcomp03_mod1<-aov(diff~Site*month, DiffData03_Pcomp)
-summary(d_Pcomp03_mod1)
-TukeyHSD(d_Pcomp03_mod1)
-
-# 0-6
-d_Pcomp06_mod1<-aov(diff~Site*month, DiffData06_Pcomp)
-summary(d_Pcomp06_mod1)
-TukeyHSD(d_Pcomp06_mod1)
 ```
 
