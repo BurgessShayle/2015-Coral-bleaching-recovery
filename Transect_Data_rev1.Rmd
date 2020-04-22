@@ -277,7 +277,7 @@ ccMeans
 
 Supplementary Table 3.  
 Coral cover full model lmer 
-```{r}
+```{r} 
 CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth)+(1|Survey), ccData)
 anova(CoralCoverMod, type=2)
 
@@ -290,7 +290,7 @@ anova(CoralCoverMod, type=2)
 Supplemental table 4.
 Prevalence, peak bleaching, all timepoints and by month: W+P  
 Full model:lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep)) and plot
-```{r}
+```{r} 
 #fullmodel, df=rData3
     Prev_transect_full<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
 anova(Prev_transect_full, type=2)
