@@ -278,7 +278,7 @@ ccMeans
 Supplementary Table 3.  
 Coral cover full model lmer 
 ```{r} 
-CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth)+(1|Survey), ccData)
+CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth), ccData)
 anova(CoralCoverMod, type=2)
 
 #conduct Tukey post hoc test 
@@ -292,7 +292,7 @@ Prevalence, peak bleaching, all timepoints and by month: W+P
 Full model:lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep)) and plot
 ```{r} 
 #fullmodel, df=rData3
-    Prev_transect_full<-lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep), data=rData3)
+    Prev_transect_full<-lmer(sum~Reef*MonthFactor*Species+(1|Depth), data=rData3)
 anova(Prev_transect_full, type=2)
     #conduct Tukey post hoc test 
     emm = emmeans(Prev_transect_full, ~ Reef*MonthFactor, adjust="tukey")
@@ -301,10 +301,10 @@ anova(Prev_transect_full, type=2)
     emm = emmeans(Prev_transect_full, ~ Species*MonthFactor, adjust="tukey")
     #letter display
     pairs(emm) 
-    #Mcap,1.5 - Pcomp,1.5    p=  0.0155
+    #Mcap,1.5 - Pcomp,1.5    p=  0.015
     #Mcap,4.5 - Pcomp,4.5    p=  0.7068
     #Mcap,10 - Pcomp,10      p=  0.0001
-    #Mcap,1819 - Pcomp,1819  p=  0.1864
+    #Mcap,1819 - Pcomp,1819  p=  0.1860
        
 #plot
 # calc average  bleaching rate/month in %  per grouping
@@ -347,7 +347,7 @@ Bleaching prevalence: White only
 #bleached
 prevWhite<-subset(rData1, Bleaching_status=="Bleached")
 
-WhiteMod<-lmer(Percent~Species*Reef*MonthFactor+(1|Depth)+(1|Rep),prevWhite)
+WhiteMod<-lmer(Percent~Species*Reef*MonthFactor+(1|Depth),prevWhite)
 anova(WhiteMod, type=2)
   #conduct Tukey post hoc test 
     emm = emmeans(WhiteMod, ~ Reef, adjust="tukey")
@@ -389,7 +389,7 @@ Bleaching severity (white/w+p)
 lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep))
 ```{r}
 #full model
-SeverityMod<-lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep),rData4)
+SeverityMod<-lmer(newPer~Species*Reef*MonthFactor+(1|Depth),rData4)
 anova(SeverityMod, type="2")
 
  #conduct Tukey post hoc test 
