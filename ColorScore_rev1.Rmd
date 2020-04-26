@@ -351,6 +351,7 @@ summary(Month3_mcap3)
 anova(Month3_mcap3)
  emm<-emmeans(Month3_mcap3,  ~ B2015*Site)
   pairs(emm)
+  cld(emm, Letter="abcde")
   #N,4 - Y,4     0.6147 0.102 68  6.004  <.0001
   #N,13 - Y,13   0.9412 0.105 68  8.967  <.0001
   
@@ -388,6 +389,8 @@ anova(Month18_mcap18)
 Month24_mcap24t<-lm(score~Site*B2015, Mcap_24)
 summary(Month24_mcap24t)
 anova(Month24_mcap24t)
+
+Mcap24_Inner<-subset(Mcap_24, Site=="4")
 ```
 
 *P. compressa* lm()

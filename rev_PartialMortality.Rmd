@@ -322,13 +322,13 @@ lm
 #Month0 
 Mcap_m0<-subset(Mcap_mort, month=="Month0")
 Mcap_m0_mod1<-lm(score~Site*B2015, Mcap_m0)
-summary(Mcap_m0_mod1) 
+#summary(Mcap_m0_mod1) 
 anova(Mcap_m0_mod1) 
 
 # Month1.5
 Mcap_m1_5<-subset(Mcap_mort, month=="Month1.5")
 Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
-summary(Mcap_m1_5_mod1)
+#summary(Mcap_m1_5_mod1)
 anova(Mcap_m1_5_mod1)
 
     #conduct Tukey post hoc test 
@@ -339,7 +339,7 @@ anova(Mcap_m1_5_mod1)
 #Month3
 Mcap_m3<-subset(Mcap_mort, month=="Month3")
 Mcap_m3_mod1<-lm(score~Site*B2015, Mcap_m3)
-summary(Mcap_m3_mod1)
+#summary(Mcap_m3_mod1)
 anova(Mcap_m3_mod1)
 
   #conduct Tukey post hoc test 
@@ -359,7 +359,7 @@ anova(Mcap_m3_mod1)
 #Month4.5
 Mcap_m4_5<-subset(Mcap_mort, month=="Month4.5")
 Mcap_m4_5_mod1<-lm(score~Site*B2015, Mcap_m4_5)
-summary(Mcap_m4_5_mod1)
+#summary(Mcap_m4_5_mod1)
 anova(Mcap_m4_5_mod1)
  #conduct Tukey post hoc test 
       emm = emmeans(Mcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
@@ -373,7 +373,7 @@ anova(Mcap_m4_5_mod1)
 #Month6
 Mcap_m6<-subset(Mcap_mort, month=="Month6")
 Mcap_m6_mod1<-lm(score~Site*B2015, Mcap_m6)
-summary(Mcap_m6_mod1)
+#summary(Mcap_m6_mod1)
 anova(Mcap_m6_mod1)
 
   #conduct Tukey post hoc test 
@@ -388,7 +388,7 @@ anova(Mcap_m6_mod1)
 #Month10
 Mcap_m10<-subset(Mcap_mort, month=="Month10")
 Mcap_m10_mod1<-lm(score~Site*B2015, Mcap_m10)
-summary(Mcap_m10_mod1)
+#summary(Mcap_m10_mod1)
 anova(Mcap_m10_mod1)
 
   #conduct Tukey post hoc test 
@@ -403,7 +403,7 @@ anova(Mcap_m10_mod1)
 #Month18
 Mcap_m18<-subset(Mcap_mort, month=="Month18")
 Mcap_m18_mod1<-lm(score~Site*B2015, Mcap_m18)
-summary(Mcap_m18_mod1)
+#summary(Mcap_m18_mod1)
 anova(Mcap_m18_mod1)
 
       #conduct Tukey post hoc test 
@@ -414,7 +414,7 @@ anova(Mcap_m18_mod1)
 #Month24
 Mcap_m24<-subset(Mcap_mort, month=="Month24")
 Mcap_m24_mod1<-lm(score~Site*B2015, Mcap_m24)
-summary(Mcap_m24_mod1)
+#summary(Mcap_m24_mod1)
 anova(Mcap_m24_mod1)
 
       #conduct Tukey post hoc test 
@@ -431,7 +431,7 @@ lm()
 #Month0
 Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
 Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
-summary(Pcomp_m0_mod1) 
+#summary(Pcomp_m0_mod1) 
 anova(Pcomp_m0_mod1) 
 
   #conduct Tukey post hoc test 
@@ -442,7 +442,7 @@ anova(Pcomp_m0_mod1)
 # Month1.5
 Pcomp_m1_5<-subset(Pcomp_mort, month=="Month1.5")
 Pcomp_m1_5_mod1<-lm(score~Site*B2015, Pcomp_m1_5)
-summary(Pcomp_m1_5_mod1)
+#summary(Pcomp_m1_5_mod1)
 anova(Pcomp_m1_5_mod1)
 
 #conduct Tukey post hoc test 
@@ -453,7 +453,7 @@ cld(emm)
 #Month3
 Pcomp_m3<-subset(Pcomp_mort, month=="Month3")
 Pcomp_m3_mod1<-lm(score~Site*B2015, Pcomp_m3)
-summary(Pcomp_m3_mod1)
+#summary(Pcomp_m3_mod1)
 anova(Pcomp_m3_mod1)
 
 #conduct Tukey post hoc test 
@@ -464,7 +464,7 @@ cld(emm)
 #Month4.5
 Pcomp_m4_5<-subset(Pcomp_mort, month=="Month4.5")
 Pcomp_m4_5_mod1<-lm(score~Site*B2015, Pcomp_m4_5)
-summary(Pcomp_m4_5_mod1)
+#summary(Pcomp_m4_5_mod1)
 anova(Pcomp_m4_5_mod1)
 
 #conduct Tukey post hoc test 
@@ -475,7 +475,7 @@ cld(emm)
 #Month6
 Pcomp_m6<-subset(Pcomp_mort, month=="Month6")
 Pcomp_m6_mod1<-lm(score~Site*B2015, Pcomp_m6)
-summary(Pcomp_m6_mod1)
+#summary(Pcomp_m6_mod1)
 anova(Pcomp_m6_mod1)
 
 #conduct Tukey post hoc test 
@@ -487,7 +487,7 @@ cld(emm)
 #Month10
 Pcomp_m10<-subset(Pcomp_mort, month=="Month10")
 Pcomp_m10_mod1<-lm(score~Site*B2015, Pcomp_m10)
-summary(Pcomp_m10_mod1)
+#summary(Pcomp_m10_mod1)
 anova(Pcomp_m10_mod1)
 #conduct Tukey post hoc test 
 emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
@@ -502,7 +502,7 @@ cld(emm)
 #Month18
 Pcomp_m18<-subset(Pcomp_mort, month=="Month18")
 Pcomp_m18_mod1<-lm(score~Site*B2015, Pcomp_m18)
-summary(Pcomp_m18_mod1)
+#summary(Pcomp_m18_mod1)
 anova(Pcomp_m18_mod1)
 #conduct Tukey post hoc test 
 emm = emmeans(Pcomp_m18_mod1, ~ Site, adjust="tukey")
@@ -512,7 +512,7 @@ pairs(emm)
 #Month24
 Pcomp_m24<-subset(Pcomp_mort, month=="Month24")
 Pcomp_m24_mod1<-lm(score~Site*B2015, Pcomp_m24)
-summary(Pcomp_m24_mod1)
+#summary(Pcomp_m24_mod1)
 anova(Pcomp_m24_mod1)
 
 #conduct Tukey post hoc test 
@@ -567,6 +567,56 @@ m36means <- ddply(Mcap_rate_36, c("Site", "B2015"), summarise,
 
 m36means$code<-paste0(m36means$Site, m36means$B2015, m36means$Species)
 m36means #display table
+
+
+McapRate03<-ggplot(data=m03means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
+#  scale_shape_manual(values=c( 16,1))+
+ # geom_line(aes(color=B2015, linetype=B2015))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  #scale_color_manual(values=c("black","black"))+
+  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
+ # ylab("Partial Mortality (%)") +
+ #   xlab("Recovery Time (months)") + #Label the X Axis
+ #   ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+ # ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));McapRate03
+
+
+McapRate36<-ggplot(data=m36means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
+#  scale_shape_manual(values=c( 16,1))+
+ # geom_line(aes(color=B2015, linetype=B2015))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  #scale_color_manual(values=c("black","black"))+
+  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
+ # ylab("Partial Mortality (%)") +
+ #   xlab("Recovery Time (months)") + #Label the X Axis
+ #   ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+ # ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));McapRate36
+
+
 ```
 Pcomp rate plot
 ```{r} 
@@ -608,6 +658,56 @@ p36means <- ddply(Pcomp_rate_36, c("Site", "B2015"), summarise,
 
 p36means$code<-paste0(p36means$Site, p36means$B2015, p36means$Species)
 p36means #display table
+
+PcompRate03<-ggplot(data=p03means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
+#  scale_shape_manual(values=c( 16,1))+
+ # geom_line(aes(color=B2015, linetype=B2015))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  #scale_color_manual(values=c("black","black"))+
+  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
+ # ylab("Partial Mortality (%)") +
+ #   xlab("Recovery Time (months)") + #Label the X Axis
+ #   ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+ # ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));PcompRate03
+
+
+PcompRate36<-ggplot(data=p36means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+                width=0.1,show.legend = FALSE)+
+#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
+#  scale_shape_manual(values=c( 16,1))+
+ # geom_line(aes(color=B2015, linetype=B2015))+
+  #scale_linetype_manual(values=c("solid", "dotted"))+
+  #scale_color_manual(values=c("black","black"))+
+  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
+ # ylab("Partial Mortality (%)") +
+ #   xlab("Recovery Time (months)") + #Label the X Axis
+ #   ylim(0, 80) + #set Y limits
+  theme_bw() + #Set the background color
+  theme(axis.line = element_line(color = 'black'), #Set the axes color
+        axis.title=element_text(size=14,face="bold"), #Set axis format
+        panel.border = element_blank(), #Set the border
+        panel.grid.major = element_blank(), #Set the major gridlines
+        panel.grid.minor = element_blank(), #Set the minor gridlines
+        plot.background =element_blank(), #Set the plot background
+        legend.key = element_blank()) + #Set plot legend key
+ # ggtitle("Outer Lagoon")+
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));PcompRate36
+
+
+
 ```
 
 # Partial mortality rates, by reef Site and Bleaching History  
@@ -615,9 +715,9 @@ SI Table 13
 *M. capitata* RATE lmer
 ```{r} 
 #0-3 months
-Mcap_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Mcap_rate_03)
+Mcap_m03rate<-lm(Rate~Site*B2015, Mcap_rate_03)
 summary(Mcap_m03rate)
-anova(Mcap_m03rate, type=2)
+anova(Mcap_m03rate)
 
  #conduct Tukey post hoc test 
     emm = emmeans(Mcap_m03rate, ~ B2015, adjust="tukey")
@@ -631,9 +731,9 @@ anova(Mcap_m03rate, type=2)
     cld(emm)
 
 #3-6 months
-Mcap_m36rate<-lmer(Rate~Site*B2015+(1|Pair), Mcap_rate_36)
+Mcap_m36rate<-lm(Rate~Site*B2015, Mcap_rate_36)
 summary(Mcap_m36rate)
-anova(Mcap_m36rate, type=2)
+anova(Mcap_m36rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Mcap_m36rate, ~ Site, adjust="tukey")
     #letter display
@@ -645,14 +745,14 @@ anova(Mcap_m36rate, type=2)
 SI Table 13   RATE
 ```{r}
 #0-3 months 
-Pcomp_m03rate<-lmer(Rate~Site*B2015+(1|Pair), Pcomp_rate_03)
+Pcomp_m03rate<-lm(Rate~Site*B2015, Pcomp_rate_03)
 summary(Pcomp_m03rate)
-anova(Pcomp_m03rate, type=2)
+anova(Pcomp_m03rate)
 
 #3-6 months
-Pcomp_m36rate<-lmer(Rate~Site*B2015+(1|Pair), Pcomp_rate_36)
+Pcomp_m36rate<-lm(Rate~Site*B2015, Pcomp_rate_36)
 summary(Pcomp_m36rate)
-anova(Pcomp_m36rate, type=2)
+anova(Pcomp_m36rate)
  #conduct Tukey post hoc test 
     emm = emmeans(Pcomp_m36rate, ~ Site*B2015, adjust="tukey")
     #letter display
