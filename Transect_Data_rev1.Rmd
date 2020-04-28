@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, results="hide", message=FALSE}
-#rm(list=ls(all=TRUE)) 
+rm(list=ls(all=TRUE)) 
 
 library("reshape2") #reshape data
 library("ggplot2") #plotting
@@ -36,6 +36,8 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
+library(emmeans)
+library(effects)
 ```
 
 Setup df:
@@ -301,10 +303,9 @@ anova(Prev_transect_full, type=2)
     emm = emmeans(Prev_transect_full, ~ Species*MonthFactor, adjust="tukey")
     #letter display
     pairs(emm) 
-    #Mcap,1.5 - Pcomp,1.5    p=  0.015
-    #Mcap,4.5 - Pcomp,4.5    p=  0.7068
-    #Mcap,10 - Pcomp,10      p=  0.0001
-    #Mcap,1819 - Pcomp,1819  p=  0.1860
+        cld(emm) 
+
+  
        
 #plot
 # calc average  bleaching rate/month in %  per grouping

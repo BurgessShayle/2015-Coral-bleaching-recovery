@@ -27,7 +27,7 @@ Load in and set up dfs:
 ```{r, results="hide", message=FALSE}
 #Set up: load libraries
 
-#rm(list=ls(all=TRUE)) 
+rm(list=ls(all=TRUE)) 
 library("emmeans") #post hoc
 library("reshape2") #reshape data
 library("plotrix") #functions in tapply
@@ -251,23 +251,16 @@ anova(Mcap_df_mod, type=2) #pvals
 Tukey post hoc:~Lagoon*Month
 ```{r}
  #posthoc
-  emm<-emmeans(Mcap_df_mod,  ~ Site*month)
+  emm<-emmeans(Mcap_df_mod,  ~ month)
   pairs(emm)
-  
-  #4,Month0 - 13,Month0      -0.049784 0.0806 346 -0.618  1.0000 
-  #4,Month1.5 - 13,Month1.5  -0.157858 0.0858 377 -1.841  0.8999 
-  #4,Month3 - 13,Month3       0.082619 0.0872 383  0.948  0.9999
-  #4,Month4.5 - 13,Month4.5   0.119074 0.0854 373  1.394  0.9912 
-  #4,Month6 - 13,Month6       0.206844 0.0931 412  2.221  0.6815 
-  #4,Month10 - 13,Month10     0.214367 0.0968 427  2.215  0.6859 
-  # 4,Month18 - 13,Month18     0.104741 0.1202 478  0.871  1.0000 
-  #4,Month24 - 13,Month24     0.156023 0.1256 482  1.242  0.9974
+  cld(emm)
+  # Month4.5 - Month10  p=0.7754 
 
-```
-Tukey post hoc:~Phenotype*Month
-```{r}  
+
+  
  emm<-emmeans(Mcap_df_mod,  ~ B2015*month)
   pairs(emm)
+  cld(emm)
   #Y,Month0 - Y,Month1.5   -0.74657 0.0719 412 -10.377 <.0001 
   #Y,Month1.5 - Y,Month3   -0.37874 0.0756 411  -5.007 0.0001
   #Y,Month3 - Y,Month4.5   -0.01643 0.0765 414  -0.215 1.0000
@@ -275,6 +268,8 @@ Tukey post hoc:~Phenotype*Month
   #Y,Month6 - Y,Month10     0.17169 0.0847 409   2.026 0.8094
   #Y,Month10 - Y,Month18   -0.12441 0.0949 417  -1.310 0.9954
   #Y,Month18 - Y,Month24   -0.33618 0.1108 427  -3.035 0.1591 
+  
+  
 ```
 
 *P. compressa* lmer(score~month*B2015*lagoon+(1|TagID) 
