@@ -140,6 +140,7 @@ dev.off()
 png("MaxTemp.png", width = 200, height = 80, units = "mm", res = 500)
 ggplot(MeanMelt, aes(x = Date, color = PR)) + 
   geom_hline(yintercept = 28, linetype = "dashed") +
+  geom_hline(yintercept = 29) +
   geom_line(aes(y = Max), size = 0.5) +
   scale_color_manual(values = c("PR1" = "coral3", "PR4" = "coral", "PR12" = "skyblue4", "PR13" = "skyblue2")) +
   scale_x_date(labels = date_format("%b '%y"), date_breaks = "2 months", limits = as.Date(c("2015-06-20", "2016-10-06"))) + 
@@ -166,8 +167,8 @@ BleachStats <- cbind(aggregate(BleachMean$Mean, by = BleachMean["PR"], FUN = mea
 BleachStats <- BleachStats[, c(1:2,4,6,8,10)]
 names(BleachStats) <- c("Reef", "Mean", "Max", "Min", "SD", "Range")
 
-sum(BleachMean$Max >= 30 & BleachMean$PR == "PR1")
-sum(BleachMean$Max >= 30 & BleachMean$PR == "PR12")
+sum(BleachMean$Max >= 29 & BleachMean$PR == "PR1") # 46
+sum(BleachMean$Max >= 29 & BleachMean$PR == "PR12") # 24
 
 ## RECOVERY 
 Recov <- subset(MeanMelt, Date >= "2015-11-01" & Date <= "2016-02-01")
@@ -259,3 +260,45 @@ shapiro.test(Recov$PR13Range) # p = 0.04107 < 0.05 -> non-normal
 var.test(Recov$PR4Range, Recov$PR13Range) # p = 0.0001996 < 0.05 -> non-equal variances
 t.test(Recov$PR4Range, Recov$PR13Range, var.equal = F) # p = 0.0.0103 -> not sig 
 wilcox.test(Recov$PR4Range, Recov$PR13Range) # p = 0.01734 -> not sig
+
+# Extract overlapping dates
+png("scattercompare.png", width = 200, height = 200, units = "mm", res = 500)
+par(mfrow = c(2,2))
+OverlapInner <- subset(AllMean, (!is.na(AllMean$PR1Max)) & (!is.na(AllMean$PR4Max)))
+plot(OverlapInner$PR1Max, OverlapInner$PR4Max, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR4 Daily Max Temp (°C)", xlab = "PR1 Daily Max Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR1Max ~ PR4Max, data = OverlapInner)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+OverlapOuter <- subset(AllMean, (!is.na(AllMean$PR12Max)) & (!is.na(AllMean$PR13Max)))
+plot(OverlapInner$PR12Max, OverlapInner$PR13Max, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR13 Daily Max Temp (°C)", xlab = "PR12 Daily Max Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR12Max ~ PR13Max, data = OverOuter)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+plot(OverlapInner$PR1, OverlapInner$PR4, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR4 Daily Mean Temp (°C)", xlab = "PR1 Daily Mean Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR1 ~ PR4, data = OverlapInner)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+plot(OverlapInner$PR12, OverlapInner$PR13, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR13 Daily Mean Temp (°C)", xlab = "PR12 Daily Mean Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR12 ~ PR13, data = OverOuter)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+dev.off()
+
+
+
