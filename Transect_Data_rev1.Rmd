@@ -28,16 +28,17 @@ library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
+library("pscl")
 library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
 library("car") #levenes test
 library("lsmeans")
+library("multcomp") 
+library("multcompView")
 library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
-library(emmeans)
-library(effects)
 ```
 
 Setup df:
@@ -55,7 +56,6 @@ rData1$MonthFactor[rData1$MonthFactor=="18"] <-"1819"
 rData1$MonthFactor[rData1$MonthFactor=="19"] <-"1819"
 
 rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10","1819")) #specify order
-
 ```
 
 # Transect color score prevalence plots
@@ -112,7 +112,7 @@ col_McapInner_plot<-ggplot(data=col_McapInner, aes(x=Month, y=mean, group = code
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ggtitle("Inner Lagoon")+
-          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_McapInner_plot
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5))
 McapInner<-col_McapInner_plot+ theme(legend.position = "none") #remove legend
 ```
 
@@ -148,7 +148,7 @@ col_McapOuter_plot<-ggplot(data=col_McapOuter, aes(x=Month, y=mean, group = code
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_McapOuter_plot
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5))
 McapOuter<-col_McapOuter_plot+ theme(legend.position = "none") #remove legend
 
 ```
@@ -186,7 +186,7 @@ col_PcompInner_plot<-ggplot(data=col_PcompInner, aes(x=Month, y=mean, group = co
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   #ggtitle("Inner Lagoon")+
-          theme(plot.title = element_text(size=20,face = "italic"));col_PcompInner_plot
+          theme(plot.title = element_text(size=20,face = "italic"))
 PcompInner<-col_PcompInner_plot+ theme(legend.position = "none") #remove legend
 
 ```
@@ -223,7 +223,7 @@ col_PcompOuter_plot<-ggplot(data=col_PcompOuter, aes(x=Month, y=mean, group = co
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   #ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5));col_PcompOuter_plot
+          theme(plot.title = element_text(size=20,face = "italic",hjust = 0.5))
 PcompOuter<-col_PcompOuter_plot+ theme(legend.position = "none") #remove legend
 
 ```
@@ -236,7 +236,7 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 #Coral bleaching prevalence  
 Sum: White (W) + Pale (P) 
 Set up df:  
-```{r}
+```{r, results="hide", message=FALSE}
 rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]    # Remove Healthy 
 rData2$code<-paste0(rData2$Species, rData2$Month, rData2$MonthFactor, rData2$Depth, rData2$Reef, rData2$Rep)#create a code for groups by Species, Month, Depth, Reef, Rep 
 rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))# Group Data: combine P and B %s
@@ -256,7 +256,7 @@ rData3$Rep<-as.factor(rData3$Rep)
 
 #Benthic section: Coral cover
 Benthic transect df setup:   
-```{r} 
+```{r, results="hide", message=FALSE} 
 ccData<-read.csv("benthicTransectCoralcover20191024.csv", header=T)
 ccData$MonthFactor<-ccData$Month
 ccData$MonthFactor[ccData$MonthFactor=="18"] <-"1819"
@@ -277,7 +277,7 @@ ccMeans <- ddply(ccData, c("Reef",  "Month"), summarise,
 ccMeans
 ```
 
-Supplementary Table 3.  
+#Supplementary Table 3.  
 Coral cover full model lmer 
 ```{r} 
 CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth), ccData)
@@ -289,7 +289,7 @@ anova(CoralCoverMod, type=2)
     pairs(emm)
 ```
 
-Supplemental table 4.
+#Supplemental table 4.
 Prevalence, peak bleaching, all timepoints and by month: W+P  
 Full model:lmer(sum~Reef*MonthFactor*Species+(1|Depth)+(1|Rep)) and plot
 ```{r} 
@@ -342,7 +342,7 @@ prev_plot<-ggplot(data=transectPlotmeanprev, aes(x=Reef, y=mean, group = Species
 ```
 
 
-Supplementary Table 5.  
+#Supplementary Table 5.  
 Bleaching prevalence: White only 
 ```{r}
 #bleached
@@ -363,8 +363,8 @@ anova(WhiteMod, type=2)
     #Outer,Mcap,0 - Outer,Pcomp,0    p= 1.0000
 ```
 
-##Severity (white/white+pale)
-Supplemental table 6 (setup)
+#Supplemental Table 6
+Severity (white/white+pale) setup
 ```{r}
 rData4<-rData2 #make a copy of rData2
 rData4$Depth<-as.factor(rData4$Depth)
@@ -382,10 +382,8 @@ rMeans <- ddply(rData4, c("Species", "Reef", "Month", "Bleaching_status"), summa
                    se   = sd / sqrt(N), #calculate standard error
                    max = max(newPer, na.rm=TRUE) #calculate max, could also calculate min () if desired
 )
-
 ```
 
-SI Table 6:  
 Bleaching severity (white/w+p)
 lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep))
 ```{r}
