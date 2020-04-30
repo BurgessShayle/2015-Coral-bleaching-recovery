@@ -14,6 +14,10 @@ output:
 editor_options: 
   chunk_output_type: console
 ---
+Last updater: 4/30/20
+
+Matsuda, S, Huffmyer, A, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species. 
+
 Tissue partial mortality in *M. capitata* and *P. compressa* colonies at the Inner Lagoon (PR4) and Outer Lagoon (PR13) after the 2015 coral bleaching event in Kaneohe Bay.  Mortality scores are in % to the nearest 20%
 
 ```{r setup, include=FALSE,results="hide"}
@@ -47,8 +51,8 @@ mData$Site<-as.factor(mData$Site)
 ```
 
 # Partial mortality   
-set up df
-```{r,results="hide", }
+set up df:
+```{r, results="hide", message=FALSE}
 #all Months
   mALL<-mData
   #melt
@@ -68,8 +72,8 @@ mALLData_cast<-dcast(mALLData, TagID+Pair+Species+Site+B2015~month)
 
 ```
 
-Mean partial mortality scores
-```{r, results=TRUE}
+Mean partial mortality scores:
+```{r, results="hide", message=FALSE}
 #calc average tissue loss score per grouping by time point
 mALLmeans <- ddply(mALLData, c("Site", "Species", "B2015", "month"), summarise, #
                    N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
@@ -80,9 +84,10 @@ mALLmeans <- ddply(mALLData, c("Site", "Species", "B2015", "month"), summarise, 
 )
 mALLmeans$code<-paste0(mALLmeans$Site, mALLmeans$B2015, mALLmeans$Species)
 #mALLmeans #display table
+#write.csv(mALLmeans, "mALLmeansMORT.csv")
 ```
 
-## Partial mortality score means 0-24 months by species/site/bleaching history
+#Partial mortality score means 0-24 months by species/site/bleaching history
 For paper figure, as percents
 ```{r, results=TRUE}
 #calc average tissue loss score per grouping by time point
@@ -96,12 +101,12 @@ mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summa
 #mALLmeansPER #display table
 mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Species)
 #mALLmeansPER #display table
+#write.csv(mALLmeansPER, "meanMortpER.csv")
 ```
 
-
-###*Montipora capitata*: Partial mortality
+#Figure 5, Partial Mortality  
 Figure 5, setup df
-```{r}
+```{r, results="hide", message=FALSE}
 #subset for Mcap only
 Mcap024AllplotM<-subset(mALLmeansPER, Species=="Montipora capitata")     #subset Mcap
 Mcap024AllplotM$Month[Mcap024AllplotM$month=="Month0"]<-0              # new col with month #s only
@@ -120,8 +125,9 @@ Mcap024AllplotPR13M<-subset(Mcap024AllplotM, Site=="13")
 Mcap024AllplotPR4M<-subset(Mcap024AllplotM, Site==4)
 ```
 
-Mcap PR13 plot
-```{r}
+*Montipora capitata*  Plots
+```{r, results="hide", message=FALSE}
+#Mcap Outer
 mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13M, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -143,13 +149,10 @@ mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13M, aes(x=Month, y=mean, group = 
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
  # ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));mallplotMcapPR13
+          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5))
 McapOuter<-mallplotMcapPR13 + theme(legend.position = "none") #remove legend
-```
 
-Mcap PR4 plot
-```{r}
-
+#Mcap Inner
 ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = code, color=B2015),show.legend = FALSE) + #color by bleaching hist. 
  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -173,13 +176,12 @@ ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = c
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
  # ggtitle("Inner Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5));ballplotMcapPR4M
+          theme(plot.title = element_text(size=20,face = "bold", hjust = 0.5))
 McapInnerMORT<-ballplotMcapPR4M + theme(legend.position = "none") #remove legend
 ```
 
-*Porites compressa*  
-Figure 5, set up df
-```{r}
+*Porites compressa* Plots  
+```{r, results="hide", message=FALSE}
 Pcomp024Allplot<-subset(mALLmeansPER, Species=="Porites compressa")
 
 # change Month# to just number
@@ -194,10 +196,10 @@ Pcomp024Allplot$Month[Pcomp024Allplot$month=="Month24"]<-24
 
 Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
 Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
-```
 
-Pcomp PR13 plot
-```{r}
+
+#Pcomp PR13 plot
+
 b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -219,12 +221,12 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group =
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   #ggtitle("Porites compressa Bleaching Scores months 0-24")+
-          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR13
+          theme(plot.title = element_text(size=20,face = "italic"))
 PcompOuter<-b024plotPcompPR13+ theme(legend.position = "none") #remove legend
-```
 
-Pcomp PR4 plot
-```{r}
+
+#Pcomp PR4 plot
+
 b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
@@ -248,7 +250,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = c
         plot.background =element_blank(), #Set the plot background
         legend.key = element_blank()) + #Set plot legend key
   #ggtitle("Porites compressa Bleaching Scores months 0-24")+
-          theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
+          theme(plot.title = element_text(size=20,face = "italic"))
 PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
 
 ```
@@ -259,21 +261,15 @@ grid.arrange(McapInnerMORT, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
 
-Table 3: Full dataset
-Mortality 0-3 months and 0-6 months
-score~month*B2015*lagoon
-
-Set up dateframes
-```{r}
+#Table 3: Pigmentation score~month*B2015*lagoon  
+```{r, results="hide", message=FALSE}
 #subset by species
 Mcap_mort<-subset(mALLDataPER, Species=="Montipora capitata")
 Pcomp_mort<-subset(mALLDataPER, Species=="Porites compressa")
 ```
 
-Table 3
-Mortality across all timepoints, Mcap and Pcomp
-LMER
-```{r}
+Mortality across all timepoints, df setup
+```{r, results="hide", message=FALSE}
 #Mcap
 Mcap_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Mcap_mort)
 anova(Mcap_mort_mod, type=2)
@@ -282,16 +278,6 @@ anova(Mcap_mort_mod, type=2)
 emm = emmeans(Mcap_mort_mod, ~ Site*month, adjust="tukey")
 #letter display
 pairs(emm)
- #4,Month0 - 13,Month0         0.584 4.10 159   0.142 1.0000
-#4,Month1.5 - 13,Month1.5    10.725 4.15 165   2.583 0.4179 
-#4,Month3 - 13,Month3        20.383 4.16 167   4.894 0.0003 
-#4,Month4.5 - 13,Month4.5    25.048 4.27 181   5.865 <.0001
-#4,Month6 - 13,Month6        29.872 4.36 193   6.854 <.0001
-#4,Month10 - 13,Month10      35.466 4.61 229   7.701 <.0001 
-#4,Month18 - 13,Month18      36.714 4.94 279   7.439 <.0001 
-#4,Month24 - 13,Month24      36.645 5.01 290   7.312 <.0001
-
-
 
 #Pcomp
 Pcomp_mort_mod<-lmer(Score~Site*B2015*month+(1|TagID), Pcomp_mort)
@@ -301,23 +287,12 @@ anova(Pcomp_mort_mod, type=2)
 emm = emmeans(Pcomp_mort_mod, ~ Site*month, adjust="tukey")
 #letter display
 pairs(emm)
-#4,Month0 - 13,Month0       -3.5714 3.36 137 -1.064  0.9995
-#4,Month1.5 - 13,Month1.5   -7.1429 3.36 137 -2.127  0.7444 
-#4,Month3 - 13,Month3       -6.2143 3.36 137 -1.851  0.8928
-#4,Month4.5 - 13,Month4.5   -0.2330 3.37 139 -0.069  1.0000 
-#4,Month6 - 13,Month6        2.2651 3.37 139  0.672  1.0000 
-#4,Month10 - 13,Month10      5.1680 3.40 142  1.522  0.9782 
-#4,Month18 - 13,Month18      9.2781 3.43 148  2.704  0.3385 
-#4,Month24 - 13,Month24     10.4339 3.76 202  2.778  0.2904
-
 
 ```
 
-
-#Tissue Loss  Models  by month
-SI Table 2 and SI Table 12.  
-*Montipora capiatata*  
-lm
+#SI Table 2 and SI Table 12.    
+Tissue Loss  Models  by month, linear mixed effects models
+*Montipora capiatata*
 ```{r} 
 #Month0 
 Mcap_m0<-subset(Mcap_mort, month=="Month0")
@@ -423,11 +398,8 @@ anova(Mcap_m24_mod1)
       cld(emm)
 ```
 
-*Porites compressa*  mixed model
-SI Table 2 and SI Table 12
-lm()
+*Porites compressa* 
 ```{r}
- 
 #Month0
 Pcomp_m0<-subset(Pcomp_mort, month=="Month0")
 Pcomp_m0_mod1<-lm(score~Site*B2015, Pcomp_m0)
@@ -521,249 +493,9 @@ emm = emmeans(Pcomp_m24_mod1, ~ Site, adjust="tukey")
 pairs(emm)
 ```
 
-
-
-# Partial mortality RATE - 
-Mean partial mortality rate for all time points 
-0-3 Months RATE calculation
-df: mALLData_cast
-Mcap rate plot
-```{r}  
-#Mcap
-Mcap_rate<-subset(mALLData_cast, Species=="Montipora capitata")
-Mcap_rate_03<-Mcap_rate[,c(1,2,4:6,8)] # months 0-3,select cols
-Mcap_rate_03$Rate<-(((Mcap_rate_03$Month3-Mcap_rate_03$Month0))) #cal rate for 3 months
-Mcap_rate_03<-na.omit(Mcap_rate_03) #get rid of NAs
-
-Mcap_rate_36<-Mcap_rate[,c(1,2,4:5,8,10)] # months 3-6,select cols
-Mcap_rate_36$Rate<-(((Mcap_rate_36$Month6-Mcap_rate_36$Month3))) #cal rate for next 3 months
-Mcap_rate_36<-na.omit(Mcap_rate_36) #get rid of NAs
-
-#Average the means of the rates. 
-# calc average  tissue loss rate/month in %  per grouping
-m03means <- ddply(Mcap_rate_03, c("Site", "B2015"), summarise, 
-                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#m03means #display table
-
-m03means$code<-paste0(m03means$Site, m03means$B2015)
-m03means #display table 
-
-## 2. months 3-6
-# means of the rates. 
-# calc average  tissue loss rate/month in %  per grouping
-m36means <- ddply(Mcap_rate_36, c("Site", "B2015"), summarise, 
-                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#m36means #display table
-
-m36means$code<-paste0(m36means$Site, m36means$B2015, m36means$Species)
-m36means #display table
-
-
-McapRate03<-ggplot(data=m03means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1,show.legend = FALSE)+
-#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-#  scale_shape_manual(values=c( 16,1))+
- # geom_line(aes(color=B2015, linetype=B2015))+
-  #scale_linetype_manual(values=c("solid", "dotted"))+
-  #scale_color_manual(values=c("black","black"))+
-  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
- # ylab("Partial Mortality (%)") +
- #   xlab("Recovery Time (months)") + #Label the X Axis
- #   ylim(0, 80) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
- # ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));McapRate03
-
-
-McapRate36<-ggplot(data=m36means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1,show.legend = FALSE)+
-#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-#  scale_shape_manual(values=c( 16,1))+
- # geom_line(aes(color=B2015, linetype=B2015))+
-  #scale_linetype_manual(values=c("solid", "dotted"))+
-  #scale_color_manual(values=c("black","black"))+
-  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
- # ylab("Partial Mortality (%)") +
- #   xlab("Recovery Time (months)") + #Label the X Axis
- #   ylim(0, 80) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
- # ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));McapRate36
-
-
-```
-Pcomp rate plot
-```{r} 
-#Pcomp
-Pcomp_rate<-subset(mALLData_cast, Species=="Porites compressa")
-Pcomp_rate_03<-Pcomp_rate[,c(1,2,4:6,8)] # months 0-3,select cols
-Pcomp_rate_03$Rate<-(((Pcomp_rate_03$Month3-Pcomp_rate_03$Month0))) #cal rate for 3 months
-Pcomp_rate_03<-na.omit(Pcomp_rate_03) #get rid of NAs
-
-Pcomp_rate_36<-Pcomp_rate[,c(1,2,4:5,8,10)] # months 3-6,select cols
-Pcomp_rate_36$Rate<-(((Pcomp_rate_36$Month6-Pcomp_rate_36$Month3))) #cal rate for next 3 months
-Pcomp_rate_36<-na.omit(Pcomp_rate_36) #get rid of NAs
-
-#Average the means of the rates. 
-# calc average  tissue loss rate/month in %  per grouping
-p03means <- ddply(Pcomp_rate_03, c("Site", "B2015"), summarise, 
-                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#p03means #display table
-
-p03means$code<-paste0(p03means$Site, p03means$B2015)
-p03means #display table 
-
-## 2. months 3-6
-# means of the rates. 
-# calc average  tissue loss rate/month in %  per grouping
-p36means <- ddply(Pcomp_rate_36, c("Site", "B2015"), summarise, 
-                   N    = length(Rate[!is.na(Rate)]), #calculate the length of the data frame, excluding NA’s *this part is important*
-                   mean = mean(Rate, na.rm=TRUE), #calculate mean of response variable, removing NA's
-                   sd   = sd(Rate, na.rm=TRUE), #calculate standard deviation
-                   se   = sd / sqrt(N), #calculate standard error
-                   max = max(Rate, na.rm=TRUE) #calculate max, could also calculate min () if desired
-)
-#p36means #display table
-
-p36means$code<-paste0(p36means$Site, p36means$B2015, p36means$Species)
-p36means #display table
-
-PcompRate03<-ggplot(data=p03means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1,show.legend = FALSE)+
-#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-#  scale_shape_manual(values=c( 16,1))+
- # geom_line(aes(color=B2015, linetype=B2015))+
-  #scale_linetype_manual(values=c("solid", "dotted"))+
-  #scale_color_manual(values=c("black","black"))+
-  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
- # ylab("Partial Mortality (%)") +
- #   xlab("Recovery Time (months)") + #Label the X Axis
- #   ylim(0, 80) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
- # ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));PcompRate03
-
-
-PcompRate36<-ggplot(data=p36means, aes(x=code, y=mean, group = code, color=B2015)) + #color by bleaching hist. 
-  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
-                width=0.1,show.legend = FALSE)+
-#  geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-#  scale_shape_manual(values=c( 16,1))+
- # geom_line(aes(color=B2015, linetype=B2015))+
-  #scale_linetype_manual(values=c("solid", "dotted"))+
-  #scale_color_manual(values=c("black","black"))+
-  #  scale_x_continuous(breaks = seq(0, 24, by = 6))+
- # ylab("Partial Mortality (%)") +
- #   xlab("Recovery Time (months)") + #Label the X Axis
- #   ylim(0, 80) + #set Y limits
-  theme_bw() + #Set the background color
-  theme(axis.line = element_line(color = 'black'), #Set the axes color
-        axis.title=element_text(size=14,face="bold"), #Set axis format
-        panel.border = element_blank(), #Set the border
-        panel.grid.major = element_blank(), #Set the major gridlines
-        panel.grid.minor = element_blank(), #Set the minor gridlines
-        plot.background =element_blank(), #Set the plot background
-        legend.key = element_blank()) + #Set plot legend key
- # ggtitle("Outer Lagoon")+
-          theme(plot.title = element_text(size=20,face = "bold",hjust = 0.5));PcompRate36
-
-
-
-```
-
-# Partial mortality rates, by reef Site and Bleaching History  
-SI Table 13  
-*M. capitata* RATE lmer
-```{r} 
-#0-3 months
-Mcap_m03rate<-lm(Rate~Site*B2015, Mcap_rate_03)
-summary(Mcap_m03rate)
-anova(Mcap_m03rate)
-
- #conduct Tukey post hoc test 
-    emm = emmeans(Mcap_m03rate, ~ B2015, adjust="tukey")
-    #letter display
-    cld(emm)
-    emm = emmeans(Mcap_m03rate, ~ Site, adjust="tukey")
-    #letter display
-    cld(emm)
-    emm = emmeans(Mcap_m03rate, ~ B2015*Site, adjust="tukey")
-    #letter display
-    cld(emm)
-
-#3-6 months
-Mcap_m36rate<-lm(Rate~Site*B2015, Mcap_rate_36)
-summary(Mcap_m36rate)
-anova(Mcap_m36rate)
- #conduct Tukey post hoc test 
-    emm = emmeans(Mcap_m36rate, ~ Site, adjust="tukey")
-    #letter display
-    cld(emm)
- 
-```
-
-*Porites compressa only*
-SI Table 13   RATE
-```{r}
-#0-3 months 
-Pcomp_m03rate<-lm(Rate~Site*B2015, Pcomp_rate_03)
-summary(Pcomp_m03rate)
-anova(Pcomp_m03rate)
-
-#3-6 months
-Pcomp_m36rate<-lm(Rate~Site*B2015, Pcomp_rate_36)
-summary(Pcomp_m36rate)
-anova(Pcomp_m36rate)
- #conduct Tukey post hoc test 
-    emm = emmeans(Pcomp_m36rate, ~ Site*B2015, adjust="tukey")
-    #letter display
-    cld(emm)
- 
-```
-
-# Pairs comparison   
-(only include colonies when both partners of a pair are found)
-df: mALLDataPER
-```{r,results="hide"}
+# Pairs models comparison   
+(only include colonies when both partners of a pair are found at a time point)
+```{r, results="hide", message=FALSE}
 #Figure out which of the pairs we lose 
 #dataset to work from (pull unwanted from)
 pData<-mALLDataPER
@@ -926,10 +658,8 @@ pairmeans #display table
 
 ```
 
-
 #SI Table 2: Pairs
-*M. capitata* partial mortality, pairs
-lm() and lmer()
+*M. capitata* partial mortality
 ```{r} 
 #set up Pairs data
 Mcappig<-subset(PairDat, Species =="Montipora capitata")            
@@ -1048,9 +778,7 @@ anova(MpigPair24_mod1)
   cld(emm)
 ```
 
-PAIRS
 *P. compressa* partial mortality pairs  
-Model: `score~Site*B2015`  
 ```{r}
 #set up Pairs data
 Pcomppig<-subset(PairDat, Species =="Porites compressa")            

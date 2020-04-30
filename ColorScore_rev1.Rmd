@@ -13,7 +13,7 @@ output:
 editor_options: 
   chunk_output_type: console
 ---
-update:"04/21/2020"
+update:"04/30/2020"
 
 Matsuda, S, Huffmyer, A, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species. 
 
@@ -27,24 +27,28 @@ Load in and set up dfs:
 ```{r, results="hide", message=FALSE}
 #Set up: load libraries
 
-rm(list=ls(all=TRUE)) 
-library("emmeans") #post hoc
+#rm(list=ls(all=TRUE)) 
 library("reshape2") #reshape data
-library("plotrix") #functions in tapply
 library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
 library("pscl")
+library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
 library("car") #levenes test
 library("lsmeans")
-library(effects)
+library("multcomp") 
+library("multcompView")
+library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
 
+```
+
 # Bleaching data
+```{r, results="hide", message=FALSE}
 bData<-read.csv("Bleaching_FINAL.csv") #read in bleaching df
 bData$Site<-as.factor(bData$Site) #site as factor
 bData$Pair<-as.factor(bData$Pair) #pair ID as factor
@@ -247,16 +251,12 @@ grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
 summary(Mcap_df_mod)
 anova(Mcap_df_mod, type=2) #pvals
-```
-Tukey post hoc:~Lagoon*Month
-```{r}
+
  #posthoc
   emm<-emmeans(Mcap_df_mod,  ~ month)
   pairs(emm)
-  cld(emm)
+  #cld(emm)
   # Month4.5 - Month10  p=0.7754 
-
-
   
  emm<-emmeans(Mcap_df_mod,  ~ B2015*month)
   pairs(emm)
@@ -268,8 +268,6 @@ Tukey post hoc:~Lagoon*Month
   #Y,Month6 - Y,Month10     0.17169 0.0847 409   2.026 0.8094
   #Y,Month10 - Y,Month18   -0.12441 0.0949 417  -1.310 0.9954
   #Y,Month18 - Y,Month24   -0.33618 0.1108 427  -3.035 0.1591 
-  
-  
 ```
 
 *P. compressa* lmer(score~month*B2015*lagoon+(1|TagID) 
@@ -278,14 +276,12 @@ Tukey post hoc:~Lagoon*Month
 Pcomp_df_mod2<-lmer(score~B2015*Site*month+(1|TagID), data=Pcomp_df)
 summary(Pcomp_df_mod2)
 anova(Pcomp_df_mod2, type=2) #pvals
-```
-Tukey post hoc: ~Phenotype*Lagoon*Month
-```{r}
+
   emm<-emmeans(Pcomp_df_mod2,  ~ B2015*Site*month)
   pairs(emm)
-```
-Tukey post hoc: ~Lagoon*Month
-```{r}
+
+#Tukey post hoc: ~Lagoon*Month
+
    emm<-emmeans(Pcomp_df_mod2,  ~ Site*month)
   pairs(emm)
       # 4,Month0 - 13,Month0      -0.190476 0.0583 545  -3.268 0.0844 
@@ -296,9 +292,7 @@ Tukey post hoc: ~Lagoon*Month
   #4,Month10 - 13,Month10    -0.024925 0.0602 545  -0.414 1.0000 
   #4,Month18 - 13,Month18    -0.033845 0.0694 547  -0.488 1.0000
   #4,Month24 - 13,Month24    -0.074803 0.0779 548  -0.960 0.9999 
-```
-Tukey post hoc: ~Phenotype*Month
-```{r}
+
      emm<-emmeans(Pcomp_df_mod2,  ~ B2015*month)
   pairs(emm)
   #Y,Month0 - Y,Month1.5   -1.475103 0.0577 473 -25.562 <.0001
