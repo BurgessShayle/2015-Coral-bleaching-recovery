@@ -1,7 +1,7 @@
 ---
 title: "Pigmentation Score"
 author: "Shayle Matsuda"
-date: "08/08/2019"
+date: "05/19/2019"
 output:
   html_document:
     code_folding: hide
@@ -13,11 +13,11 @@ output:
 editor_options: 
   chunk_output_type: console
 ---
-update:"04/30/2020"
+update:"05/20/2020"
 
 Matsuda, S, Huffmyer, A, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species. 
 
-Pigmentation score for *M. capitata* and *P. compressa* tagged colonies at the Inner Lagoon and Outer Lagoon after the 2015 coral bleaching event in Kaneohe Bay.  Tagged individuals were given a pigment score based on their visual color: 1) white (>80% of colony white with no visible pigmentation); 2) pale (>10% colony affected by pigment loss); or 3) fully pigmented (<10% colony with any pale coloration). 
+Pigmentation score data analysis for *M. capitata* and *P. compressa* tagged colonies at the Inner Lagoon and Outer Lagoon after the 2015 coral bleaching event in Kaneohe Bay.  Tagged individuals were given a pigment score based on their visual color: 1) white (>80% of colony white with no visible pigmentation); 2) pale (>10% colony affected by pigment loss); or 3) fully pigmented (<10% colony with any pale coloration). 
 
 ```{r setup, include=FALSE,results="hide"}
 knitr::opts_chunk$set(echo = TRUE)
@@ -44,25 +44,22 @@ library(glmmTMB)
 library(lme4)
 library(lmerTest)
 library(tidyverse)
-
 ```
 
-# Bleaching data
+# Bleaching df
 ```{r, results="hide", message=FALSE}
 bData<-read.csv("Bleaching_FINAL.csv") #read in bleaching df
 bData$Site<-as.factor(bData$Site) #site as factor
 bData$Pair<-as.factor(bData$Pair) #pair ID as factor
 
-#organize data
 bALL<-bData
   #melt
   bALLData1<-melt(data = bALL, measure.vars = c("Month0","Month1.5","Month3","Month4.5", "Month6","Month10","Month18","Month24"))   
   colnames(bALLData1)[colnames(bALLData1)=="variable"] <- "month"   # change col name from 'variable' to 'month'
   colnames(bALLData1)[colnames(bALLData1)=="value"] <- "score"   # change col name from 'value' to 'score'
   bALLData1$group<-paste(bALLData1$Species, bALLData1$Site, bALLData1$B2015, bALLData1$month) # add column for groups for figures only
-#write.csv(bALL, "PigmentationBNB_20191122.csv")
 
-#Remove all NON PAIRS and all NAs
+#Remove all NON PAIRED corals and all NAs
   bALLData<-na.omit(bALLData1) # remove the NA rows (this removes individuals and NAs from pairs with no score at particular timepoints (due to not finding the coral))
   
   #Change month into TIME numeric for plots
@@ -77,34 +74,29 @@ bALL<-bData
   bALLData$time[bALLData$month=="Month24"]<-24
 
 #Subsets of df for Mcap and Pcomp
- 
 Mcap_df<-subset(bALLData, Species=="Montipora capitata")   #Mcap only
 Pcomp_df<-subset(bALLData, Species=="Porites compressa")   #Pcomp only
 
 #Mean bleaching scores full df
 #calc average bleaching  score per grouping by time point
-
 ballmeans <- ddply(bALLData, c("Site", "Species", "B2015", "time"), summarise, #
                    N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(score, na.rm=TRUE), #calculate standard deviation
                    se   = sd / sqrt(N), #calculate standard error
-                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+                   max = max(score, na.rm=TRUE) #calculate max
 )
-ballmeans #display table
 
 ballmeans$code<-paste0(ballmeans$Site, ballmeans$B2015, ballmeans$Species)
 ballmeans #display table
-#write.csv(ballmeans,"ballmeans.csv"
 ```
 
 #Figure 5
-Bleaching score means 0-24 months by species. 
+Color score means
 *Montipora capitata* df
 ```{r, results="hide", message=FALSE} 
 #subset for Mcap only 
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
-  
 #subset by reef
 #PR13 
 Mcap024AllplotPR13<-subset(Mcap024Allplot, Site==13)
@@ -119,7 +111,7 @@ ballplotMcapPR13<-ggplot(data=Mcap024AllplotPR13, aes(x=time, y=mean, group = co
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="black", size=5)+
   scale_shape_manual(values=c(16,1))+
-  geom_line(aes(color=B2015,linetype=B2015))+        #adding size=x here only blew it up
+  geom_line(aes(color=B2015,linetype=B2015))+       
   scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
@@ -171,7 +163,6 @@ McapInner<-ballplotMcapPR4 + theme(legend.position = "none") #remove legend
 *Porites compressa*  df setup
 ```{r, results="hide", message=FALSE}
 Pcomp024Allplot<-subset(ballmeans, Species=="Porites compressa")
-
 #subset by reef 
 Pcomp024AllplotPR13<-subset(Pcomp024Allplot, Site==13)
 Pcomp024AllplotPR4<-subset(Pcomp024Allplot, Site==4)
@@ -183,9 +174,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=time, y=mean, group = 
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-  
   scale_shape_manual(values=c( 16,1))+
-  
   geom_line(aes(color=B2015, linetype=B2015))+
   scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("black","black"))+
@@ -213,9 +202,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=time, y=mean, group = co
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se), 
                 width=0.1,show.legend = FALSE)+
   geom_point(aes(shape=B2015),fill="mediumblue", size=5)+
-  
   scale_shape_manual(values=c( 16,1))+
-  
   geom_line(aes(color=B2015, linetype=B2015))+
   scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("black","black"))+
@@ -233,21 +220,19 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=time, y=mean, group = co
         legend.key = element_blank()) + #Set plot legend key
   #Sggtitle("Porites compressa Bleaching Scores times 0-24")+
           theme(plot.title = element_text(size=20,face = "italic"));b024plotPcompPR4
-
-
 PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
 ```
 
-Figure 5:
+Figure 5 (color score side, full figure includes Mortality data (see Partial mortality Rmd))
 ```{r}
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
 # Bleaching Recovery Models
-##Table 2: Color score recovery  
+#Table 2: Color score recovery  
 *M. capitata* lmer(score~month*B2015*lagoon+(1|TagID) 
 ```{r}
-#full model
+#full model (all months)
 Mcap_df_mod<-lmer(score~B2015*Site*month+(1|TagID), data=Mcap_df)
 summary(Mcap_df_mod)
 anova(Mcap_df_mod, type=2) #pvals
@@ -255,19 +240,10 @@ anova(Mcap_df_mod, type=2) #pvals
  #posthoc
   emm<-emmeans(Mcap_df_mod,  ~ month)
   pairs(emm)
-  #cld(emm)
-  # Month4.5 - Month10  p=0.7754 
   
  emm<-emmeans(Mcap_df_mod,  ~ B2015*month)
   pairs(emm)
   cld(emm)
-  #Y,Month0 - Y,Month1.5   -0.74657 0.0719 412 -10.377 <.0001 
-  #Y,Month1.5 - Y,Month3   -0.37874 0.0756 411  -5.007 0.0001
-  #Y,Month3 - Y,Month4.5   -0.01643 0.0765 414  -0.215 1.0000
-  #Y,Month4.5 - Y,Month6   -0.08619 0.0804 412  -1.073 0.9995
-  #Y,Month6 - Y,Month10     0.17169 0.0847 409   2.026 0.8094
-  #Y,Month10 - Y,Month18   -0.12441 0.0949 417  -1.310 0.9954
-  #Y,Month18 - Y,Month24   -0.33618 0.1108 427  -3.035 0.1591 
 ```
 
 *P. compressa* lmer(score~month*B2015*lagoon+(1|TagID) 
@@ -276,43 +252,19 @@ anova(Mcap_df_mod, type=2) #pvals
 Pcomp_df_mod2<-lmer(score~B2015*Site*month+(1|TagID), data=Pcomp_df)
 summary(Pcomp_df_mod2)
 anova(Pcomp_df_mod2, type=2) #pvals
-
   emm<-emmeans(Pcomp_df_mod2,  ~ B2015*Site*month)
   pairs(emm)
-
-#Tukey post hoc: ~Lagoon*Month
-
-   emm<-emmeans(Pcomp_df_mod2,  ~ Site*month)
+  emm<-emmeans(Pcomp_df_mod2,  ~ Site*month)
   pairs(emm)
-      # 4,Month0 - 13,Month0      -0.190476 0.0583 545  -3.268 0.0844 
-      #4,Month1.5 - 13,Month1.5  -0.049478 0.0590 545  -0.839 1.0000
-  #4,Month3 - 13,Month3      -0.022300 0.0598 545  -0.373 1.0000 
-  #4,Month4.5 - 13,Month4.5  -0.151734 0.0610 545  -2.488 0.4822
-  #4,Month6 - 13,Month6       0.000289 0.0590 545   0.005 1.0000 
-  #4,Month10 - 13,Month10    -0.024925 0.0602 545  -0.414 1.0000 
-  #4,Month18 - 13,Month18    -0.033845 0.0694 547  -0.488 1.0000
-  #4,Month24 - 13,Month24    -0.074803 0.0779 548  -0.960 0.9999 
-
-     emm<-emmeans(Pcomp_df_mod2,  ~ B2015*month)
+  emm<-emmeans(Pcomp_df_mod2,  ~ B2015*month)
   pairs(emm)
-  #Y,Month0 - Y,Month1.5   -1.475103 0.0577 473 -25.562 <.0001
-  #Y,Month1.5 - Y,Month3   -0.447667 0.0584 473  -7.661 <.0001
-  #Y,Month3 - Y,Month4.5   -0.001545 0.0593 476  -0.026 1.0000 
-  #Y,Month4.5 - Y,Month6   -0.075574 0.0589 477  -1.283 0.9963
-  #Y,Month6 - Y,Month10    -0.000723 0.0584 473  -0.012 1.0000 
-  #Y,Month10 - Y,Month18    0.073924 0.0642 490   1.151 0.9989
-  #Y,Month18 - Y,Month24   -0.071078 0.0734 513  -0.969 0.9999 
-  
-    emm<-emmeans(Pcomp_df_mod2,  ~ B2015*month*Site)
+  emm<-emmeans(Pcomp_df_mod2,  ~ B2015*month*Site)
   pairs(emm)
-  #Y,Month0,4 - Y,Month1.5,4     -1.350207 0.0811 474 -16.642 <.0001 
-  #
-  
 ```
 
-#Supplemental Table 7
+#Supplemental Table 5
 Models at each timepoint
-*M. capitata* lm()
+*M. capitata* 
 ```{r, results="hide", message=FALSE}  
 Mcap_0<-subset(Mcap_df, month=="Month0")
 Mcap_1.5<-subset(Mcap_df, month=="Month1.5")
@@ -333,36 +285,29 @@ Month1.5_mcap1.5<-lm(score~Site*B2015, Mcap_1.5)
 summary(Month1.5_mcap1.5)
 anova(Month1.5_mcap1.5)
 
-
 #Month3
 Month3_mcap3<-lm(score~Site*B2015, Mcap_3)
 summary(Month3_mcap3)
 anova(Month3_mcap3)
  emm<-emmeans(Month3_mcap3,  ~ B2015*Site)
   pairs(emm)
-  cld(emm, Letter="abcde")
-  #N,4 - Y,4     0.6147 0.102 68  6.004  <.0001
-  #N,13 - Y,13   0.9412 0.105 68  8.967  <.0001
-  
+  cld(emm)
+
 #Month4.5
 Month4.5_mcap4.5<-lm(score~Site*B2015, Mcap_4.5)
 summary(Month4.5_mcap4.5)
 anova(Month4.5_mcap4.5)
- emm<-emmeans(Month4.5_mcap4.5,  ~ B2015*Site)
+  emm<-emmeans(Month4.5_mcap4.5,  ~ B2015*Site)
   pairs(emm)
-  #N,4 - Y,4     0.4494 0.134 72  3.349  0.0069
-  #N,13 - Y,13   0.8421 0.130 72  6.500  <.0001
 
-  #Month6
+#Month6
 Month6_mcap6<-lm(score~Site*B2015, Mcap_6)
 summary(Month6_mcap6)
 anova(Month6_mcap6)
-emm<-emmeans(Month6_mcap6,  ~ Site)
+  emm<-emmeans(Month6_mcap6,  ~ Site)
   pairs(emm)
-emm<-emmeans(Month6_mcap6,  ~ B2015*Site)
+  emm<-emmeans(Month6_mcap6,  ~ B2015*Site)
   pairs(emm)
-  # N,4 - Y,4     0.3111 0.140 58  2.229  0.1275
-  #N,13 - Y,13   0.8000 0.148 58  5.392  <.0001
   
 #Month10
 Month10_mcap10<-lm(score~Site*B2015, Mcap_10)
@@ -378,8 +323,6 @@ anova(Month18_mcap18)
 Month24_mcap24t<-lm(score~Site*B2015, Mcap_24)
 summary(Month24_mcap24t)
 anova(Month24_mcap24t)
-
-Mcap24_Inner<-subset(Mcap_24, Site=="4")
 ```
 
 *P. compressa* lm()
@@ -393,7 +336,6 @@ Pcomp_10<-subset(Pcomp_df, month=="Month10")
 Pcomp_18<-subset(Pcomp_df, month=="Month18")
 Pcomp_24<-subset(Pcomp_df, month=="Month24")
 
-
 #Month0
 Month0_Pcomp0<-lm(score~Site*B2015, Pcomp_0)
 summary(Month0_Pcomp0)
@@ -403,6 +345,8 @@ anova(Month0_Pcomp0)
 Month1.5_Pcomp1.5<-lm(score~Site*B2015, Pcomp_1.5)
 summary(Month1.5_Pcomp1.5)
 anova(Month1.5_Pcomp1.5)
+ emm<-emmeans(Month1.5_Pcomp1.5,  ~ B2015)
+  pairs(emm)
 
 #Month3
 Month3_Pcomp3<-lm(score~Site*B2015, Pcomp_3)
@@ -442,7 +386,6 @@ naData<-bALLData   #subset only pairs
 pData<-bALLData   #dataset to work from (pull unwanted from)
 
 # Identify which pairs have a partner not found by month:
-
 # Subset Month0 (two colonies missing values, checked datasheet)
 M0<-subset(naData, month=="Month0") # subset month 0
 
@@ -451,22 +394,13 @@ M0<-subset(naData, month=="Month0") # subset month 0
   M0<-pData[M0a]
   M0<-subset(M0, month=="Month0")
 
-    #For DIFFS df
-  M0diff<-M0  
-  M0diff<-dcast(M0diff, Species+Site+Pair+month~B2015) # cast()
-  M0diff$diff<-M0diff$N-M0diff$Y
-
 # Subset Month1.5 
-M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
+  M1.5<-subset(naData, month=="Month1.5") # subset month 1.5 
   # subset month 1.5
   M1.5a<-c("TagID","Pair","Species", "Site","B2015","month","score") # which columns to pull
   M1.5<-pData[M1.5a]
   M1.5<-subset(M1.5, month=="Month1.5")
   M1.5<-M1.5[!(M1.5$Pair=="113_114"),]
- #DIFFS 
-  M1.5diff<-M1.5  
-  M1.5diff<-dcast(M1.5diff, Species+Site+Pair+month~B2015) # cast()
-  M1.5diff$diff<-M1.5diff$N-M1.5diff$Y
   
 ## Subset Month3
 M3<-subset(naData, month=="Month3") # subset month 3
@@ -477,14 +411,9 @@ M3<-subset(naData, month=="Month3") # subset month 3
   M3<-M3[!(M3$Pair=="113_114"),]
   M3<-M3[!(M3$Pair=="255_256"),]
   M3<-M3[!(M3$Pair=="259_260"),]
-  
-  #DIFFS
-  M3diff<-M3  
-  M3diff<-dcast(M3diff, Species+Site+Pair+month~B2015) # cast()
-  M3diff$diff<-M3diff$N-M3diff$Y
 
 ## Subset Month 4.5
-M4.5<-subset(naData, month=="Month4.5") # subset month 3
+  M4.5<-subset(naData, month=="Month4.5") # subset month 3
   M4.5a<-c("TagID","Pair","Species", "Site","B2015","month", "score")
   M4.5<-pData[M4.5a]
   M4.5<-subset(M4.5, month=="Month4.5")
@@ -496,15 +425,9 @@ M4.5<-subset(naData, month=="Month4.5") # subset month 3
   M4.5<-M4.5[!(M4.5$Pair=="263_264"),]
   M4.5<-M4.5[!(M4.5$Pair=="267_268"),]
   M4.5<-M4.5[!(M4.5$Pair=="82_83"),]
- 
-  #DIFFS
-  M4.5diff<-M4.5  
-  M4.5diff<-dcast(M4.5diff, Species+Site+Pair+month~B2015) # cast()
-  M4.5diff$diff<-M4.5diff$N-M4.5diff$Y
-  
 
 # Subset month 6
-M6<-subset(naData, month=="Month6")
+  M6<-subset(naData, month=="Month6")
   M6a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M6<-pData[M6a]
   M6<-subset(M6, month=="Month6")
@@ -518,13 +441,8 @@ M6<-subset(naData, month=="Month6")
   M6<-M6[!(M6$Pair=="267_268"),]
   M6<-M6[!(M6$Pair=="263_264"),]
   
-  #DIFFS
-  M6diff<-M6  
-  M6diff<-dcast(M6diff, Species+Site+Pair+month~B2015) # cast()
-  M6diff$diff<-M6diff$N-M6diff$Y
-  
 # Subset month 10
-M10<-subset(naData, month=="Month10")
+  M10<-subset(naData, month=="Month10")
   M10a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M10<-pData[M10a]
   M10<-subset(M10, month=="Month10")
@@ -540,13 +458,9 @@ M10<-subset(naData, month=="Month10")
   M10<-M10[!(M10$Pair=="277_278"),]
   M10<-M10[!(M10$Pair=="31_32"),]
   M10<-M10[!(M10$Pair=="261_262"),]
-  #DIFFS
-  M10diff<-M10  
-  M10diff<-dcast(M10diff, Species+Site+Pair+month~B2015) # cast()
-  M10diff$diff<-M10diff$N-M10diff$Y
   
   # Subset month 18
-M18<-subset(naData, month=="Month18")
+  M18<-subset(naData, month=="Month18")
   M18a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M18<-pData[M18a]
   M18<-subset(M18, month=="Month18")
@@ -572,13 +486,8 @@ M18<-subset(naData, month=="Month18")
   M18<-M18[!(M18$Pair=="223_224"),]
   M18<-M18[!(M18$Pair=="39_40"),]
   
-  #DIFFS
-  M18diff<-M18  
-  M18diff<-dcast(M18diff, Species+Site+Pair+month~B2015) # cast()
-  M18diff$diff<-M18diff$N-M18diff$Y
-  
   # Subset month 24
-M24<-subset(naData, month=="Month24")
+  M24<-subset(naData, month=="Month24")
   M24a<-c("TagID","Pair","Species", "Site","B2015","month","score")
   M24<-pData[M24a]
   M24<-subset(M24, month=="Month24")
@@ -597,28 +506,20 @@ M24<-subset(naData, month=="Month24")
   M24<-M24[!(M24$Pair=="76_77"),]
   M24<-M24[!(M24$Pair=="78_79"),]
 
-  #DIFFS
-  M24diff<-M24  
-  M24diff<-dcast(M24diff, Species+Site+Pair+month~B2015) # cast()
-  M24diff$diff<-M24diff$N-M24diff$Y
-  
 #make dfs   
 PairDat<-rbind(M0,M1.5,M3,M4.5,M6,M10,M18,M24)
  
 #Mean bleaching scores across the entire project
-
 #calc average bleaching score per grouping by time point
 pairmeans <- ddply(PairDat, c("Site", "Species", "B2015", "month"), summarise, #
                    N    = length(score[!is.na(score)]), #calculate the length of the data frame, excluding NA’s *this part is important*
                    mean = mean(score, na.rm=TRUE), #calculate mean of response variable, removing NA's
                    sd   = sd(score, na.rm=TRUE), #calculate standard deviation
                    se   = sd / sqrt(N), #calculate standard error
-                   max = max(score, na.rm=TRUE) #calculate max, could also calculate min () if desired
+                   max = max(score, na.rm=TRUE) #calculate max
 )
-#ballmeans #display table
 
 pairmeans$code<-paste0(pairmeans$Site, pairmeans$B2015, pairmeans$Species)
-pairmeans #display table
 ```
 
 *Montipora capitata*  plot pairs
@@ -674,8 +575,7 @@ PairplotPcompB<-ggplot(data=PcompPairplot, aes(x=month, y=mean, group = code, co
   ggtitle("Pairs Porites compressa Bleaching Scores months 0-10")+
           theme(plot.title = element_text(size=20,face = "italic"));PairplotPcompB
 ```
-#Mcap: Pairs 
-SI Table 1 
+#Mcap: Pairs (SI Table 6)
 Model: lmer(score~Site*B2015*Species+(1|Pair)+(1|TagID))
 ```{r}
 #set up Pairs data
@@ -737,8 +637,8 @@ summary(MpigPair24_mod1)
 anova(MpigPair24_mod1)
 ```
 
-#Pcomp: Pairs
-lmer/lm()
+#Pcomp: Pairs (SI Table 6)
+Model: lmer(score~Site*B2015*Species+(1|Pair)+(1|TagID)) 
 ```{r}
 Pcomppig<- subset(PairDat, Species == "Porites compressa") 
 
