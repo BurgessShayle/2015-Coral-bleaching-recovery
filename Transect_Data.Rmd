@@ -46,7 +46,7 @@ library(tidyverse)
 Setup df:
 ```{r,results="hide", message=FALSE}
 #Setup workspace:
-rData1<- read.csv("Benthic_Transect_df.csv", header=T) # load in transect data
+rData1<- read.csv("data/Benthic_Transect_df.csv", header=T) # load in transect data
 
 # set levels of factor for Bleaching_status
 levels(rData1$Bleaching_score)
@@ -248,7 +248,7 @@ rData3$Rep<-as.factor(rData3$Rep)
 #Benthic section: %Coral cover
 Benthic transect df setup:   
 ```{r, results="hide", message=FALSE} 
-ccData<-read.csv("Benthic_Transect_Coral_Cover.csv", header=T)
+ccData<-read.csv("data/Benthic_Transect_Coral_Cover.csv", header=T)
 ccData$MonthFactor<-ccData$Month
 ccData$MonthFactor[ccData$MonthFactor=="18"] <-"1819" #combine months 18 and 19
 ccData$MonthFactor[ccData$MonthFactor=="19"] <-"1819"

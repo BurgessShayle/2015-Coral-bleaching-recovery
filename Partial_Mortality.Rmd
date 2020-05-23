@@ -43,7 +43,7 @@ library(lmerTest)
 library(tidyverse)
 
 #load data
-mData<-read.csv("Mortality_scores_percent.csv")
+mData<-read.csv("data/Mortality_scores_percent.csv")
 mData$Site<-as.factor(mData$Site)
 
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
