@@ -10,3 +10,20 @@ In this repository, please find data sheets and .Rmd for all data analyses in th
 
 This manuscript was first released as a preprint (https://doi.org/10.1101/2019.12.17.880161). Files labeled "Biorxiv*" are the scripts used to run the analyses reported in this version. All other documents relate to the final peer reviewed manuscript.
 
+
+Color pigmentation analysis:
+Script: ColorScore.Rmd
+Data: Bleaching_FINAL.csv
+
+Partial mortality analysis:
+Script: Partial_Mortality.Rmd
+Data: Mortality_Scores_Percent.csv
+
+Benthic transect surveys analysis:
+Script: Transect_Data.Rmd
+Data: Benthic_Transect_Coral_Cover.csv and Benthic_Transect_df.csv
+
+Temperature analysis:
+Script:
+Data:
+
