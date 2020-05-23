@@ -1,0 +1,290 @@
+---
+title: "Sea Surface Temperature Analysis"
+author: "Teegan Innis"
+date: "5/23/2020"
+output: html_document
+---
+This script is the analysis of SST for the following manuscript:
+
+Matsuda, S, Huffmyer, A, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species. 
+
+```{r setup, include=FALSE, results='hide'}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load necessary packages
+```{r, results='hide', message=FALSE}
+rm(list = ls())
+library(readr)
+library(lubridate)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(scales)
+```
+
+# Import data
+```{r, results='hide', message=FALSE}
+PR413 <- read_csv("data/Temp_Data_PR4_PR13.csv") 
+PR1 <- read_csv("data/Temp_Data_PR1.csv")
+PR12 <- read_csv("data/Temp_Data_PR12.csv")
+```
+
+# Structure data
+```{r, results='hide', message=FALSE}
+# Rename columns
+names(PR413) <- c("Date", "Time", "Time24", "InnerBay", "OuterBay")
+names(PR1) <- c("Date", "Time", "Time24", "InnerBay")
+names(PR12) <- c("Date", "Time", "Time24", "TempF", "TempC", "CorTempC")
+
+# Convert time to time format
+PR413$newTime <- as.POSIXct(PR413$Time24, format = "%H:%M") 
+PR413$TimeFinal <- format(PR413$newTime, "%H:%M") 
+PR1$newTime <- as.POSIXct(PR1$Time24, format = "%H:%M") 
+PR1$TimeFinal <- format(PR1$newTime, "%H:%M")
+PR12$newTime <- as.POSIXct(PR12$Time24, format = "%H:%M") 
+PR12$TimeFinal <- format(PR12$newTime, "%H:%M")
+
+# Convert date to date format
+PR413$newDate <- as.Date(PR413$Date, format = "%m/%d/%y")
+PR1$newDate <- as.Date(PR1$Date, format = "%m/%d/%y")
+PR12$newDate <- as.Date(PR12$Date, format = "%m/%d/%y")
+
+# Merge date and time
+PR413$dttm <- as.POSIXct(paste(PR413$newDate, PR413$TimeFinal), format="%Y-%m-%d %H:%M") 
+PR413$dttm <- as_datetime(PR413$dttm, tz = "America/New_York") 
+PR1$dttm <- as.POSIXct(paste(PR1$newDate, PR1$TimeFinal), format="%Y-%m-%d %H:%M") 
+PR1$dttm <- as_datetime(PR1$dttm, tz = "America/New_York")  
+PR12$dttm <- as.POSIXct(paste(PR12$newDate, PR12$TimeFinal), format="%Y-%m-%d %H:%M") 
+PR12$dttm <- as_datetime(PR12$dttm, tz = "America/New_York") 
+
+# Assign group to continuous data
+TimeDiff <- difftime(PR413$dttm, lag(PR413$dttm, default = PR413$dttm[1]), units = "days")
+PR413$grp <- cumsum(ifelse(TimeDiff>2,1,0))
+TimeDiff <- difftime(PR1$dttm, lag(PR1$dttm, default = PR1$dttm[1]), units = "days")
+PR1$grp <- cumsum(ifelse(TimeDiff>2,1,0))
+TimeDiff <- difftime(PR12$dttm, lag(PR12$dttm, default = PR12$dttm[1]), units = "days")
+PR12$grp <- cumsum(ifelse(TimeDiff>2,1,0))
+
+# Combine dataframes
+AllLogs <- merge(merge(PR1, PR413, by = "dttm", all = TRUE), PR12, by = "dttm", all = TRUE)
+AllLogs <- AllLogs[ ,c(1,5,8:9,13:14,17:18,24,27:28)]
+names(AllLogs) <- c("dttm", "PR1", "PR1Date", "PR1Group", "PR4", "PR13", "PR4Date", "PR4Group", "PR12", "PR12Date", "PR12Group")
+
+# Convert to long form
+Sub <- dplyr::select(AllLogs, dttm, PR1, PR4, PR12, PR13)
+MeltSub <- melt(Sub, id.vars = c("dttm"))
+MeltSub <- na.omit(MeltSub)
+```
+
+# Daily mean +/- max and min
+```{r, results='hide', message=FALSE}
+PR413Mean <- cbind(aggregate(AllLogs$PR4, by=AllLogs["PR4Date"], FUN=mean, na.rm = TRUE), aggregate(AllLogs$PR4, by=AllLogs["PR4Date"], FUN=max, na.rm = TRUE), aggregate(AllLogs$PR4, by=AllLogs["PR4Date"], FUN=min, na.rm = TRUE),
+                 aggregate(AllLogs$PR13, by=AllLogs["PR4Date"], FUN=mean, na.rm = TRUE), aggregate(AllLogs$PR13, by=AllLogs["PR4Date"], FUN=max, na.rm = TRUE), aggregate(AllLogs$PR13, by=AllLogs["PR4Date"], FUN=min, na.rm = TRUE))
+PR413Mean <- PR413Mean[ ,c(1:2,4,6,8,10,12)]
+names(PR413Mean) <- c("Date", "PR4", "PR4Max", "PR4Min", "PR13", "PR13Max", "PR13Min")
+HIMBMean <- cbind(aggregate(AllLogs$PR1, by=AllLogs["PR1Date"], FUN=mean, na.rm = TRUE), aggregate(AllLogs$PR1, by=AllLogs["PR1Date"], FUN=max, na.rm = TRUE), aggregate(AllLogs$PR1, by=AllLogs["PR1Date"], FUN=min, na.rm = TRUE))
+HIMBMean <- HIMBMean[ ,c(1:2,4,6)]
+names(HIMBMean) <- c("Date", "PR1", "PR1Max", "PR1Min")
+PR12Mean <- cbind(aggregate(AllLogs$PR12, by=AllLogs["PR12Date"], FUN=mean, na.rm = TRUE), aggregate(AllLogs$PR12, by=AllLogs["PR12Date"], FUN=max, na.rm = TRUE), aggregate(AllLogs$PR12, by=AllLogs["PR12Date"], FUN=min, na.rm = TRUE))
+PR12Mean <- PR12Mean[ ,c(1:2,4,6)]
+names(PR12Mean) <- c("Date", "PR12", "PR12Max", "PR12Min")
+AllMean <- merge(merge(HIMBMean, PR413Mean, by = "Date", all = TRUE), PR12Mean, by = "Date", all = TRUE)
+is.na(AllMean) <- do.call(cbind,lapply(AllMean, is.infinite))
+
+# Structure data
+MeanSub <- dplyr::select(AllMean, Date, PR1, PR4, PR12, PR13)
+MeanMelt <- melt(MeanSub, id.vars = c("Date"))
+MeanMelt <- na.omit(MeanMelt)
+
+MaxSub <- dplyr::select(AllMean, Date, PR1Max, PR4Max, PR12Max, PR13Max)
+MaxMelt <- melt(MaxSub, id.vars = c("Date"))
+MaxMelt <- na.omit(MaxMelt)
+
+MinSub <- dplyr::select(AllMean, Date, PR1Min, PR4Min, PR12Min, PR13Min)
+MinMelt <- melt(MinSub, id.vars = c("Date"))
+MinMelt <- na.omit(MinMelt)
+
+MeanMelt <- cbind(MeanMelt, MaxMelt, MinMelt)
+MeanMelt <- MeanMelt[ ,c(1:3,6,9)]
+names(MeanMelt) <- c("Date", "PR", "Mean", "Max", "Min")
+
+# Ignore PR1/PR12 after 10-1 
+MeanMelt <- subset(MeanMelt, Date >= "2015-07-01")
+MeanMelt$Mean <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR1", NA, MeanMelt$Mean)
+MeanMelt$Mean <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR12", NA, MeanMelt$Mean)
+MeanMelt$Max <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR1", NA, MeanMelt$Max)
+MeanMelt$Max <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR12", NA, MeanMelt$Max)
+MeanMelt$Min <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR1", NA, MeanMelt$Min)
+MeanMelt$Min <- ifelse(MeanMelt$Date > "2015-10-01" & MeanMelt$PR == "PR12", NA, MeanMelt$Min)
+```
+
+# Plot Daily Max (Fig1D)
+```{r, results='hide', message=FALSE}
+png("MaxTemp.png", width = 200, height = 80, units = "mm", res = 500)
+ggplot(MeanMelt, aes(x = Date, color = PR)) + 
+  geom_hline(yintercept = 28, linetype = "dashed") +
+  geom_hline(yintercept = 29) +
+  geom_line(aes(y = Max), size = 0.5) +
+  scale_color_manual(values = c("PR1" = "coral3", "PR4" = "coral", "PR12" = "skyblue4", "PR13" = "skyblue2")) +
+  scale_x_date(labels = date_format("%b '%y"), date_breaks = "2 months", limits = as.Date(c("2015-06-20", "2016-10-06"))) + 
+  scale_y_continuous(breaks = c(24,26,28,30)) +
+  theme(aspect.ratio = .3, axis.title=element_text(size=12, color = "black", face = "bold"),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), 
+        panel.border = element_rect(fill = NA), legend.title = element_text(size = 10, color = "black", face = "bold"), legend.key = element_blank(), 
+        legend.text = element_text(size = 10, color = "black"), legend.position = c(0.065, 0.2), legend.key.size = unit(0.3, "cm")) +
+  scale_fill_manual(values=alpha(c("coral3", "coral", "skyblue4", "skyblue2")), name = "Patch Reef") + 
+  labs(y = "Temperature (°C)", x = "Date", color = "Patch Reef", title = "") +
+  guides(color=guide_legend(override.aes=list(fill=NA)))
+dev.off()
+```
+
+# Stats
+```{r, results='hide', message=FALSE}
+# Bleach
+BleachMean <- subset(MeanMelt, Date <= "2015-10-01" & Date >= "2015-07-01")
+BleachMean$Range <- BleachMean$Max - BleachMean$Min
+
+BleachStats <- cbind(aggregate(BleachMean$Mean, by = BleachMean["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(BleachMean$Max, by = BleachMean["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(BleachMean$Min, by = BleachMean["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(BleachMean$Mean, by = BleachMean["PR"], FUN = sd, na.rm = TRUE),
+                     aggregate(BleachMean$Range, by = BleachMean["PR"], FUN = mean, na.rm = TRUE))
+BleachStats <- BleachStats[, c(1:2,4,6,8,10)]
+names(BleachStats) <- c("Reef", "Mean", "Max", "Min", "SD", "Range")
+
+sum(BleachMean$Max >= 29 & BleachMean$PR == "PR1") 
+sum(BleachMean$Max >= 29 & BleachMean$PR == "PR12") 
+
+# Recovery
+Recov <- subset(MeanMelt, Date >= "2015-11-01" & Date <= "2016-02-01")
+Recov$Range <- Recov$Max - Recov$Min
+
+RecovStats <- cbind(aggregate(Recov$Mean, by = Recov["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(Recov$Max, by = Recov["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(Recov$Min, by = Recov["PR"], FUN = mean, na.rm = TRUE),
+                     aggregate(Recov$Mean, by = Recov["PR"], FUN = sd, na.rm = TRUE),
+                     aggregate(Recov$Range, by = Recov["PR"], FUN = mean, na.rm = TRUE))
+RecovStats <- RecovStats[, c(1:2,4,6,8,10)]
+names(RecovStats) <- c("Reef", "Mean", "Max", "Min", "SD", "Range")
+
+# DHW
+## PR1
+Bleach <- subset(AllLogs, dttm <= "2015-10-01" & dttm >= "2015-07-01" & PR1 != "NA")
+Bleach$Stress <- Bleach$PR1-28
+DHWPR128 <- subset(Bleach, Stress >= 1)
+DHWPR128$Stress <- floor(DHWPR128$Stress)
+sum(DHWPR128$Stress)/168 
+
+## PR12
+Bleach$Stress3 <- Bleach$PR12-28
+DHWPR1228 <- subset(Bleach, Stress3 >= 1)
+DHWPR1228$Stress3 <- floor(DHWPR1228$Stress3)
+sum(DHWPR1228$Stress3)/168
+
+# Mean daily max - Bleach
+Bleach <- subset(AllMean, Date <= "2015-10-01" & Date >= "2015-07-01" & PR1 != "NA")
+shapiro.test(Bleach$PR1Max) 
+shapiro.test(Bleach$PR12Max) 
+var.test(Bleach$PR1Max, Bleach$PR12Max) 
+t.test(Bleach$PR1Max, Bleach$PR12Max, var.equal = T) 
+wilcox.test(Bleach$PR1Max, Bleach$PR12Max) 
+
+# Mean daily min - Bleach
+shapiro.test(Bleach$PR1Min) 
+shapiro.test(Bleach$PR12Min) 
+var.test(Bleach$PR1Min, Bleach$PR12Min)
+t.test(Bleach$PR1Min, Bleach$PR12Min, var.equal = T)
+wilcox.test(Bleach$PR1Min, Bleach$PR12Min) 
+
+# Mean daily range - Bleach
+Bleach$PR1Range <- Bleach$PR1Max - Bleach$PR1Min
+shapiro.test(Bleach$PR1Range) 
+Bleach$PR12Range <- Bleach$PR12Max - Bleach$PR12Min
+shapiro.test(Bleach$PR12Range) 
+var.test(Bleach$PR1Range, Bleach$PR12Range) 
+t.test(Bleach$PR1Range, Bleach$PR12Range, var.equal = F) 
+wilcox.test(Bleach$PR1Range, Bleach$PR12Range)
+
+# Mean daily max - Recov
+Recov <- subset(AllMean, Date >= "2015-11-01" & Date <= "2016-02-01")
+shapiro.test(Recov$PR1Max) 
+shapiro.test(Recov$PR12Max) 
+var.test(Recov$PR1Max, Recov$PR12Max) 
+t.test(Recov$PR1Max, Recov$PR12Max, var.equal = T) 
+wilcox.test(Recov$PR1Max, Recov$PR12Max) 
+shapiro.test(Recov$PR4Max) 
+shapiro.test(Recov$PR13Max) 
+var.test(Recov$PR4Max, Recov$PR13Max) 
+t.test(Recov$PR4Max, Recov$PR13Max, var.equal = T) 
+wilcox.test(Recov$PR4Max, Recov$PR13Max)
+
+# Mean daily min - Recov
+shapiro.test(Recov$PR1Min) 
+shapiro.test(Recov$PR12Min) 
+var.test(Recov$PR1Min, Recov$PR12Min) 
+t.test(Recov$PR1Min, Recov$PR12Min, var.equal = T) 
+wilcox.test(Recov$PR1Min, Recov$PR12Min) 
+shapiro.test(Recov$PR4Min) 
+shapiro.test(Recov$PR13Min) 
+var.test(Recov$PR4Min, Recov$PR13Min) 
+t.test(Recov$PR4Min, Recov$PR13Min, var.equal = T) 
+wilcox.test(Recov$PR4Min, Recov$PR13Min) 
+
+# Mean daily range - Recov
+Recov$PR1Range <- Recov$PR1Max - Recov$PR1Min
+shapiro.test(Recov$PR1Range) 
+Recov$PR12Range <- Recov$PR12Max - Recov$PR12Min
+shapiro.test(Recov$PR12Range) 
+var.test(Recov$PR1Range, Recov$PR12Range) 
+t.test(Recov$PR1Range, Recov$PR12Range, var.equal = T) 
+wilcox.test(Recov$PR1Range, Recov$PR12Range) 
+Recov$PR4Range <- Recov$PR4Max - Recov$PR4Min
+shapiro.test(Recov$PR4Range) 
+Recov$PR13Range <- Recov$PR13Max - Recov$PR13Min
+shapiro.test(Recov$PR13Range) 
+var.test(Recov$PR4Range, Recov$PR13Range) 
+t.test(Recov$PR4Range, Recov$PR13Range, var.equal = F) 
+wilcox.test(Recov$PR4Range, Recov$PR13Range) 
+```
+
+# Extract overlapping dates
+```{r, results='hide', message=FALSE}
+png("scattercompare.png", width = 200, height = 200, units = "mm", res = 500)
+par(mfrow = c(2,2))
+OverlapInner <- subset(AllMean, (!is.na(AllMean$PR1Max)) & (!is.na(AllMean$PR4Max)))
+plot(OverlapInner$PR1Max, OverlapInner$PR4Max, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR4 Daily Max Temp (°C)", xlab = "PR1 Daily Max Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR1Max ~ PR4Max, data = OverlapInner)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+OverlapOuter <- subset(AllMean, (!is.na(AllMean$PR12Max)) & (!is.na(AllMean$PR13Max)))
+plot(OverlapInner$PR12Max, OverlapInner$PR13Max, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR13 Daily Max Temp (°C)", xlab = "PR12 Daily Max Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR12Max ~ PR13Max, data = OverOuter)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+plot(OverlapInner$PR1, OverlapInner$PR4, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR4 Daily Mean Temp (°C)", xlab = "PR1 Daily Mean Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR1 ~ PR4, data = OverlapInner)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+plot(OverlapInner$PR12, OverlapInner$PR13, ylim = c(23, 29), xlim = c(23, 29), ylab = "PR13 Daily Mean Temp (°C)", xlab = "PR12 Daily Mean Temp (°C)")
+abline(a = 0, b = 1)
+fit <- lm(PR12 ~ PR13, data = OverOuter)
+legend(22.5, 28.3, bty = "n", legend = paste("R2:",format(summary(fit)$adj.r.squared, digits=4)))
+cf <- round(coef(fit), 2) 
+eq <- paste0("y = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "x")
+mtext(eq, 3, line = -2, adj = 0.08)
+dev.off()
+```
