@@ -16,7 +16,7 @@ editor_options:
 
 This script is the analysis of the benthic transect data for the following manuscript:
 
-Matsuda, S.B., Huffmyer, A., Lenz, E., Davidson, J., Hancock, J., Przybylowski, A., Innis, T., Gates, R., Barott, K. (2020). Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species, Front. Ecol. Evol., doi: 10.3389/fevo.2020.00178
+Matsuda, S.B., Huffmyer, A.S., Lenz, E., Davidson, J., Hancock, J., Przybylowski, A., Innis, T., Gates, R., Barott, K. (2020). Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species, Front. Ecol. Evol., doi: 10.3389/fevo.2020.00178
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
