@@ -8,25 +8,79 @@ Marine heat waves instigated by anthropogenic climate change are causing increas
 
 In this repository, please find data sheets and .Rmd for all data analyses in the manuscript.
 
-This manuscript was first released as a preprint (https://doi.org/10.1101/2019.12.17.880161). For copies of the .Rmd used for this release, please contact . 
+This manuscript was first released as a preprint (https://doi.org/10.1101/2019.12.17.880161). For copies of the .Rmd used for this release, please contact SMatsuda.   
 
 
-Color pigmentation analysis:
-Script: ColorScore.Rmd
-Data: Bleaching_FINAL.csv
-columns
-*TagID*: Unique identification number for each coral colony
+**Color pigmentation analysis:**    
+Script: ColorScore.Rmd.     
+Data: Bleaching_FINAL.csv.     
+columns    
+*TagID*: Unique identification number for each coral colony  
+*Pair*: Unique identification number for each set of bleached and non-bleached adjacent pairs of colonies  
+*Species*: Coral species
+*Site*: Lagoon: 4=PR4, Inner Lagoon; 13=PR13, Outer Lagoon    
+*B2015*: Bleaching phenotype (if a colony bleached during the 2015 bleaching event) Y=Yes, N=No    
+*Month0*: Color scores at the time of peack bleaching, October 2015    
+*Month1.5-Month24*: Color scores the number of months post peak bleaching (columns= months post peak bleaching)    
+
+**Partial mortality analysis:**  
+Script: Partial_Mortality.Rmd  
+Data: Mortality_Scores_Percent.csv. 
+columns. 
+*TagID*: Unique identification number for each coral colony    
+*Pair*: Unique identification number for each set of bleached and non-bleached adjacent pairs of colonies    
+*Species*: Coral species. 
+*Site*: Lagoon: 4=PR4, Inner Lagoon; 13=PR13, Outer Lagoon      
+*B2015*: Bleaching phenotype (if a colony bleached during the 2015 bleaching event) Y=Yes, N=No      
+*Month0*: Partial mortality scores (20% intervals) at peack bleaching, October 2015      
+*Month1.5-Month24*: Partial mortality scores the number of months post peak bleaching (columns= months post peak bleaching)    
+
+**Benthic transect surveys analysis:**. 
+Script: Transect_Data.Rmd. 
+
+Data:   
+Benthic_Transect_Coral_Cover.csv   
+*Reef*: Inner = Inner Lagoon, Outer = Outer Lagoon  
+*Depth*: Depth of transect (meters) 
+*Month*: 0 (peak bleaching) and number of months post peak bleaching    
+*Survey*: Survey replicate    
+*CoralCover*: % coral cover 
 
 
-Partial mortality analysis:
-Script: Partial_Mortality.Rmd
-Data: Mortality_Scores_Percent.csv
+Benthic_Transect_df.csv    
+columns    
+*Species*: Coral species (Mcap = *Montipora capitata*, Pcomp = *Porites compressa*)    
+*Bleaching_status*: Bleaching phenotype (Bleached, Pale, Healthy)    
+*BNB*: Bleaching color score (1=Bleached, 2=Pale, 3=Healthy)    
+*Date*: Date of transect    
+*Depth*: Depth of transect (meters)    
+*Reef*: Inner = Inner Lagoon, Outer = Outer Lagoon    
+*Percent*: % of each bleaching phenotype out of total    
+*Rep*: Transect replicate by depth     
 
-Benthic transect surveys analysis:
-Script: Transect_Data.Rmd
-Data: Benthic_Transect_Coral_Cover.csv and Benthic_Transect_df.csv
+**Temperature analysis:**        
+Script: Temp_Analysis.Rmd        
+Data:         
+Temp_Data_PR12.csv    
+columns    
+*Date*: Date    
+*Time*: Time 12hr clock    
+*Time24*: Date 24hr clock    
+*Temp F*: Temperature in degrees F    
+*Temp C*: Temperature in degrees C    
+*Corrected Temp C*: Temp C logger calibrated data    
+    
+Temp_Data_PR1.csv    
+columns    
+*Date*: Date    
+*Time*: Time 12hr clock    
+*Time24*: Date 24hr clock    
+*Temp C*: Temperature in degrees C    
 
-Temperature analysis:
-Script: Temp_Analysis.Rmd
-Data: Temp_Data_PR12.csv, Temp_Data_PR1.csv and Temp_Data_PR4_PR13.csv
+Temp_Data_PR4_PR13.csv      
+*Date*: Date    
+*Time*: Time 12hr clock    
+*Time24*: Date 24hr clock    
+*Temp C*: Temperature in degrees C    
+*Corrected Temp C*: Temp C logger calibrated data    
 
