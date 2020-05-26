@@ -15,7 +15,7 @@ editor_options:
 ---
 Last updater: 5/20/2020
 
-Matsuda, S, Huffmyer, A, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species.  
+Matsuda, SB, Huffmyer, AS, Lenz, E, Davidson, J, Hancock, J, Pryzybylowski, A, Innis, T, Gates, RD, and KL Barott. Coral bleaching susceptibility is predictive of subsequent mortality within but not between coral species.  
 
 Tissue partial mortality analysis for *M. capitata* and *P. compressa* colonies at the Inner Lagoon (PR4) and Outer Lagoon (PR13) after the 2015 coral bleaching event in Kaneohe Bay.  Mortality scores are in % to the nearest 20%
 
