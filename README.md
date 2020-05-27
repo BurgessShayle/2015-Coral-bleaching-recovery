@@ -70,7 +70,7 @@ columns
 *Temp C*: Temperature in degrees C    
 *Corrected Temp C*: Temp C logger calibrated data    
     
-Temp_Data_PR1.csv    
+Temp_Data_PR1.csv (PACIOOS sensor on Coconut Island)    
 columns    
 *Date*: Date    
 *Time*: Time 12hr clock    
