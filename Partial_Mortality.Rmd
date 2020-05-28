@@ -1,5 +1,5 @@
 ---
-title: "ColorScore revision"
+title: "Partial Mortality"
 author: "Shayle Matsuda"
 date: "5/20/2020"
 output:
@@ -29,17 +29,13 @@ library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
-library("pscl")
 library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
-library("car") #levenes test:
 library("lsmeans")
 library("multcomp") 
 library("multcompView")
-library(glmmTMB)
-library(lme4)
-library(lmerTest)
-library(tidyverse)
+library("lme4")
+library("lmerTest")
 
 #load data
 mData<-read.csv("data/Mortality_scores_percent.csv")
@@ -48,7 +44,7 @@ mData$Site<-as.factor(mData$Site)
 #We excluded these pairs as part of the pair analysis because the Bleached coral was only a 2: Porites Outer Bay 233_234, Porites Inner Bay 297_298, Porites Outer Bay 227_228, Montipora capitata Inner Bay 251_252.
 ```
 
-##Partial mortality   
+#Partial mortality   
 ```{r, results="hide", message=FALSE}
 #all Months
   mALL<-mData
@@ -94,7 +90,7 @@ mALLmeansPER <- ddply(mALLDataPER, c("Site", "Species", "B2015", "month"), summa
 mALLmeansPER$code<-paste0(mALLmeansPER$Site, mALLmeansPER$B2015, mALLmeansPER$Species)
 ```
 
-##Figure 5
+#Figure 5
 Average color score (A-D) and partial mortality (E-H) of bleaching susceptible versus
 bleaching resistant colonies of Montipora capitata (A, B, E, F) and Porites compressa (C, D, G,
 H) at the Inner Lagoon (A,C, E, G) and Outer Lagoon (B, D, F, H) from the peak of the coral
@@ -130,6 +126,7 @@ mallplotMcapPR13<-ggplot(data=Mcap024AllplotPR13M, aes(x=Month, y=mean, group = 
   scale_linetype_manual(values=c("solid", "dotted"))+
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
+  ylab("Percent")+
     ylim(0, 80) + #set Y limits
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
@@ -154,6 +151,7 @@ ballplotMcapPR4M<-ggplot(data=Mcap024AllplotPR4M, aes(x=Month, y=mean, group = c
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
     ylim(0, 80) + #set Y limits
   theme_bw() + #Set the background color
+  ylab("Percent")+
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
         panel.border = element_blank(), #Set the border
@@ -195,6 +193,7 @@ b024plotPcompPR13<-ggplot(data=Pcomp024AllplotPR13, aes(x=Month, y=mean, group =
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
     ylim(0,80) + #set Y limits
+    ylab("Percent")+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -217,6 +216,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=Month, y=mean, group = c
   scale_color_manual(values=c("black","black"))+
     scale_x_continuous(breaks = seq(0, 24, by = 6))+
     ylim(0,80) + #set Y limits
+    ylab("Percent")+
   theme_bw() + #Set the background color
   theme(axis.line = element_line(color = 'black'), #Set the axes color
         axis.title=element_text(size=14,face="bold"), #Set axis format
@@ -234,7 +234,7 @@ Figure 5 (E, F, G, H) *(Partial mortality figure, full figure includes color sco
 grid.arrange(McapInnerMORT, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
-##Table 3:  
+#Table 3:  
 `Pigmentation score~month*B2015*lagoon`     
 Type II Analysis of Variance Table with Satterthwaite approximation for the effects of
 bleaching phenotype, lagoon, and recovery time across the course of the study, on partial
@@ -255,7 +255,7 @@ anova(Mcap_mort_mod, type=2)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Mcap_mort_mod, ~ Site*month, adjust="tukey")
-#letter display
+
 pairs(emm)
 ```
 
@@ -267,11 +267,11 @@ anova(Pcomp_mort_mod, type=2)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_mort_mod, ~ Site*month, adjust="tukey")
-#letter display
+
 pairs(emm)
 ```
 
-##SI Tables 7  
+#Supplementary Tables 7  
 Analysis of Variance Table of the effects of lagoon and bleaching phenotype on partial mortality of Montipora capitata and Porites compressa by recovery month from peak bleaching to 24 months of recovery (`Partial Mortality ~ Lagoon*Phenotype+(1|Coral Tag ID)`). Bold indicates statistical significance.   
 *Montipora capiatata*
 Month0 
@@ -288,10 +288,10 @@ Mcap_m1_5_mod1<-lm(score~Site*B2015, Mcap_m1_5)
 #summary(Mcap_m1_5_mod1)
 anova(Mcap_m1_5_mod1)
 ```
-Tukey post hoc test::
+Tukey post hoc test:
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Mcap_m1_5_mod1, ~ B2015, adjust="tukey")
-    #letter display
+    
     cld(emm)
 ```
 Month3
@@ -301,17 +301,17 @@ Mcap_m3_mod1<-lm(score~Site*B2015, Mcap_m3)
 #summary(Mcap_m3_mod1)
 anova(Mcap_m3_mod1)
 ```
-Tukey post hoc test::
+Tukey post hoc test:
 ```{r, results="hide", message=FALSE}
    emm = emmeans(Mcap_m3_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
+      
       cld(emm)
       emm = emmeans(Mcap_m3_mod1, ~ Site, adjust="tukey") #B2015
-      #letter display
+      
       cld(emm)
       #conduct Tukey post hoc test: 
       emm = emmeans(Mcap_m3_mod1, ~ Site*B2015, adjust="tukey")  #B2015*Site
-      #letter display
+      
       pairs(emm)
 ```
 Month4.5
@@ -324,11 +324,11 @@ anova(Mcap_m4_5_mod1)
 Tukey post hoc test: :
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Mcap_m4_5_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
+      
       cld(emm)
       #conduct Tukey post hoc test: 
       emm = emmeans(Mcap_m4_5_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
+      
       cld(emm)
 ```
 Month6
@@ -338,14 +338,14 @@ Mcap_m6_mod1<-lm(score~Site*B2015, Mcap_m6)
 #summary(Mcap_m6_mod1)
 anova(Mcap_m6_mod1)
 ```
-Tukey post hoc test:: 
+Tukey post hoc test:
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Mcap_m6_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
+      
       cld(emm)
       #conduct Tukey post hoc test: 
       emm = emmeans(Mcap_m6_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
+      
       cld(emm)
 ```
 Month10
@@ -355,14 +355,14 @@ Mcap_m10_mod1<-lm(score~Site*B2015, Mcap_m10)
 #summary(Mcap_m10_mod1)
 anova(Mcap_m10_mod1)
 ```
-Tukey post hoc test:: 
+Tukey post hoc test:
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Mcap_m10_mod1, ~ B2015, adjust="tukey") #B2015
-      #letter display
+      
       cld(emm)
       #conduct Tukey post hoc test: 
       emm = emmeans(Mcap_m10_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
+      
       cld(emm)
 ```
 Month18
@@ -375,7 +375,7 @@ anova(Mcap_m18_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Mcap_m18_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
+      
       cld(emm)
 ```
 Month24
@@ -388,7 +388,7 @@ anova(Mcap_m24_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Mcap_m24_mod1, ~ Site, adjust="tukey")  #Site
-      #letter display
+      
       cld(emm)
 ```
 *Porites compressa*   
@@ -402,7 +402,7 @@ anova(Pcomp_m0_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Pcomp_m0_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month1.5
@@ -415,7 +415,7 @@ anova(Pcomp_m1_5_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_m1_5_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month3
@@ -428,7 +428,7 @@ anova(Pcomp_m3_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_m3_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month4.5
@@ -441,7 +441,7 @@ anova(Pcomp_m4_5_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_m4_5_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month6
@@ -454,7 +454,7 @@ anova(Pcomp_m6_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Pcomp_m6_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month10
@@ -467,11 +467,11 @@ anova(Pcomp_m10_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
   #conduct Tukey post hoc test: 
   emm = emmeans(Pcomp_m10_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month18
@@ -484,7 +484,7 @@ anova(Pcomp_m18_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_m18_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   pairs(emm)
 ```
 Month24
@@ -497,7 +497,7 @@ anova(Pcomp_m24_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(Pcomp_m24_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   pairs(emm)
 ```
 
@@ -674,7 +674,7 @@ anova(MpigPair_all_mod1, type=2)
 Tukey post hoc test:
 ```{r, results="hide", message=FALSE}
  emm = emmeans(MpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month0
@@ -687,7 +687,7 @@ anova(MpigPair0_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(MpigPair0_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month1.5
@@ -700,11 +700,11 @@ anova(MpigPair1.5_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(MpigPair1.5_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
   #conduct Tukey post hoc test: 
   emm = emmeans(MpigPair1.5_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month3
@@ -717,13 +717,13 @@ anova(MpigPair3_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(MpigPair3_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
    emm = emmeans(MpigPair3_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
   emm = emmeans(MpigPair3_mod1, ~ B2015*Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month4.5
@@ -736,10 +736,10 @@ anova(MpigPair4.5_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(MpigPair4.5_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
    emm = emmeans(MpigPair4.5_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month6
@@ -752,10 +752,10 @@ anova(MpigPair6_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(MpigPair6_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
    emm = emmeans(MpigPair6_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month10
@@ -768,10 +768,10 @@ anova(MpigPair10_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(MpigPair10_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
    emm = emmeans(MpigPair10_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month18
@@ -784,10 +784,10 @@ anova(MpigPair18_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
 emm = emmeans(MpigPair18_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
    emm = emmeans(MpigPair18_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month24
@@ -800,7 +800,7 @@ anova(MpigPair24_mod1)
 Tukey post hoc test: 
 ```{r, results="hide", message=FALSE}
  emm = emmeans(MpigPair24_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 
@@ -813,9 +813,11 @@ Pcomppig<-subset(PairDat, Species =="Porites compressa")
 PpigPair_all_mod1<-lmer(score~Site*B2015*month+(1|TagID)+(1|Pair), Pcomppig) 
 #summary(PpigPair_all_mod1)
 anova(PpigPair_all_mod1, type=2)
-  #conduct Tukey post hoc test: 
-  emm = emmeans(PpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
-  #letter display
+```
+Tukey post hoc test: 
+```{r, results="hide", message=FALSE}
+ emm = emmeans(PpigPair_all_mod1, ~ Site*B2015*month, adjust="tukey")
+  
   cld(emm)
 ```
 Month0
@@ -826,15 +828,9 @@ PpigPair0_mod1<-lm(score~Site*B2015, PpigPair0)
 anova(PpigPair0_mod1)
 ```
 Tukey post hoc test: 
-```{r}
- emm = emmeans(PpigPair0_mod1, ~ Site, adjust="tukey")
-  #letter display
-  cld(emm)  
-  emm = emmeans(PpigPair0_mod1, ~ B2015, adjust="tukey")
-  #letter display
-  cld(emm)  
-  emm = emmeans(PpigPair0_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
+```{r, results="hide", message=FALSE}
+emm = emmeans(PpigPair0_mod1, ~ Site*B2015, adjust="tukey")
+  
   cld(emm)
 ```
 Month1.5
@@ -845,15 +841,15 @@ PpigPair1.5_mod1<-lm(score~Site*B2015, PpigPair1.5)
 anova(PpigPair1.5_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
  emm = emmeans(PpigPair1.5_mod1, ~ Site, adjust="tukey")
-  #letter display
+  
   cld(emm)  
   emm = emmeans(PpigPair1.5_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)  
   emm = emmeans(PpigPair1.5_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month3
@@ -864,12 +860,10 @@ PpigPair3_mod1<-lm(score~Site*B2015, PpigPair3)
 anova(PpigPair3_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
 emm = emmeans(PpigPair3_mod1, ~ B2015, adjust="tukey")
-  #letter display
   cld(emm)  
   emm = emmeans(PpigPair3_mod1, ~ Site*B2015, adjust="tukey")
-  #letter display
   cld(emm)
 ```
 Month4.5
@@ -880,9 +874,9 @@ PpigPair4.5_mod1<-lm(score~Site*B2015, PpigPair4.5)
 anova(PpigPair4.5_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
 emm = emmeans(PpigPair4.5_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month6
@@ -893,9 +887,9 @@ PpigPair6_mod1<-lm(score~Site*B2015, PpigPair6)
 anova(PpigPair6_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
 emm = emmeans(PpigPair6_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month10
@@ -906,9 +900,9 @@ PpigPair10_mod1<-lm(score~Site*B2015, PpigPair10)
 anova(PpigPair10_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
   emm = emmeans(PpigPair10_mod1, ~ B2015, adjust="tukey")
-  #letter display
+  
   cld(emm)
 ```
 Month18
@@ -919,9 +913,8 @@ PpigPair18_mod1<-lm(score~Site*B2015, PpigPair18)
 anova(PpigPair18_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
 emm = emmeans(PpigPair18_mod1, ~ B2015, adjust="tukey")
-  #letter display
   cld(emm)  
   emm = emmeans(PpigPair18_mod1, ~ Site*B2015, adjust="tukey")
   cld(emm)
@@ -934,7 +927,7 @@ PpigPair24_mod1<-lm(score~Site*B2015, PpigPair24)
 anova(PpigPair24_mod1)
 ```
 Tukey post hoc test: 
-```{r}
+```{r, results="hide", message=FALSE}
 emm = emmeans(PpigPair24_mod1, ~ Site*B2015, adjust="tukey")
   cld(emm)  
 ```
