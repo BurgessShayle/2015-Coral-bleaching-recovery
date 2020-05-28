@@ -1,7 +1,7 @@
 ---
-title: "transect_reps"
+title: "Benthic Transects"
 author: "Shayle Matsuda"
-date: "10/23/2019"
+date: "5/20/2020"
 output:
   html_document:
     code_folding: hide
@@ -30,20 +30,15 @@ library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
-library("pscl")
 library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
-library("car") #levenes test
 library("lsmeans")
 library("multcomp") 
 library("multcompView")
-library(glmmTMB)
 library(lme4)
 library(lmerTest)
-library(tidyverse)
 ```
 
-Setup df:
 ```{r,results="hide", message=FALSE}
 #Setup workspace:
 rData1<- read.csv("data/Benthic_Transect_df.csv", header=T) # load in transect data
@@ -59,8 +54,8 @@ rData1$MonthFactor[rData1$MonthFactor=="19"] <-"1819"
 rData1$MonthFactor <- factor(rData1$MonthFactor, levels=c("0", "1.5", "4.5","10","1819")) #specify order
 ```
 
-# Transect color score prevalence plots
-SI Figure 2, Mean Table
+# Supplementary Figure 2  
+Prevalence of coral bleaching phenotypes (bleached [circles], healthy [triangles], pale [squares] for *Montipora capitata* (A-B) and *Porites compressa* (C-D) at the Inner Lagoon (left column) and Outer Lagoon (right column). Data represent the means of four replicate transects. Error bars represent standard error of mean.
 ```{r, results="hide", message=FALSE}
 # Calc. mean, sd,se   
 repcol<-c("Species", "Reef", "Month","MonthFactor", "Bleaching_status","Percent")
@@ -77,10 +72,8 @@ transectPlotmean <- ddply(rDataPlot, c("Species", "Reef", "Month","MonthFactor",
 
 transectPlotmean$code<-paste0(transectPlotmean$Species, transectPlotmean$Reef, transectPlotmean$Bleaching_status) #code for plotting
 ```
-
-Subsets by Coral and Lagoon for plots:   
-*Montipora capitata* Inner Lagoon  
 ```{r, results="hide", message=FALSE} 
+#*Montipora capitata* Inner Lagoon  
 McapInner1<-subset(transectPlotmean, Species=="Mcap")
 McapInner<-subset(McapInner1, Reef=="Inner")
 
@@ -116,8 +109,8 @@ col_McapInner_plot<-ggplot(data=col_McapInner, aes(x=Month, y=mean, group = code
 McapInner<-col_McapInner_plot+ theme(legend.position = "none") #remove legend
 ```
 
-*Montipora capitata* Outer Lagoon
 ```{r, results="hide", message=FALSE}
+#*Montipora capitata* Outer Lagoon
 McapOuter<-subset(McapInner1, Reef=="Outer")
 
 col_McapOuter <- McapOuter %>%   
@@ -151,8 +144,8 @@ col_McapOuter_plot<-ggplot(data=col_McapOuter, aes(x=Month, y=mean, group = code
 McapOuter<-col_McapOuter_plot+ theme(legend.position = "none") #remove legend
 ```
 
-*Porites compressa* Inner Lagoon
 ```{r, results="hide", message=FALSE}
+#*Porites compressa* Inner Lagoon
 PcompInner1<-subset(transectPlotmean, Species=="Pcomp")
 PcompInner<-subset(PcompInner1, Reef=="Inner")
 
@@ -186,8 +179,8 @@ col_PcompInner_plot<-ggplot(data=col_PcompInner, aes(x=Month, y=mean, group = co
 PcompInner<-col_PcompInner_plot+ theme(legend.position = "none") #remove legend
 ```
 
-*Porites compressa* Outer Lagoon
 ```{r, results="hide", message=FALSE}
+#*Porites compressa* Outer Lagoon
 PcompOuter<-subset(PcompInner1, Reef=="Outer")
 
 col_PcompOuter <- PcompOuter %>% 
@@ -220,15 +213,13 @@ col_PcompOuter_plot<-ggplot(data=col_PcompOuter, aes(x=Month, y=mean, group = co
 PcompOuter<-col_PcompOuter_plot+ theme(legend.position = "none") #remove legend
 ```
 
-Plot all four together:  Manuscript SI Figure 1
 ```{r}
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
-#Coral bleaching prevalence  
-Sum: White (W) + Pale (P) 
-Set up df:  
 ```{r, results="hide", message=FALSE}
+#Sum: White (W) + Pale (P) 
+
 rData2<-rData1[!(rData1$Bleaching_status=="Healthy"),]    # Remove Healthy 
 rData2$code<-paste0(rData2$Species, rData2$Month, rData2$MonthFactor, rData2$Depth, rData2$Reef, rData2$Rep)#create a code for groups by Species, Month, Depth, Reef, Rep 
 rData3<-rData2 %>% group_by(code) %>%summarise(sum=sum(Percent))# Group Data: combine P and B %s
@@ -244,10 +235,9 @@ rData3<-rData3[,c(1,3,5:8,2)]
 rData3$Depth<-as.factor(rData3$Depth)
 rData3$Rep<-as.factor(rData3$Rep)
 ```
-
-#Benthic section: %Coral cover
-Benthic transect df setup:   
 ```{r, results="hide", message=FALSE} 
+#Benthic transect df setup:   
+
 ccData<-read.csv("data/Benthic_Transect_Coral_Cover.csv", header=T)
 ccData$MonthFactor<-ccData$Month
 ccData$MonthFactor[ccData$MonthFactor=="18"] <-"1819" #combine months 18 and 19
@@ -268,57 +258,57 @@ ccMeans <- ddply(ccData, c("Reef",  "Month"), summarise,
 ```
 
 #Supplementary Table 1  
-%Coral cover full model lmer 
+Linear model summary table of the effect of lagoon on coral cover over the duration of the study (`% Coral Cover~Lagoon*Month+(1|Depth)`). Bold indicates statistical significance. Data collected by benthic transects.
 ```{r} 
 CoralCoverMod<-lmer(CoralCover~Reef*MonthFactor+(1|Depth), ccData)
 anova(CoralCoverMod, type=2)
+```
+Tukey post hoc test 
+```{r, results="hide", message=FALSE}
+ emm = emmeans(CoralCoverMod, ~ Reef, adjust="tukey")
 
-#conduct Tukey post hoc test 
-    emm = emmeans(CoralCoverMod, ~ Reef, adjust="tukey")
-    #letter display
     pairs(emm)
 ```
 
 #Supplementary Table 2
-Bleaching prevalence, all timepoints and by month: W+P  
-Full model:lmer(sum~Reef*MonthFactor*Species+(1|Depth))
+BLinear mixed effects model summary table of the effect of lagoon and recovery month on bleaching prevalence (white + pale corals) (`Bleaching Prevalence~Lagoon*Month*Species+(1|Depth)`). Bold indicates statistical significance. Data collected by benthic transects.
 ```{r}  
 #fullmodel, df=rData3
 Prev_transect_full<-lmer(sum~Reef*MonthFactor*Species+(1|Depth), data=rData3)
 anova(Prev_transect_full, type=2)
-    #conduct Tukey post hoc test 
-    emm = emmeans(Prev_transect_full, ~ Reef*MonthFactor, adjust="tukey")
-    #letter display
+```
+Tukey post hoc test 
+```{r, results="hide", message=FALSE}
+ emm = emmeans(Prev_transect_full, ~ Reef*MonthFactor, adjust="tukey")
+
       pairs(emm) 
     emm = emmeans(Prev_transect_full, ~ Species*MonthFactor, adjust="tukey")
-    #letter display
+
     pairs(emm) 
         cld(emm) 
 ```
-
-
-#Supplementary Table 3  
-Bleaching prevalence: White only 
+   
+#Supplementary Table 3    
+Linear mixed effects model summary table of the effect of lagoon, coral species and recovery time point on prevalence of severely bleached (white) corals (`Bleaching Severity~Species*Lagoon*Month+(1|Depth)`). Bold indicates statistical significance. Data collected by benthic transects. Bold indicates statistical significance. Data collected by benthic transects.
 ```{r}
 #bleached
 prevWhite<-subset(rData1, Bleaching_status=="Bleached")
 
 WhiteMod<-lmer(Percent~Species*Reef*MonthFactor+(1|Depth),prevWhite)
 anova(WhiteMod, type=2)
-  #conduct Tukey post hoc test 
-    emm = emmeans(WhiteMod, ~ Reef, adjust="tukey")
-    #letter display
+```
+Tukey post hoc test 
+```{r, results="hide", message=FALSE}
+ emm = emmeans(WhiteMod, ~ Reef, adjust="tukey")
     cld(emm)
   #conduct Tukey post hoc test 
     emm = emmeans(WhiteMod, ~ Reef*Species*MonthFactor, adjust="tukey")
-    #letter display
     cld(emm)
     pairs(emm)
 ```
 
-#Supplementary Table 4
-Bleaching severity (white/white+pale)  
-lmer(newPer~Species*Reef*MonthFactor+(1|Depth)+(1|Rep))
+#Supplementary Table 4  
+Linear mixed effects model summary table for the effect of lagoon, coral species, and recovery month on bleaching severity (proportion of completely white corals out of the all affected corals) (`Bleaching Severity~Species*Lagoon*Month+(1|Depth)`). Bold indicates statistical significance. Data collected by benthic transects.
 ```{r}
 rData4<-rData2 #make a copy of rData2
 rData4$Depth<-as.factor(rData4$Depth)
@@ -331,13 +321,15 @@ rData4<-subset(rData4, Bleaching_status=="Bleached") # get rid of Pale
 #full model
 SeverityMod<-lmer(newPer~Species*Reef*MonthFactor+(1|Depth),rData4)
 anova(SeverityMod, type="2")
- #conduct Tukey post hoc test 
-    emm = emmeans(SeverityMod, ~ Species*MonthFactor*Reef, adjust="tukey")
-    #letter display
+```
+Tukey post hoc test 
+```{r, results="hide", message=FALSE}
+ emm = emmeans(SeverityMod, ~ Species*MonthFactor*Reef, adjust="tukey")
+
     cld(emm)
     pairs(emm) 
  #conduct Tukey post hoc test 
     emm = emmeans(SeverityMod, ~ Reef*Species*MonthFactor, adjust="tukey")
-    #letter display
-    pairs(emm)   
+        pairs(emm)
 ```
+
