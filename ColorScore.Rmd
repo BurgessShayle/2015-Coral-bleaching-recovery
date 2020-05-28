@@ -92,7 +92,12 @@ ballmeans #display table
 ```
 
 #Figure 5
-Color score df setup, means, and individual plots:
+Average color score (A-D) and partial mortality (E-H) of bleaching susceptible versus
+bleaching resistant colonies of Montipora capitata (A, B, E, F) and Porites compressa (C, D, G,
+H) at the Inner Lagoon (A,C, E, G) and Outer Lagoon (B, D, F, H) from the peak of the coral
+bleaching event (Sept. – Oct. 2015) through the following 24 months of recovery. Solid lines
+indicate bleaching resistant colonies; dashed lines indicate bleaching susceptible colonies. Color
+scores: 1, white; 2, pale; 3, pigmented. Error bars indicate SEM.
 ```{r, results="hide", message=FALSE} 
 #subset for Mcap only 
 Mcap024Allplot<-subset(ballmeans, Species=="Montipora capitata")     #subset Mcap
@@ -225,7 +230,7 @@ b024plotPcompPR4<-ggplot(data=Pcomp024AllplotPR4, aes(x=time, y=mean, group = co
 PcompInner<-b024plotPcompPR4+ theme(legend.position = "none") #remove legend
 ```
 
-Figure 5 (A, B, C, D) *(color score figure, full figure includes Mortality data (see Partial mortality Rmd))*
+Figure 5 (A, B, C, D) *(color score figure, full figure includes Mortality data (see Partial_Mortality.Rmd))*
 ```{r}
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
