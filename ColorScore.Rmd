@@ -32,10 +32,8 @@ library("ggplot2") #plotting
 library("reshape") #reshape data
 library("plyr")  #splitting, applying, and combining data
 library("dplyr")  #splitting, applying, and combining data
-library("pscl")
 library("plotrix") #plotting
 library("gridExtra") #arrange plots for output
-library("car") #levenes test
 library("lsmeans")
 library("multcomp") 
 library("multcompView")
@@ -235,7 +233,12 @@ Figure 5 (A, B, C, D) *(color score figure, full figure includes Mortality data 
 grid.arrange(McapInner, McapOuter, PcompInner,PcompOuter, nrow = 2)
 ```
 
-#Table 2: Color score recovery  
+#Table 2: Color score recovery   
+Type II Analysis of Variance Table with Satterthwaite approximation for the effects of
+bleaching phenotype, lagoon, and recovery time across the course of the study, on pigmentation
+recovery of bleaching susceptible and resistant colonies for Montipora capitata and Porites
+compressa at Inner and Outer lagoons (`Color Score~Phenotype*Lagoon*Month+(1|Coral Tag
+ID)`). Bold indicates statistical significance (p&lt;0.05).  
 *M. capitata* `lmer(score~month*B2015*lagoon+(1|TagID)`
 ```{r}
 #full model (all months)
@@ -273,7 +276,7 @@ posthoc:
   pairs(emm)
 ```
 
-#Supplemental Table 5
+#Supplementary Table 5
 Analysis of Variance Table of the effects of lagoon and bleaching phenotype on pigmentation score of Montipora capitata and Porites compressa by recovery month from peak bleaching to 24 months of recovery (`Color Score ~ Lagoon*Phenotype+(1|Coral Tag ID)`). Bold indicates statistical significance.
 *M. capitata* 
 ```{r, results="hide", message=FALSE}  
@@ -434,7 +437,8 @@ Month24_Pcomp24<-lm(score~Site*B2015,Pcomp_24)
 anova(Month24_Pcomp24)
 ```
 
-# Pairs subset - Supplementary Table 6.
+#Supplementary Table 6  
+"Pairs" subset  
 Type II Analysis of Variance Table with Satterthwaite approximation (p-values only) of the effects of lagoon and bleaching phenotype on pigmentation score of Montipora capitata and Porites compressa from peak bleaching to 24 months of recovery. “Full” models include data from all colonies found at each time point (`Color Score~Lagoon*Phenotype+(1|Coral Tag ID)`). “Pairs” models contain only colonies where both partners of each pair were found at a time point (“pairs” models not run for months if less than half of the original tagged corals were found) (`Color Score ~ Lagoon*Phenotype+(1|Coral Tag ID)+(1|Pair ID)`). Bold indicates statistical significance, and “n” equals the number of individual colonies in the “Full”/“Pairs” models at each time point.  
   
 *"Pairs" subset of full dataset with only colonies when both partners of a pair are found at each time point* 
