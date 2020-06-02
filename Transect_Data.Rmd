@@ -40,8 +40,8 @@ library(lmerTest)
 ```
 
 ```{r,results="hide", message=FALSE}
-#Setup workspace:
-rData1<- read.csv("data/Benthic_Transect_df.csv", header=T) # load in transect data
+#Setup workspace: 
+rData1<- read.csv("data/Benthic_Transect_dfUpdate.csv", header=T) # load in transect data
 
 # set levels of factor for Bleaching_status
 levels(rData1$Bleaching_score)
